@@ -91,3 +91,47 @@ xbootldo_gpio_init:
 	orr	w1, w1, #(0x1 << 0)
 	str	w1, [x0]
 	ret
+
+	.global vol_up_key_gpio_init
+vol_up_key_gpio_init:
+	stp	x0, x1, [sp, #-16]!
+	stp	x2, x3, [sp, #-16]!
+
+	/* Set Volume up KEY (GPA1_5) to Pull-up */
+	ldr	x0, =EXYNOS9610_GPA1CON
+	add	x0, x0, #8
+	ldr	w1, [x0]
+	ldr	w2, =0xf
+	lsl	w2, w2, #20
+	bic	w1, w1, w2
+	ldr	w2, =0x3
+	lsl	w2, w2, #20
+	orr	w1, w1, w2
+	str	w1, [x0]
+
+	/* Set Volume up KEY (GPA1_5) to Input */
+	ldr	x0, =EXYNOS9610_GPA1CON
+	ldr	w1, [x0]
+	ldr	w2, =0xf
+	lsl	w2, w2, #20
+	bic	w1, w1, w2
+	str	w1, [x0]
+
+	ldp	x2, x3, [sp], #16
+	ldp	x0, x1, [sp], #16
+	ret
+
+	.global vol_up_key_get_gpio_value
+vol_up_key_get_gpio_value:
+	stp	x1, x2, [sp, #-16]!
+
+	/* Get Volume up KEY (GPA1_5) */
+	ldr	x1, =EXYNOS9610_GPA1CON
+	add	x1, x1, #4
+	ldr	w0, [x1]
+	ldr	w2, =0x1
+	lsl	w2, w2, #5
+	and	w0, w0, w2
+
+	ldp	x1, x2, [sp], #16
+	ret
