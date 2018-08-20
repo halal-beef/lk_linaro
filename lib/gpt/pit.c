@@ -657,6 +657,41 @@ static int pit_copy_one_string(char **t, const char *s, char *org)
 	return 0;
 }
 
+int pit_lba_cumulation(void)
+{
+	int pit_index = 0;
+	u32 lun;
+
+	/*
+	 * check pit entries and build input string to build gpt
+	 *
+	 * PIT entries are supposed to be described as follows and
+	 * they should not be mixed to another group
+	 * e.g.) An entry in LUN1 should not exist in the middle of
+	 * entry array of LUN0
+	 *
+	 * LUN0 > LUN1 > LUN2
+	 */
+
+	/* for non gpt entries of part 0 */
+	if (pit_check_info(&pit, (int *)&pit_index, 0, PIT_DISK_LOC))
+		goto err;
+
+	/* for gpt entries of part 0 */
+	if (pit_check_info_gpt(&pit, (int *)&pit_index))
+		goto err;
+
+	/* for entries of others */
+	for (lun = 1; ; lun++) {
+		if (pit_check_info(&pit, (int *)&pit_index, lun, 0))
+			goto err;
+		if (pit.count == (u32)pit_index)
+			break;
+	}
+
+err:
+	return 1;
+}
 
 static void pit_sysparam_scan(void)
 {
@@ -715,6 +750,8 @@ void pit_init(void)
 	} else {
 		printf("pit signature check success\n");
 	}
+	/* Calculation Start LBA */
+	pit_lba_cumulation();
 
 	/* Clear buffer for partition writes */
 	memset(nul_buf, 0, sizeof(nul_buf));
@@ -730,8 +767,13 @@ void pit_init(void)
 		if (!ptn)
 			goto err;
 		pit_blk_cnt = ptn->blknum;
+
+		/* Calculation userdata lba */
 		printf("... [PIT] pit init passes\n");
 		pit_sysparam_scan();
+
+		/* Print initially */
+		pit_show_info();
 
 		return;
 	}
@@ -773,9 +815,7 @@ void pit_show_info()
 
 int pit_update(void *buf, u32 size)
 {
-	int pit_index = 0;
 	u32 lun_start_lba = 0;
-	u32 lun;
 	struct pit_entry *ptn;
 
 
@@ -803,44 +843,20 @@ int pit_update(void *buf, u32 size)
 	if (pit_check_header(&pit))
 		goto err;
 
-	/*
-	 * check pit entries and build input string to build gpt
-	 *
-	 * PIT entries are supposed to be described as follows and
-	 * they should not be mixed to another group
-	 * e.g.) An entry in LUN1 should not exist in the middle of
-	 * entry array of LUN0
-	 *
-	 * LUN0 > LUN1 > LUN2
-	 */
-
-	/* for non gpt entries of part 0 */
-	lun_start_lba = PIT_PART_META;
-	if (pit_check_info(&pit, (int *)&pit_index, 0, (u32 *)&lun_start_lba))
+	/* Check if PIT is valid and set PIT block count */
+	ptn = pit_get_part_info("pit");
+	if (!ptn)
 		goto err;
+	pit_blk_cnt = ptn->blknum;
 
-	/* set 4K align */
-	if(lun_start_lba & (PIT_LBA_ALIGMENT-1)) {
-		lun_start_lba = lun_start_lba + PIT_LBA_ALIGMENT;
-		lun_start_lba = (lun_start_lba / PIT_LBA_ALIGMENT) * PIT_LBA_ALIGMENT;
-	}
+	/* Save pure pit binary */
+	LOAD_PIT(pit_buf, &pit);
+	pit_save_pit(pit_buf);
 
-	gpt_if.gpt_start_lba = lun_start_lba;
-	gpt_if.gpt_last_lba = pit_get_last_lba();
+	/* Calculation Start LBA */
+	pit_lba_cumulation();
 
-	/* for gpt entries of part 0 */
-	if (pit_check_info_gpt(&pit, (int *)&pit_index, &gpt_if))
-		goto err;
-
-
-	/* for entries of others */
-	for (lun = 1; ; lun++) {
-		lun_start_lba = 0;
-		if (pit_check_info(&pit, (int *)&pit_index, lun, (u32 *)&lun_start_lba))
-			goto err;
-		if (pit.count == (u32)pit_index)
-			break;
-	}
+	pit_close_dev();
 
 	/*
 	 * GPT would open the same device as one opened here.
@@ -856,27 +872,15 @@ int pit_update(void *buf, u32 size)
 		print_lcd_update(FONT_RED, FONT_BLACK, "[PIT] GPT update failed !");
 		 */
 		printf("[PIT] GPT update failed !\n\n");
-		goto err;
+		goto err1;
 	}
-	pit_open_dev();
-
+	printf("[PIT] pit updated\n\n");
 	/* display all entries */
 	pit_show_info();
 
-	/* Check if PIT is valid and set PIT block count */
-	ptn = pit_get_part_info("pit");
-	if (!ptn)
-		goto err;
-	pit_blk_cnt = ptn->blknum;
-
-	/* update pit */
-	LOAD_PIT(pit_buf, &pit);
-	pit_save_pit(pit_buf);
-
-	printf("[PIT] pit updated\n\n");
-	pit_close_dev();
-
 	return 0;
+err1:
+	return 1;
 err:
 	pit_close_dev();
 	return 1;
