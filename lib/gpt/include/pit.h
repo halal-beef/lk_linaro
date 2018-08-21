@@ -42,7 +42,7 @@
 /*
  * Setting this definition to smaller than maximum value is recommended.
  */
-#define PIT_MAX_PART_NUM		60
+#define PIT_MAX_PART_NUM		59
 
 #define PIT_ENV_SIZE			(16 << 10)
 
@@ -73,8 +73,9 @@ struct pit_info {
 	u32 magic;	/* to check integrity */
 	u32 count;	/* a number of partitions */
 	u32 reserved[5];
-
 	struct pit_entry pte[PIT_MAX_PART_NUM];
+	u8 dummy[104];
+	u8 signature[272];
 } __attribute__((packed));
 
 
