@@ -16,6 +16,7 @@
 #include <lib/heap.h>
 #include <dev/boot.h>
 #include <platform/decompress_ext4.h>
+#include <platform/secure_boot.h>
 
 // TODO:
 /*
@@ -688,6 +689,13 @@ void pit_init(void)
 	/* Load pit data */
 	pit_load_pit(pit_buf);
 	LOAD_PIT(&pit, pit_buf);
+
+	ret = el3_verify_signature_using_image((uint64_t)&pit, sizeof(pit));
+	if (ret) {
+		printf("[SB ERR] pit signature check fail [ret: 0x%X]\n", ret);
+	} else {
+		printf("pit signature check success\n");
+	}
 
 	/* Calculation Start LBA */
 	pit_lba_cumulation();
