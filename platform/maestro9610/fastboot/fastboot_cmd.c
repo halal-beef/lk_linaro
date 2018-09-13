@@ -123,6 +123,16 @@ int fb_do_getvar(const char *cmd_buffer)
 
 		if (ptn->filesys == FS_TYPE_EXT4)
 			strcpy(response + 4, "ext4");
+		/*
+		 * In case of flashing pit, this should be
+		 * passed unconditionally.
+		 */
+		if (strcmp(key, "pit") && ptn->filesys != FS_TYPE_NONE) {
+			if (!strcmp(key, "userdata"))
+				strcpy(response + 4, "f2fs");
+			else
+				strcpy(response + 4, "ext4");
+		}
 	}
 	else if (!memcmp(cmd_buffer + 7, "partition-size", strlen("partition-size")))
 	{
