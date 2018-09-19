@@ -79,7 +79,7 @@ int fb_do_getvar(const char *cmd_buffer)
 		if (interface.serial_no)
 			sprintf(response + 4, interface.serial_no);
 	}
-	else if (!memcmp(cmd_buffer + 7, "downloadsize", strlen("downloadsize")))
+	else if (!memcmp(cmd_buffer + 7, "max-download-size", strlen("max-download-size")))
 	{
 		if (interface.transfer_buffer_size)
 			sprintf(response + 4, "%08x", interface.transfer_buffer_size);
@@ -101,13 +101,7 @@ int fb_do_getvar(const char *cmd_buffer)
 		char *key = (char *)cmd_buffer + 7 + strlen("partition-size:");
 		struct pit_entry *ptn = pit_get_part_info(key);
 
-		/*
-		 * In case of flashing pit, this location
-		 * would not be passed. So it's unnecessary
-		 * to check that this case is pit.
-		 */
-		if (ptn->filesys != FS_TYPE_NONE)
-			sprintf(response + 4, "0x%llx", pit_get_length(ptn));
+		sprintf(response + 4, "0x%llx", pit_get_length(ptn));
 	}
 	else if (!strcmp(cmd_buffer + 7, "slot-count"))
 	{
@@ -116,9 +110,9 @@ int fb_do_getvar(const char *cmd_buffer)
 	else if (!strcmp(cmd_buffer + 7, "current-slot"))
 	{
 		if (ab_current_slot())
-			sprintf(response + 4, "_b");
+			sprintf(response + 4, "b");
 		else
-			sprintf(response + 4, "_a");
+			sprintf(response + 4, "a");
 	}
 	else if (!memcmp(cmd_buffer + 7, "slot-successful", strlen("slot-successful")))
 	{
