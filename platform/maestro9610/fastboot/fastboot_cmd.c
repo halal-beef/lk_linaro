@@ -470,6 +470,51 @@ int fb_do_flashing(const char *cmd_buffer)
 	return 0;
 }
 
+int fb_do_oem(const char *cmd_buffer)
+{
+	char buf[FB_RESPONSE_BUFFER_SIZE];
+	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
+
+	if (!strncmp(cmd_buffer + 4, "trackid write", 13)) {
+		struct pit_entry *ptn;
+		char *proinfo;
+
+		ptn = pit_get_part_info("proinfo");
+		proinfo = memalign(0x1000, pit_get_length(ptn));
+		pit_access(ptn, PIT_OP_LOAD, (u64)proinfo, 0);
+		memcpy(proinfo + 21, cmd_buffer + 18, 10);
+		pit_access(ptn, PIT_OP_FLASH, (u64)proinfo, 0);
+
+		sprintf(response, "OKAY");
+		fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+
+		free(proinfo);
+	} else if (!strncmp(cmd_buffer + 4, "trackid read", 13)) {
+		struct pit_entry *ptn;
+		char *proinfo;
+
+		ptn = pit_get_part_info("proinfo");
+		proinfo = memalign(0x1000, pit_get_length(ptn));
+		pit_access(ptn, PIT_OP_LOAD, (u64)proinfo, 0);
+
+		sprintf(response, "INFO");
+		memcpy(response + 4, proinfo + 21, 10);
+		*(response + 14) = 0;
+		fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+
+		sprintf(response, "OKAY");
+		fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+
+		free(proinfo);
+	} else {
+		printf("Unsupported oem command!\n");
+		sprintf(response, "FAILunsupported command");
+		fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+	}
+
+	return 0;
+}
+
 struct cmd_fastboot cmd_list[] = {
 	{"reboot", fb_do_reboot},
 	{"flash:", fb_do_flash},
@@ -479,6 +524,7 @@ struct cmd_fastboot cmd_list[] = {
 	{"getvar:", fb_do_getvar},
 	{"set_active:", fb_do_set_active},
 	{"flashing", fb_do_flashing},
+	{"oem", fb_do_oem},
 };
 
 static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
