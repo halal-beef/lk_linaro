@@ -82,7 +82,7 @@ int fb_do_getvar(const char *cmd_buffer)
 	else if (!memcmp(cmd_buffer + 7, "max-download-size", strlen("max-download-size")))
 	{
 		if (interface.transfer_buffer_size)
-			sprintf(response + 4, "%08x", interface.transfer_buffer_size);
+			sprintf(response + 4, "%d", interface.transfer_buffer_size);
 	}
 	else if (!memcmp(cmd_buffer + 7, "partition-type", strlen("partition-type")))
 	{
