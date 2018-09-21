@@ -89,17 +89,27 @@ int fb_do_getvar(const char *cmd_buffer)
 		char *key = (char *)cmd_buffer + 7 + strlen("partition-type:");
 		struct pit_entry *ptn = pit_get_part_info(key);
 
-		/*
-		 * In case of flashing pit, this should be
-		 * passed unconditionally.
-		 */
-		if (strcmp(key, "pit") && ptn->filesys != FS_TYPE_NONE)
+		if (ptn == 0)
+		{
+			sprintf(response, "FAILpartition does not exist");
+			fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+			return 0;
+		}
+
+		if (ptn->filesys == FS_TYPE_EXT4)
 			strcpy(response + 4, "ext4");
 	}
 	else if (!memcmp(cmd_buffer + 7, "partition-size", strlen("partition-size")))
 	{
 		char *key = (char *)cmd_buffer + 7 + strlen("partition-size:");
 		struct pit_entry *ptn = pit_get_part_info(key);
+
+		if (ptn == 0)
+		{
+			sprintf(response, "FAILpartition does not exist");
+			fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+			return 0;
+		}
 
 		sprintf(response + 4, "0x%llx", pit_get_length(ptn));
 	}
@@ -162,9 +172,10 @@ int fb_do_getvar(const char *cmd_buffer)
 	else if (!memcmp(cmd_buffer + 7, "has-slot", strlen("has-slot")))
 	{
 		if (!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "boot") ||
-			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "dtb") ||
 			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "dtbo") ||
 			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "system") ||
+			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "vbmeta") ||
+			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "oem") ||
 			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "vendor"))
 			sprintf(response + 4, "yes");
 		else
