@@ -15,6 +15,7 @@
 #include <libfdt.h>
 #include <lib/bio.h>
 #include <lib/console.h>
+#include <lib/font_display.h>
 #include <part_gpt.h>
 #include <dev/boot.h>
 #include <dev/rpmb.h>
@@ -43,6 +44,8 @@
 
 void configure_ddi_id(void);
 void arm_generic_timer_disable(void);
+void vol_up_key_gpio_init(void);
+unsigned int vol_up_key_get_gpio_value(void);
 
 static char cmdline[AVB_CMD_MAX_SIZE];
 static char verifiedbootstate[AVB_VBS_MAX_SIZE]="androidboot.verifiedbootstate=";
@@ -321,6 +324,7 @@ static void configure_dtb(void)
 		snprintf(str, BUFFER_SIZE, "%s %s", np, "androidboot.mode=factory");
 		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
 		printf("Enter factory mode...");
+		print_lcd_update(FONT_GREEN, FONT_BLACK, "Enter factory mode...");
 	}
 
 	sprintf(str, "<0x%x>", ECT_BASE);
@@ -459,6 +463,14 @@ int cmd_boot(int argc, const cmd_args *argv)
 {
 	fdt_dtb = (struct fdt_header *)DT_BASE;
 	dtbo_table = (struct dt_table_header *)DTBO_BASE;
+
+	vol_up_key_gpio_init();
+	if (!vol_up_key_get_gpio_value()) {
+		writel(REBOOT_MODE_FACTORY, EXYNOS9610_POWER_SYSIP_DAT0);
+		printf("Pressed key combination to enter factory mode!\n");
+		print_lcd_update(FONT_GREEN, FONT_BLACK,
+			"Pressed key combination to enter factory mode!");
+	}
 
 	load_boot_images();
 
