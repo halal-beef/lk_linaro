@@ -35,13 +35,13 @@ int check_compress_ext4(char *img_base, unsigned long long parti_size) {
 		return -1;
 	}
 
-	if (file_header->file_header_size != EXT4_FILE_HEADER_SIZE) {
+	if (file_header->file_header_size < EXT4_FILE_HEADER_SIZE) {
 		printf("Invalid File Header Size! 0x%8x\n",
 								file_header->file_header_size);
 		return -1;
 	}
 
-	if (file_header->chunk_header_size != EXT4_CHUNK_HEADER_SIZE) {
+	if (file_header->chunk_header_size < EXT4_CHUNK_HEADER_SIZE) {
 		printf("Invalid Chunk Header Size! 0x%8x\n",
 								file_header->chunk_header_size);
 		return -1;
@@ -81,10 +81,12 @@ int write_raw_chunk(char* data, unsigned int sector, unsigned int sector_size) {
 
 	dev = bio_open(str);
 
-	if (((unsigned long)data % 8) != 0) {
-		tmp_align = (unsigned char *)CFG_FASTBOOT_MMC_BUFFER;
-		memcpy((unsigned char *)tmp_align, (unsigned char *)data, sector_size * 512);
-		data = (char *)tmp_align;
+	if (boot_dev != BOOT_UFS) {
+		if (((unsigned long)data % 8) != 0) {
+			tmp_align = (unsigned char *)CFG_FASTBOOT_MMC_BUFFER;
+			memcpy((unsigned char *)tmp_align, (unsigned char *)data, sector_size * 512);
+			data = (char *)tmp_align;
+		}
 	}
 
 	ext4_printf("write raw data in %d size %d \n", sector, sector_size);
@@ -103,17 +105,19 @@ int write_raw_chunk(char* data, unsigned int sector, unsigned int sector_size) {
 }
 
 int write_compressed_ext4(char* img_base, unsigned int sector_base) {
-	unsigned int sector_size;
+	unsigned int sector_size, i;
 	int total_chunks;
 	ext4_chunk_header *chunk_header;
 	ext4_file_header *file_header;
+	uint *pdata;
+	uint fill_data;
 
 	file_header = (ext4_file_header*)img_base;
 	total_chunks = file_header->total_chunks;
 
 	ext4_printf("total chunk = %d \n", total_chunks);
 
-	img_base += EXT4_FILE_HEADER_SIZE;
+	img_base += file_header->file_header_size;
 
 	while(total_chunks) {
 		chunk_header = (ext4_chunk_header*)img_base;
@@ -123,13 +127,19 @@ int write_compressed_ext4(char* img_base, unsigned int sector_base) {
 		{
 		case EXT4_CHUNK_TYPE_RAW:
 			ext4_printf("raw_chunk \n");
-			write_raw_chunk(img_base + EXT4_CHUNK_HEADER_SIZE,
+			write_raw_chunk(img_base + file_header->chunk_header_size,
 							sector_base, sector_size);
 			sector_base += sector_size;
 			break;
 
 		case EXT4_CHUNK_TYPE_FILL:
 			printf("*** fill_chunk ***\n");
+			fill_data = *(uint *)(img_base + file_header->chunk_header_size);
+			pdata = (uint *)CFG_FASTBOOT_MMC_BUFFER;
+			for (i = 0; i < sector_size * 512 / 4; i++) {
+				pdata[i] = fill_data;
+			}
+			write_raw_chunk((char*)pdata, sector_base, sector_size);
 			sector_base += sector_size;
 			break;
 
