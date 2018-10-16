@@ -215,8 +215,10 @@ static AvbIOResult exynos_write_rollback_index(AvbOps *ops,
 static AvbIOResult exynos_read_is_device_unlocked(AvbOps *ops, bool *out_is_unlocked)
 {
 	AvbIOResult ret = AVB_IO_RESULT_OK;
+	uint32_t lock_state;
 
-	*out_is_unlocked = (bool)!get_lock_state();
+	rpmb_get_lock_state(&lock_state);
+	*out_is_unlocked = (bool)!lock_state;
 
 	return ret;
 }
