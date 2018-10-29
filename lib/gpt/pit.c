@@ -67,6 +67,7 @@ static void *pit_buf;
 static u32 pit_blk_cnt;
 static bdev_t *pit_dev;
 static enum __pit_if pit_if;
+static struct gpt_info gpt_if;
 
 /*
  * When you erase somewhere on eMMC supporting high capacity and
@@ -101,7 +102,7 @@ static inline u32 pit_get_last_lba(void)
 
 	/*
 	 * The unit is 512B.
-	 * decreasing 1 is because it is last lba, not count.
+	 * decreasing 1 is because it is the last lba, not count.
 	 *
 	 * And we need to minus one because PMBR only exists at the head.
 	 */
@@ -431,12 +432,12 @@ err:
 
 static int pit_check_info(struct pit_info *ppit, int *idx,
 						u32 lun,
-						u32 startlba)
+						u32 *non_gpt_end)
 {
 	u32 i;
 	int ret = 1;
 	struct pit_entry *ptn;
-	u32 lba = startlba;
+	u32 lba = *non_gpt_end;
 
 	for (i = *idx ; i < ppit->count; i++) {
 		ptn = &ppit->pte[i];
@@ -504,12 +505,13 @@ static int pit_check_info(struct pit_info *ppit, int *idx,
 	}
 
 	*idx = i;
+	*non_gpt_end = lba;
 	ret = 0;
 err:
 	return ret;
 }
 
-static int pit_check_info_gpt(struct pit_info *ppit, int *idx)
+static int pit_check_info_gpt(struct pit_info *ppit, int *idx, struct gpt_info *gpt_if)
 {
 	u32 i;
 	int ret = 1;
@@ -521,9 +523,8 @@ static int pit_check_info_gpt(struct pit_info *ppit, int *idx)
 	u32 blknum;
 
 	u32 lun = 0;		/* here is only for part 0*/
-	u32 startlba =			/* adding 1 for protective mbr */
-			PIT_FAT_SIZE + PIT_PART_META;
-	u32 lastlba = pit_get_last_lba();
+	u32 startlba = gpt_if->gpt_start_lba;
+	u32 lastlba = gpt_if->gpt_last_lba;
 	u32 lba = startlba;
 
 	for (i = *idx ; i < ppit->count; i++) {
@@ -626,6 +627,7 @@ static int pit_check_info_gpt(struct pit_info *ppit, int *idx)
 		lba += ptn->blknum;
 	}
 
+	gpt_if->gpt_entry_cnt = last_idx - *idx;
 	*idx = last_idx;
 	ret = 0;
 err:
@@ -740,7 +742,6 @@ void pit_show_info()
 {
 	struct pit_entry *ptn;
 	u32 i;
-	int is_filesys = 0;
 
 	if (pit_check_header(&pit))
 		return;
@@ -757,15 +758,6 @@ void pit_show_info()
 	for (i = 0; i < pit.count; i++) {
 		ptn = &pit.pte[i];
 
-		if (is_filesys == 0 && ptn->filesys) {
-			printf("%12s:\t%7s\t%15u\t%15u\t%7s\n",
-						"(FAT)",
-						"-------",
-						PIT_PART_META,
-						PIT_FAT_SIZE,
-						"-------");
-			is_filesys = ptn->filesys;
-		}
 		printf("%12s:\t%7u\t%15u\t%15u\t%7u\n",
 						ptn->name,
 						ptn->filesys,
@@ -779,6 +771,7 @@ void pit_show_info()
 int pit_update(void *buf, u32 size)
 {
 	int pit_index = 0;
+	u32 lun_start_lba = 0;
 	u32 lun;
 	struct pit_entry *ptn;
 
@@ -819,30 +812,42 @@ int pit_update(void *buf, u32 size)
 	 */
 
 	/* for non gpt entries of part 0 */
-	if (pit_check_info(&pit, (int *)&pit_index, 0, PIT_PART_META))
+	lun_start_lba = PIT_PART_META;
+	if (pit_check_info(&pit, (int *)&pit_index, 0, (u32 *)&lun_start_lba))
 		goto err;
 
+	/* set 4K align */
+	if(lun_start_lba & (PIT_LBA_ALIGMENT-1)) {
+		lun_start_lba = lun_start_lba + PIT_LBA_ALIGMENT;
+		lun_start_lba = (lun_start_lba / PIT_LBA_ALIGMENT) * PIT_LBA_ALIGMENT;
+	}
+
+	gpt_if.gpt_start_lba = lun_start_lba;
+	gpt_if.gpt_last_lba = pit_get_last_lba();
+
 	/* for gpt entries of part 0 */
-	if (pit_check_info_gpt(&pit, (int *)&pit_index))
+	if (pit_check_info_gpt(&pit, (int *)&pit_index, &gpt_if))
 		goto err;
 
 
 	/* for entries of others */
 	for (lun = 1; ; lun++) {
-		if (pit_check_info(&pit, (int *)&pit_index, lun, 0))
+		lun_start_lba = 0;
+		if (pit_check_info(&pit, (int *)&pit_index, lun, (u32 *)&lun_start_lba))
 			goto err;
 		if (pit.count == (u32)pit_index)
 			break;
 	}
 
-	/* update gpt */
-	pit_close_dev();
-
 	/*
 	 * GPT would open the same device as one opened here.
 	 * So, we close here temporarily.
 	 */
-	if (gpt_create(&pit, pit_get_last_lba())) {
+	 pit_close_dev();
+
+	/* update gpt */
+	if (gpt_create(&pit, &gpt_if)) {
+
 		/*
 		// TODO: print_lcd_update
 		print_lcd_update(FONT_RED, FONT_BLACK, "[PIT] GPT update failed !");
