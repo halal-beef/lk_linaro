@@ -23,6 +23,7 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 	bool unlock;
 	uint32_t ret = 0;
 	uint32_t i = 0;
+	uint32_t tmp = 0;
 	struct AvbOps *ops;
 	const char *partition_arr[] = {"boot", "dtbo", NULL};
 	char buf[100];
@@ -64,9 +65,9 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 		__asm__ volatile("b	.");
 
 	/* block RPMB */
-	ret = block_RPMB_hmac();
-	if (ret) {
-		printf("[AVB 2.0 ERR] RPMB hmac ret: 0x%X\n", ret);
+	tmp = block_RPMB_hmac();
+	if (tmp) {
+		printf("[AVB 2.0 ERR] RPMB hmac ret: 0x%X\n", tmp);
 	}
 
 	/* set cmdline */
