@@ -469,6 +469,11 @@ int cmd_boot(int argc, const cmd_args *argv)
 
 	fdt_dtb = (struct fdt_header *)DT_BASE;
 	dtbo_table = (struct dt_table_header *)DTBO_BASE;
+#if defined(CONFIG_USE_AVB20)
+	int avb_ret = 0;
+	uint32_t lock_state;
+#endif
+	int ab_ret = 0;
 
 	val = exynos_gpio_get_value(bank, gpio);
 	if (!val) {
@@ -478,14 +483,38 @@ int cmd_boot(int argc, const cmd_args *argv)
 			"Pressed key combination to enter factory mode!");
 	}
 
-	load_boot_images();
+	ab_ret = ab_update_slot_info();
+	if (ab_ret < 0) {
+		printf("AB update error! Error code: %d\n", ab_ret);
+		do_fastboot(0, 0);
+		do {
+			asm volatile("wfi");
+		} while(1);
+	}
 
 #if defined(CONFIG_USE_AVB20)
 	if (ab_current_slot())
-		avb_main("_b", cmdline, verifiedbootstate);
+		avb_ret = avb_main("_b", cmdline, verifiedbootstate);
 	else
-		avb_main("_a", cmdline, verifiedbootstate);
+		avb_ret = avb_main("_a", cmdline, verifiedbootstate);
+	printf("AVB: boot/dtbo image verification result: %d\n", avb_ret);
+
+	rpmb_get_lock_state(&lock_state);
+	printf("lock state: %d\n", lock_state);
+	if(lock_state) {
+		if (avb_ret) {
+			printf("AVB failed! Resetting!\n");
+			/* Delay for data write HW operation on 'misc' partition */
+			mdelay(500);
+			writel(0x1, EXYNOS9610_SWRESET);
+			do {
+				asm volatile("wfi");
+			} while(1);
+		}
+	}
 #endif
+
+	load_boot_images();
 
 	configure_dtb();
 	configure_ddi_id();

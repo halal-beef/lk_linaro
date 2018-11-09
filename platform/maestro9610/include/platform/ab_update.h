@@ -1,56 +1,38 @@
 /*
- * Copyright (C) 2015 The Android Open Source Project
+ * Copyright@ Samsung Electronics Co. LTD
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This software is proprietary of Samsung Electronics.
+ * No part of this software, either material or conceptual may be copied or distributed, transmitted,
+ * transcribed, stored in a retrieval system or translated into any human or computer language in any form by any means,
+ * electronic, mechanical, manual or otherwise, or disclosed
+ * to third parties without the express written permission of Samsung Electronics.
  */
 
 #ifndef __AB_UPDATE_H__
 #define __AB_UPDATE_H__
 
 typedef struct ExynosSlotInfo {
-	// Flag mean that the slot can bootable or not.
-	uint8_t bootable :1;
+	uint8_t magic[4];
 
-	// Set to true when the OS has successfully booted.
-	uint8_t boot_successful :1;
-
-	// Priorty number range [0:15], with 15 meaning highest priortiy,
-	// 1 meaning lowest priority and 0 mean that the slot is unbootable.
-	uint8_t priority;
-
-	// Boot times left range [0:7].
+	uint8_t bootable;
+	uint8_t is_active;
+	uint8_t boot_successful;
 	uint8_t tries_remaining;
 
-	uint8_t reserved[1];
+	uint8_t reserved[8];
 } ExynosSlotInfo;
 
-typedef struct ExynosBootInfo {
-	// Magic for identification
-	uint8_t magic[3];
-
-	// Version of ExynosBootInfo struct, must be 0 or larger.
-	uint8_t version;
-
-	// Information about each slot.
-	ExynosSlotInfo slot_info[2];
-
-	uint8_t reserved[20];
-} ExynosBootInfo;
-
 #if (__STDC_VERSION__ >= 201112L) || defined(__cplusplus)
-static_assert(sizeof(struct ExynosBootInfo) == 32);
+static_assert(sizeof(struct ExynosSlotInfo) == 16);
 #endif
 
+#define AB_ERROR_INVALID_MAGIC -1
+#define AB_ERROR_NO_BOOTABLE_SLOT -2
+#define AB_ERROR_SLOT_ALL_ACTIVE -3
+#define AB_ERROR_SLOT_ALL_INACTIVE -4
+#define AB_ERROR_UNBOOTABLE_SLOT -5
+
+int ab_update_slot_info(void);
 int ab_set_active(int slot);
 int ab_current_slot(void);
 int ab_slot_successful(int slot);
