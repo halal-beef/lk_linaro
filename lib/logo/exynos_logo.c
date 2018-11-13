@@ -21,6 +21,8 @@
  */
 
 #include <malloc.h>
+#include <pit.h>
+#include <platform/ab_update.h>
 #include <platform/exynos9610.h>
 #include <dev/dpu/decon.h>
 #include <target/dpu_config.h>
@@ -37,7 +39,7 @@ int show_boot_logo(void)
 #ifdef CONFIG_PIT
 	unsigned char *file = (unsigned char *)(CONFIG_DISPLAY_TEMP_BASE_ADDRESS);
 	unsigned int *fb = (unsigned int *)(CONFIG_DISPLAY_LOGO_BASE_ADDRESS);
-	struct pit_entry *ptn = pit_get_part_info("logo");
+	struct pit_entry *ptn;
 
 	unsigned int i;
 
@@ -47,6 +49,11 @@ int show_boot_logo(void)
 	unsigned int img_width;
 	unsigned int img_height;
 	unsigned short bpp;
+
+	if (ab_current_slot())
+		ptn = pit_get_part_info("logo_b");
+	else
+		ptn = pit_get_part_info("logo_a");
 
 	if (ptn)
 		pit_access(ptn, PIT_OP_LOAD, (u64)file, 512);
