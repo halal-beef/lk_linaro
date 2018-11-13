@@ -25,6 +25,7 @@
 #include <platform/tmu.h>
 #include <platform/dfd.h>
 #include <platform/ldfw.h>
+#include <platform/gpio.h>
 
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
@@ -224,11 +225,18 @@ void arm_generic_timer_disable(void)
 void platform_early_init(void)
 {
 	unsigned int rst_stat = readl(EXYNOS9610_POWER_RST_STAT);
+	struct exynos_gpio_bank *bank = (struct exynos_gpio_bank *)EXYNOS9610_GPA1CON;
 
 	read_chip_id();
 
 	speedy_gpio_init();
 	xbootldo_gpio_init();
+	/* Volume up set Input & Pull up */
+	exynos_gpio_set_pull(bank, 5, GPIO_PULL_UP);
+	exynos_gpio_cfg_pin(bank, 5, GPIO_INPUT);
+	/* Volume down set Input & Pull up */
+	exynos_gpio_set_pull(bank, 6, GPIO_PULL_UP);
+	exynos_gpio_cfg_pin(bank, 6, GPIO_INPUT);
 #ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
 	display_panel_init();
 	initialize_fbs();

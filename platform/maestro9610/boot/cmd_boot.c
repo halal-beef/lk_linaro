@@ -31,6 +31,7 @@
 #include <platform/bootimg.h>
 #include <platform/fdt.h>
 #include <platform/chip_id.h>
+#include <platform/gpio.h>
 #include <pit.h>
 
 /* Memory node */
@@ -44,8 +45,6 @@
 
 void configure_ddi_id(void);
 void arm_generic_timer_disable(void);
-void vol_up_key_gpio_init(void);
-unsigned int vol_up_key_get_gpio_value(void);
 
 static char cmdline[AVB_CMD_MAX_SIZE];
 static char verifiedbootstate[AVB_VBS_MAX_SIZE]="androidboot.verifiedbootstate=";
@@ -461,11 +460,15 @@ int load_boot_images(void)
 
 int cmd_boot(int argc, const cmd_args *argv)
 {
+	struct exynos_gpio_bank *bank = (struct exynos_gpio_bank *)EXYNOS9610_GPA1CON;
+	int gpio = 5;	/* Volume Up */
+	int val;
+
 	fdt_dtb = (struct fdt_header *)DT_BASE;
 	dtbo_table = (struct dt_table_header *)DTBO_BASE;
 
-	vol_up_key_gpio_init();
-	if (!vol_up_key_get_gpio_value()) {
+	val = exynos_gpio_get_value(bank, gpio);
+	if (!val) {
 		writel(REBOOT_MODE_FACTORY, EXYNOS9610_POWER_SYSIP_DAT0);
 		printf("Pressed key combination to enter factory mode!\n");
 		print_lcd_update(FONT_GREEN, FONT_BLACK,
