@@ -17,8 +17,21 @@
 void pmic_init (void)
 {
 	unsigned char reg;
+	unsigned char capsel_val;
 
 	speedy_init();
+
+	/* prevent RTC oscillator from operating abnormally */
+	speedy_read(S2MPU09_RTC_ADDR, S2MPU09_RTC_CAP_SEL, &capsel_val);
+	if ((capsel_val & 0xF0) != 0xF0) {
+		speedy_read(S2MPU09_PM_ADDR, S2MPU09_PM_ETC_OTP, &reg);
+		reg |= (1 << 6);
+		speedy_write(S2MPU09_PM_ADDR, S2MPU09_PM_ETC_OTP, reg);
+		mdelay(300);
+		speedy_read(S2MPU09_PM_ADDR, S2MPU09_PM_ETC_OTP, &reg);
+		reg &= ~(1 << 6);
+		speedy_write(S2MPU09_PM_ADDR, S2MPU09_PM_ETC_OTP, reg);
+	}
 
 	/* Disable Manual Reset */
 	speedy_read(S2MPU09_PM_ADDR, S2MPU09_PM_CTRL1, &reg);
@@ -79,6 +92,7 @@ void display_pmic_info_s2mpu09 (void)
 {
 	unsigned char read_int1, read_int2, read_pwronsrc, read_offsrc, read_ctrl1, read_ctrl3, read_wtsr_smpl;
 	unsigned char read_rtc_buf;
+	unsigned char read_etc_otp;
 #if 1
 	/* defined (CONFIG_MACH_MAESTRO9610) */
 	unsigned char read_ldo38_ctrl, read_ldo39_ctrl;
@@ -114,6 +128,9 @@ void display_pmic_info_s2mpu09 (void)
 	printf("S2MPU09_PM_LDO38_CTRL: 0x%x\n", read_ldo38_ctrl);
 	printf("S2MPU09_PM_LDO39_CTRL: 0x%x\n", read_ldo39_ctrl);
 #endif
+
+	speedy_read(S2MPU09_PM_ADDR, S2MPU09_PM_ETC_OTP, &read_etc_otp);
+	printf("S2MPU09_PM_ETC_OTP: 0x%x\n", read_etc_otp);
 
 	display_pmic_rtc_time();
 }
