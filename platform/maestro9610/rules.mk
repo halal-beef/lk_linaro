@@ -30,6 +30,7 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/ab_update/ab_update.c \
 	$(LOCAL_DIR)/lock/lock.c \
 	$(LOCAL_DIR)/gpio_init.S \
+	$(LOCAL_DIR)/gpio.c \
 	$(LOCAL_DIR)/dfd.c \
 	$(LOCAL_DIR)/dfd_entry.S \
 	$(LOCAL_DIR)/tmu.c \
