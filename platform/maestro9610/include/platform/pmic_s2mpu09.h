@@ -73,6 +73,7 @@ enum {
  * CTRL3
  */
 #define WRSTBIEN	(0x1 << 6)
+#define MRSEL		(0x1 << 5)
 #define WRSTEN		(0x1 << 4)
 
 /*
@@ -81,6 +82,7 @@ enum {
 #define S2MPU09_OUTPUT_ON_NORMAL	(0x3 << 6)
 
 void pmic_init(void);
+void pmic_enable_manual_reset(void);
 void display_pmic_info_s2mpu09(void);
 
 #endif /*__S2MPU09_PMIC_H__*/

@@ -25,6 +25,7 @@
 #include <platform/lock.h>
 #include <platform/ab_update.h>
 #include <platform/environment.h>
+#include <platform/pmic_s2mpu09.h>
 #include <platform/if_pmic_s2mu004.h>
 #include <platform/dfd.h>
 #include <dev/boot.h>
@@ -622,6 +623,10 @@ int do_fastboot(int argc, const cmd_args *argv)
 #endif
 
 	dprintf(ALWAYS, "This is do_fastboot\n");
+	dprintf(ALWAYS, "Enabling manual reset and disabling warm reset.\n");
+	/* To prevent entering fastboot mode after manual reset, clear ramdump scratch. */
+	writel(0, CONFIG_RAMDUMP_SCRATCH);
+	pmic_enable_manual_reset();
 	print_lcd_update(FONT_GREEN, FONT_BLACK, "Entering fastboot mode.");
 
 	/* display all entries */

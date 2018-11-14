@@ -14,6 +14,22 @@
 #include <platform/delay.h>
 #include <platform/pmic_s2mpu09.h>
 
+void pmic_enable_manual_reset (void)
+{
+	unsigned char reg;
+
+	/* Disable Warm Reset */
+	speedy_read(S2MPU09_PM_ADDR, S2MPU09_PM_CTRL3, &reg);
+	reg &= ~WRSTEN;
+	reg |= MRSEL;
+	speedy_write(S2MPU09_PM_ADDR, S2MPU09_PM_CTRL3, reg);
+
+	/* Enable Manual Reset */
+	speedy_read(S2MPU09_PM_ADDR, S2MPU09_PM_CTRL1, &reg);
+	reg |= MRSTB_EN;
+	speedy_write(S2MPU09_PM_ADDR, S2MPU09_PM_CTRL1, reg);
+}
+
 void pmic_init (void)
 {
 	unsigned char reg;
