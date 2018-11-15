@@ -239,5 +239,6 @@ u64 skip_ect(void);
 u64 set_tzasc_action(u32 val);
 u64 sdm_encrypt_secdram(void);
 u64 dumpgpr_flush_secdram(u32 cache_level, u32 core);
+extern unsigned int secure_os_loaded;
 
 #endif /* _SMC_H_ */

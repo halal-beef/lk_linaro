@@ -182,6 +182,19 @@ int fb_do_getvar(const char *cmd_buffer)
 		else
 			sprintf(response + 4, "no");
 	}
+	else if (!memcmp(cmd_buffer + 7, "unlocked", strlen("unlocked")))
+	{
+		if (secure_os_loaded == 1) {
+			uint32_t lock_state;
+			rpmb_get_lock_state(&lock_state);
+			if (!lock_state)
+				sprintf(response + 4, "yes");
+			else
+				sprintf(response + 4, "no");
+		} else {
+			sprintf(response + 4, "ignore");
+		}
+	}
 	else
 	{
 		debug_snapshot_getvar_item(cmd_buffer + 7, response + 4);
