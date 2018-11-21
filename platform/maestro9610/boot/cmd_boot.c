@@ -394,7 +394,10 @@ static void configure_dtb(void)
 
 			/* get modem partition info */
 			dev = bio_open(name);
-			ptn = pit_get_part_info("modem");
+			if (ab_current_slot())
+				ptn = pit_get_part_info("modem_b");
+			else
+				ptn = pit_get_part_info("modem_a");
 			/* load modem header */
 			dev->new_read(dev, (void *)(u64)be32_to_cpu(((const u32 *)str)[1]), ptn->blkstart, 16);
 			bio_close(dev);
