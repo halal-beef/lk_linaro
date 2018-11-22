@@ -26,9 +26,11 @@
 #include <platform/dfd.h>
 #include <platform/ldfw.h>
 #include <platform/gpio.h>
+#include <platform/bl_sys_info.h>
 
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
+#include <part_gpt.h>
 #include <target/dpu_config.h>
 #include <stdio.h>
 
@@ -256,6 +258,10 @@ void platform_early_init(void)
 void platform_init(void)
 {
 	u32 ret = 0;
+	struct bl_sys_info *bl_sys = (struct bl_sys_info *)BL_SYS_INFO;
+
+	printf("bootloader partition start block(512 Byte): %d\n",
+			bl_sys->bl1_info.epbl_start * (UFS_BSIZE / MMC_BSIZE));
 
 	pmic_init();
 	fg_init_s2mu004();

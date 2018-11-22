@@ -15,6 +15,7 @@
 #include <dev/boot.h>
 #include <platform/sfr.h>
 #include <platform/ldfw.h>
+#include <platform/ab_update.h>
 
 int init_ldfw(u64 addr, u64 size);
 int load_keystorage(u64 addr, u64 size);
@@ -54,9 +55,15 @@ int load_parition(u64 addr, u64 ch)
 	struct pit_entry *ptn;
 
 	if (ch == LDFW_PART) {
-		ptn = pit_get_part_info("ldfw");
+		if (ab_current_slot())
+			ptn = pit_get_part_info("ldfw_b");
+		else
+			ptn = pit_get_part_info("ldfw_a");
 	} else if (ch == KEYSTORAGE_PART) {
-		ptn = pit_get_part_info("keystorage");
+		if (ab_current_slot())
+			ptn = pit_get_part_info("keystorage_b");
+		else
+			ptn = pit_get_part_info("keystorage_a");
 	} else {
 		printf("Invalid ch\n");
 		return -1;

@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <platform/smc.h>
 #include <platform/sfr.h>
+#include <platform/bl_sys_info.h>
 #include <dev/boot.h>
 
 u64 exynos_smc(u64 cmd, u64 arg1, u64 arg2, u64 arg3)
@@ -81,13 +82,15 @@ int init_ldfw(u64 addr, u64 size)
 
 unsigned long load_sp_image(u32 boot_device)
 {
+	struct bl_sys_info *bl_sys = (struct bl_sys_info *)BL_SYS_INFO;
+
 	if (boot_device == BOOT_MMCSD)
 		return 0; /*exynos_smc(SMC_CMD_LOAD_SECURE_PAYLOAD,
 			(u64)boot_device, MOVI_TZSW_POS, 0);
 			*/
 	else if (boot_device == BOOT_UFS)
 		return exynos_smc(SMC_CMD_LOAD_SECURE_PAYLOAD,
-				(u64)boot_device, UFS_TZSW_POS, 0);
+				(u64)boot_device, bl_sys->bl1_info.epbl_start + UFS_TZSW_POS, 0);
 	else
 		return exynos_smc(SMC_CMD_LOAD_SECURE_PAYLOAD,
 			(u64)boot_device, 0, 0);
