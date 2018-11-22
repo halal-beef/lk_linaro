@@ -38,6 +38,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 
 	if (*(unsigned int *)DRAM_BASE != 0xabcdef) {
 		printf("Running on DRAM by TRACE32: skip auto booting\n");
+		do_fastboot(0, 0);
 		return;
 	}
 
