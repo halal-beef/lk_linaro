@@ -13,10 +13,13 @@
 #include <stdlib.h>
 #include <reg.h>
 #include <pit.h>
+#include <part_gpt.h>
 #include <platform/sfr.h>
 #include <platform/delay.h>
 #include <platform/ab_update.h>
+#include <platform/ab_slotinfo.h>
 #include <platform/bootloader_message.h>
+#include <platform/bl_sys_info.h>
 
 int ab_update_slot_info(void)
 {
@@ -118,6 +121,90 @@ int ab_update_slot_info(void)
 	printf("_b bootable: %d, is_active %d, boot_successful %d, tries_remaining %d\n",
 			b->bootable, b->is_active, b->boot_successful, b->tries_remaining);
 	printf("slot information update - end\n");
+	printf("\n");
+
+	pit_access(ptn, PIT_OP_FLASH, (u64)buf, 0);
+
+	free(buf);
+
+	return ret;
+}
+
+int ab_set_active_bootloader(int slot, ExynosSlotInfo *si)
+{
+	int other_slot = 1 - slot;
+
+	(si + slot)->bootable = 1;
+	(si + slot)->is_active = 1;
+	(si + slot)->boot_successful = 0;
+	(si + slot)->tries_remaining = 2;
+	memcpy((si + slot)->magic, "EXBC", 4);
+
+	(si + other_slot)->bootable = 0;
+	(si + other_slot)->is_active = 0;
+	(si + other_slot)->boot_successful = 0;
+	(si + other_slot)->tries_remaining = 0;
+	memcpy((si + other_slot)->magic, "EXBC", 4);
+
+	printf("\n");
+	printf("Current slot(%d) booting failed in bootloader. Changing active slot to %d.\n", other_slot, slot);
+
+	return 0;
+}
+
+int ab_update_slot_info_bootloader(void)
+{
+	void *buf;
+	struct bootloader_message_ab *bm;
+	struct pit_entry *ptn, *bootloader_ptn;
+	ExynosSlotInfo *a, *b;
+	struct bl_sys_info *bl_sys = (struct bl_sys_info *)BL_SYS_INFO;
+	int ret = 0;
+
+	ptn = pit_get_part_info("misc");
+	buf = memalign(0x1000, pit_get_length(ptn));
+	pit_access(ptn, PIT_OP_LOAD, (u64)buf, 0);
+
+	bm = (struct bootloader_message_ab *)buf;
+	a = (ExynosSlotInfo *)bm->slot_suffix;
+	b = a + 1;
+
+	printf("\n");
+	printf("Slot information update when bootloader booting is failed - start\n");
+	printf("Before\n");
+	printf("_a bootable: %d, is_active %d, boot_successful %d, tries_remaining %d\n",
+			a->bootable, a->is_active, a->boot_successful, a->tries_remaining);
+	printf("_b bootable: %d, is_active %d, boot_successful %d, tries_remaining %d\n",
+			b->bootable, b->is_active, b->boot_successful, b->tries_remaining);
+	printf("\n");
+
+	if (memcmp(a->magic, "EXBC", 4) ||
+		memcmp(b->magic, "EXBC", 4)) {
+		printf("Invalid slot information magic code!\n");
+		ret = AB_ERROR_INVALID_MAGIC;
+	} else if (a->is_active == 1 && b->is_active == 0) {
+		bootloader_ptn = pit_get_part_info("bootloader_a");
+		if (bl_sys->bl1_info.epbl_start * (UFS_BSIZE / MMC_BSIZE)
+			!= bootloader_ptn->blkstart)
+			ab_set_active_bootloader(1, a);
+	} else if (a->is_active == 0 && b->is_active == 1) {
+		bootloader_ptn = pit_get_part_info("bootloader_b");
+		if (bl_sys->bl1_info.epbl_start * (UFS_BSIZE / MMC_BSIZE)
+			!= bootloader_ptn->blkstart)
+			ab_set_active_bootloader(0, a);
+	} else if (a->is_active == 1 && b->is_active == 1) {
+		ret = AB_ERROR_SLOT_ALL_ACTIVE;
+	} else {
+		ret = AB_ERROR_SLOT_ALL_INACTIVE;
+	}
+
+	printf("\n");
+	printf("After\n");
+	printf("_a bootable: %d, is_active %d, boot_successful %d, tries_remaining %d\n",
+			a->bootable, a->is_active, a->boot_successful, a->tries_remaining);
+	printf("_b bootable: %d, is_active %d, boot_successful %d, tries_remaining %d\n",
+			b->bootable, b->is_active, b->boot_successful, b->tries_remaining);
+	printf("Slot information update when bootloader booting is failed - end\n");
 	printf("\n");
 
 	pit_access(ptn, PIT_OP_FLASH, (u64)buf, 0);

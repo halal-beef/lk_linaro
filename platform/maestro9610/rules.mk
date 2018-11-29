@@ -38,6 +38,7 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/dpu_cal/dpp_reg.c \
 	$(LOCAL_DIR)/dpu_cal/dsim_reg.c \
 	$(LOCAL_DIR)/debug-snapshot-uboot.c \
+	$(LOCAL_DIR)/wdt/wdt_recovery.c \
 	$(LOCAL_DIR)/fdt.c
 
 MODULE_DEPS += \

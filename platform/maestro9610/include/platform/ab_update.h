@@ -11,21 +11,6 @@
 #ifndef __AB_UPDATE_H__
 #define __AB_UPDATE_H__
 
-typedef struct ExynosSlotInfo {
-	uint8_t magic[4];
-
-	uint8_t bootable;
-	uint8_t is_active;
-	uint8_t boot_successful;
-	uint8_t tries_remaining;
-
-	uint8_t reserved[8];
-} ExynosSlotInfo;
-
-#if (__STDC_VERSION__ >= 201112L) || defined(__cplusplus)
-static_assert(sizeof(struct ExynosSlotInfo) == 16);
-#endif
-
 #define AB_ERROR_INVALID_MAGIC -1
 #define AB_ERROR_NO_BOOTABLE_SLOT -2
 #define AB_ERROR_SLOT_ALL_ACTIVE -3
@@ -33,6 +18,7 @@ static_assert(sizeof(struct ExynosSlotInfo) == 16);
 #define AB_ERROR_UNBOOTABLE_SLOT -5
 
 int ab_update_slot_info(void);
+int ab_update_slot_info_bootloader(void);
 int ab_set_active(int slot);
 int ab_current_slot(void);
 int ab_slot_successful(int slot);
