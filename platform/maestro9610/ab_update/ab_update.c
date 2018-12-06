@@ -137,7 +137,7 @@ int ab_set_active_bootloader(int slot, ExynosSlotInfo *si)
 	(si + slot)->bootable = 1;
 	(si + slot)->is_active = 1;
 	(si + slot)->boot_successful = 0;
-	(si + slot)->tries_remaining = 2;
+	(si + slot)->tries_remaining = 7;
 	memcpy((si + slot)->magic, "EXBC", 4);
 
 	(si + other_slot)->bootable = 0;
@@ -232,13 +232,13 @@ int ab_set_active(int slot)
 	(si + slot)->bootable = 1;
 	(si + slot)->is_active = 1;
 	(si + slot)->boot_successful = 0;
-	(si + slot)->tries_remaining = 2;
+	(si + slot)->tries_remaining = 7;
 	memcpy((si + slot)->magic, "EXBC", 4);
 
 	(si + other_slot)->bootable = 1;
 	(si + other_slot)->is_active = 0;
 	(si + other_slot)->boot_successful = 0;
-	(si + other_slot)->tries_remaining = 2;
+	(si + other_slot)->tries_remaining = 7;
 	memcpy((si + other_slot)->magic, "EXBC", 4);
 
 	printf("\n");
