@@ -26,4 +26,6 @@ typedef struct ExynosSlotInfo {
 static_assert(sizeof(struct ExynosSlotInfo) == 16);
 #endif
 
+#define AB_SLOTINFO_PART_NAME "slotinfo"
+
 #endif	/* __AB_SLOTINFO_H__ */

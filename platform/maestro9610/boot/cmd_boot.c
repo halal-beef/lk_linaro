@@ -504,7 +504,8 @@ int cmd_boot(int argc, const cmd_args *argv)
 	if(lock_state) {
 		if (avb_ret) {
 			printf("AVB failed! Resetting!\n");
-			/* Delay for data write HW operation on 'misc' partition */
+			/* Delay for data write HW operation of ab_update_slot_info()
+				on AB_SLOTINFO_PART partition. */
 			mdelay(500);
 			writel(0x1, EXYNOS9610_SWRESET);
 			do {

@@ -280,7 +280,7 @@ void platform_init(void)
 	 */
 	print_lcd(FONT_RED, FONT_BLACK, "LK Display is enabled!");
 	ret = display_drv_init();
-	if (ret == 0 && is_first_boot())
+	if (ret == 0 && is_first_boot() && *(unsigned int *)DRAM_BASE == 0xabcdef)
 		show_boot_logo();
 
 	/* If the display_drv_init function is called,
@@ -293,7 +293,7 @@ void platform_init(void)
 	display_tmu_info();
 	display_trip_info();
 	dfd_display_reboot_reason();
-	if (is_first_boot())
+	if (is_first_boot() && *(unsigned int *)DRAM_BASE == 0xabcdef)
 		debug_snapshot_fdt_init();
 
 	if (secure_os_loaded == 1) {

@@ -29,7 +29,7 @@ int ab_update_slot_info(void)
 	ExynosSlotInfo *a, *b, *active, *inactive;
 	int ret = 0;
 
-	ptn = pit_get_part_info("misc");
+	ptn = pit_get_part_info(AB_SLOTINFO_PART_NAME);
 	buf = memalign(0x1000, pit_get_length(ptn));
 	pit_access(ptn, PIT_OP_LOAD, (u64)buf, 0);
 
@@ -61,7 +61,7 @@ int ab_update_slot_info(void)
 					if(inactive->bootable == 1) {
 						inactive->is_active = 1;
 						pit_access(ptn, PIT_OP_FLASH, (u64)buf, 0);
-						/* Delay for data write HW operation on 'misc' partition */
+						/* Delay for data write HW operation on AB_SLOTINFO_PART partition */
 						mdelay(500);
 						free(buf);
 						/* reset */
@@ -91,7 +91,7 @@ int ab_update_slot_info(void)
 					if(inactive->bootable == 1) {
 						inactive->is_active = 1;
 						pit_access(ptn, PIT_OP_FLASH, (u64)buf, 0);
-						/* Delay for data write HW operation on 'misc' partition */
+						/* Delay for data write HW operation on AB_SLOTINFO_PART partition */
 						mdelay(500);
 						free(buf);
 						/* reset */
@@ -161,7 +161,7 @@ int ab_update_slot_info_bootloader(void)
 	struct bl_sys_info *bl_sys = (struct bl_sys_info *)BL_SYS_INFO;
 	int ret = 0;
 
-	ptn = pit_get_part_info("misc");
+	ptn = pit_get_part_info(AB_SLOTINFO_PART_NAME);
 	buf = memalign(0x1000, pit_get_length(ptn));
 	pit_access(ptn, PIT_OP_LOAD, (u64)buf, 0);
 
@@ -222,7 +222,7 @@ int ab_set_active(int slot)
 	struct pit_entry *ptn;
 	ExynosSlotInfo *si;
 
-	ptn = pit_get_part_info("misc");
+	ptn = pit_get_part_info(AB_SLOTINFO_PART_NAME);
 	buf = memalign(0x1000, pit_get_length(ptn));
 	pit_access(ptn, PIT_OP_LOAD, (u64)buf, 0);
 
@@ -262,7 +262,7 @@ int ab_current_slot(void)
 	ExynosSlotInfo *a;
 	int ret;
 
-	ptn = pit_get_part_info("misc");
+	ptn = pit_get_part_info(AB_SLOTINFO_PART_NAME);
 	buf = memalign(0x1000, pit_get_length(ptn));
 	pit_access(ptn, PIT_OP_LOAD, (u64)buf, 0);
 
@@ -284,7 +284,7 @@ int ab_slot_successful(int slot)
 	ExynosSlotInfo *si;
 	int ret;
 
-	ptn = pit_get_part_info("misc");
+	ptn = pit_get_part_info(AB_SLOTINFO_PART_NAME);
 	buf = memalign(0x1000, pit_get_length(ptn));
 	pit_access(ptn, PIT_OP_LOAD, (u64)buf, 0);
 
@@ -306,7 +306,7 @@ int ab_slot_unbootable(int slot)
 	ExynosSlotInfo *si;
 	int ret;
 
-	ptn = pit_get_part_info("misc");
+	ptn = pit_get_part_info(AB_SLOTINFO_PART_NAME);
 	buf = memalign(0x1000, pit_get_length(ptn));
 	pit_access(ptn, PIT_OP_LOAD, (u64)buf, 0);
 
@@ -328,7 +328,7 @@ int ab_slot_retry_count(int slot)
 	ExynosSlotInfo *si;
 	int ret;
 
-	ptn = pit_get_part_info("misc");
+	ptn = pit_get_part_info(AB_SLOTINFO_PART_NAME);
 	buf = memalign(0x1000, pit_get_length(ptn));
 	pit_access(ptn, PIT_OP_LOAD, (u64)buf, 0);
 
