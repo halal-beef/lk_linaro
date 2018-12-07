@@ -23,6 +23,6 @@ void clear_wdt_recovery_settings(void)
 
 	printf("Clear bootloader booting start flag\n");
 	reg = readl(EXYNOS9610_POWER_DREX_CALIBRATION7);
-	reg &= ~0x1;
+	reg &= ~0xF;
 	writel(reg, EXYNOS9610_POWER_DREX_CALIBRATION7);
 }
