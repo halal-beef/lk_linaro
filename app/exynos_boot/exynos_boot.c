@@ -12,6 +12,7 @@
 #include <reg.h>
 #include <app.h>
 #include <lib/console.h>
+#include <platform/wdt_recovery.h>
 #include <platform/sfr.h>
 #include <platform/charger.h>
 #include <platform/fastboot.h>
@@ -20,6 +21,7 @@
 #include <platform/gpio.h>
 
 int cmd_boot(int argc, const cmd_args *argv);
+int ab_update_slot_info_bootloader(void);
 
 static void exynos_boot_task(const struct app_descriptor *app, void *args)
 {
@@ -52,6 +54,11 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	/* Volume down set Input & Pull up */
 	exynos_gpio_set_pull(bank, 6, GPIO_PULL_UP);
 	exynos_gpio_cfg_pin(bank, 6, GPIO_INPUT);
+
+	clear_wdt_recovery_settings();
+	if (is_first_boot())
+		ab_update_slot_info_bootloader();
+
 	if (!is_first_boot() || (rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET)) ||
 		((readl(CONFIG_RAMDUMP_SCRATCH) == CONFIG_RAMDUMP_MODE) && get_charger_mode() == 0)) {
 		dfd_run_dump_gpr();
