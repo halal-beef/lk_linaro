@@ -17,6 +17,7 @@
 #include <platform/fastboot.h>
 #include <platform/dfd.h>
 #include <dev/boot.h>
+#include <platform/gpio.h>
 
 int cmd_boot(int argc, const cmd_args *argv);
 
@@ -24,6 +25,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 {
 	unsigned int rst_stat = readl(EXYNOS9610_POWER_RST_STAT);
 	int cpu;
+	struct exynos_gpio_bank *bank = (struct exynos_gpio_bank *)EXYNOS9610_GPA1CON;
 
 	printf("RST_STAT: 0x%x\n", rst_stat);
 
@@ -44,6 +46,12 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 
 	dfd_display_reboot_reason();
 	dfd_display_core_stat();
+	/* Volume up set Input & Pull up */
+	exynos_gpio_set_pull(bank, 5, GPIO_PULL_UP);
+	exynos_gpio_cfg_pin(bank, 5, GPIO_INPUT);
+	/* Volume down set Input & Pull up */
+	exynos_gpio_set_pull(bank, 6, GPIO_PULL_UP);
+	exynos_gpio_cfg_pin(bank, 6, GPIO_INPUT);
 	if (!is_first_boot() || (rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET)) ||
 		((readl(CONFIG_RAMDUMP_SCRATCH) == CONFIG_RAMDUMP_MODE) && get_charger_mode() == 0)) {
 		dfd_run_dump_gpr();
