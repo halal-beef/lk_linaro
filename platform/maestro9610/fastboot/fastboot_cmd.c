@@ -172,12 +172,17 @@ int fb_do_getvar(const char *cmd_buffer)
 		}
 	else if (!memcmp(cmd_buffer + 7, "has-slot", strlen("has-slot")))
 	{
-		if (!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "boot") ||
+		if (!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "ldfw") ||
+			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "keystorage") ||
+			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "boot") ||
 			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "dtbo") ||
 			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "system") ||
 			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "vbmeta") ||
 			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "oem") ||
-			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "vendor"))
+			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "vendor") ||
+			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "logo") ||
+			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "modem") ||
+			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "bootloader"))
 			sprintf(response + 4, "yes");
 		else
 			sprintf(response + 4, "no");
