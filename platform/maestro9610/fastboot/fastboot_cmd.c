@@ -317,7 +317,6 @@ int fb_do_flash(const char *cmd_buffer)
 	flash_using_pit((char *)cmd_buffer + 6, response,
 			downloaded_data_size, (void *)interface.transfer_buffer);
 
-	strcpy(response,"OKAY");
 	fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 
 	return 0;
