@@ -27,6 +27,7 @@
 #include <platform/ldfw.h>
 #include <platform/gpio.h>
 #include <platform/bl_sys_info.h>
+#include <platform/dram_training.h>
 
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
@@ -297,6 +298,8 @@ void platform_init(void)
 		debug_snapshot_fdt_init();
 
 	if (secure_os_loaded == 1) {
+		write_dram_training_data();
+
 		if (!init_keystorage())
 			printf("keystorage: init done successfully.\n");
 		else

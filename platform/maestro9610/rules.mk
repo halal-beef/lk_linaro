@@ -40,7 +40,8 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/dpu_cal/dsim_reg.c \
 	$(LOCAL_DIR)/debug-snapshot-uboot.c \
 	$(LOCAL_DIR)/wdt/wdt_recovery.c \
-	$(LOCAL_DIR)/fdt.c
+	$(LOCAL_DIR)/fdt.c \
+	$(LOCAL_DIR)/dram_training/dram_training.c
 
 MODULE_DEPS += \
     dev/interrupt/arm_gic \
