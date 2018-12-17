@@ -28,6 +28,7 @@
 #include <platform/pmic_s2mpu09.h>
 #include <platform/if_pmic_s2mu004.h>
 #include <platform/dfd.h>
+#include <platform/chip_id.h>
 #include <dev/boot.h>
 #include <dev/rpmb.h>
 #include <dev/scsi.h>
@@ -58,6 +59,29 @@ struct cmd_fastboot {
 	const char *cmd_name;
 	int (*handler)(const char *);
 };
+
+static void simple_byte_hextostr(u8 hex, char *str)
+{
+	int i;
+
+	for (i = 0; i < 2; i++) {
+		if ((hex & 0xF) > 9)
+			*--str = 'a' + (hex & 0xF) - 10;
+		else
+			*--str = '0' + (hex & 0xF);
+
+		hex >>= 4;
+	}
+}
+
+static void hex2str(u8 *buf, char *str, int len)
+{
+	int i;
+
+	for (i = 0; i < len; i++) {
+		simple_byte_hextostr(buf[i], str + (i + 1) * 2);
+	}
+}
 
 int fb_do_getvar(const char *cmd_buffer)
 {
@@ -199,6 +223,25 @@ int fb_do_getvar(const char *cmd_buffer)
 		} else {
 			sprintf(response + 4, "ignore");
 		}
+	}
+	else if (!memcmp(cmd_buffer + 7, "uid", strlen("uid")))
+	{
+		char uid_str[33] = {0};
+		uint32_t *p;
+		/* default is faked UID, for test purpose only */
+		uint8_t uid_buf[] = {0x41, 0xDC, 0x74, 0x4B,	\
+								0x00, 0x00, 0x00, 0x00,	\
+								0x00, 0x00, 0x00, 0x00,	\
+								0x00, 0x00, 0x00, 0x00};
+
+		p = (uint32_t *)&uid_buf[0];
+		*p = ntohl(s5p_chip_id[1]);
+		p = (uint32_t *)&uid_buf[4];
+		*p = ntohl(s5p_chip_id[0]);
+
+		hex2str(uid_buf, uid_str, 16);
+
+		sprintf(response + 4, uid_str);
 	}
 	else
 	{
