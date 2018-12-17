@@ -50,10 +50,10 @@ static char cmdline[AVB_CMD_MAX_SIZE];
 static char verifiedbootstate[AVB_VBS_MAX_SIZE]="androidboot.verifiedbootstate=";
 
 struct bootargs_prop {
-	char prop[64];
-	char val[64];
+	char prop[128];
+	char val[128];
 };
-static struct bootargs_prop prop[32] = { { {0, }, {0, } }, };
+static struct bootargs_prop prop[64] = { { {0, }, {0, } }, };
 static int prop_cnt = 0;
 extern char dtbo_idx[4];
 
@@ -62,6 +62,7 @@ static int bootargs_init(void)
 	u32 i = 0;
 	u32 len = 0;
 	u32 cur = 0;
+	u32 cnt = 0;
 	u32 is_val = 0;
 	char bootargs[BUFFER_SIZE];
 	int len2;
@@ -89,14 +90,20 @@ static int bootargs_init(void)
 	len = strlen(bootargs);
 	for (i = 0; i < len; i++) {
 		if (bootargs[i] == '=') {
-			prop[prop_cnt].prop[cur++] = '\0';
 			is_val = 1;
-			cur = 0;
+			if (cnt > 0)
+				prop[prop_cnt].val[cur++] = bootargs[i];
+			else {
+				cnt++;
+				prop[prop_cnt].prop[cur++] = '\0';
+				cur = 0;
+			}
 		} else if (bootargs[i] == ' ') {
 			prop[prop_cnt].val[cur++] = '\0';
 			is_val = 0;
 			cur = 0;
 			prop_cnt++;
+			cnt = 0;
 		} else {
 			if (is_val)
 				prop[prop_cnt].val[cur++] = bootargs[i];
