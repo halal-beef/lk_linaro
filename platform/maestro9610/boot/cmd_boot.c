@@ -55,6 +55,7 @@ struct bootargs_prop {
 };
 static struct bootargs_prop prop[32] = { { {0, }, {0, } }, };
 static int prop_cnt = 0;
+extern char dtbo_idx[4];
 
 static int bootargs_init(void)
 {
@@ -189,6 +190,7 @@ static void set_bootargs(void)
 	bootargs_init();
 
 	/* update_val("console", "ttySAC0,115200"); */
+	update_val("androidboot.dtbo_idx", dtbo_idx);
 
 	bootargs_update();
 }
@@ -429,6 +431,7 @@ static void configure_dtb(void)
 	np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
 	printf("\nbootargs: %s\n", np);
 
+	set_bootargs();
 	resize_dt(0);
 }
 

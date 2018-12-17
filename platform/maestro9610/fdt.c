@@ -26,6 +26,8 @@ struct dt_table_header *dtbo_table;
 
 unsigned long simple_strtoul(const char *cp,char **endp,unsigned int base);
 
+char dtbo_idx[4] = {0,};
+
 void merge_dto_to_main_dtb(void)
 {
 	void *fdto, *merged_fdt;
@@ -51,7 +53,8 @@ void merge_dto_to_main_dtb(void)
 		u32 rev = fdt32_to_cpu(dt_entry->rev);
 
 		if ((id == board_id) && (rev == board_rev)) {
-			printf("DTBO: id: 0x%x, rev: 0x%x\n", id, rev);
+			printf("DTBO: id: 0x%x, rev: 0x%x, dtbo_idx: 0x%x\n", id, rev, i);
+			snprintf(dtbo_idx, sizeof(dtbo_idx), "%d", i);
 			break;
 		}
 	}
