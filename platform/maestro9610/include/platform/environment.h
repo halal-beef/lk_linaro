@@ -15,6 +15,7 @@ typedef enum {
 	ENV_ID_RAMDISK_SIZE = 0x0,
 	ENV_ID_LOCKED = 0x1,		/* 0:unlocked, 1:locked */
 	ENV_ID_LOCKED_CRITICAL = 0x2,	/* 0:unlocked, 1:locked */
+	ENV_ID_FB_MODE = 0x3,		/* 0:clear, 1:set */
 } env_id_t;
 
 #endif	/* __ENVIRONMENT_H__ */

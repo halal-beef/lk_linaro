@@ -141,6 +141,8 @@
 #define ECT_BASE			0x90000000
 #define ECT_SIZE			0x32000
 
+#define FB_MODE_FLAG              	0x00FB00DE
+
 /* GPIO */
 #define CONFIG_GPIO_4BIT_PUD
 
