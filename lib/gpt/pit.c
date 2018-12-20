@@ -659,6 +659,14 @@ err:
 	return 1;
 }
 
+int pit_gpt_chk(void)
+{
+	int ret = 0;
+
+	ret = gpt_compare_chk(&pit);
+	return ret;
+}
+
 /*
  * ---------------------------------------------------------------------------
  * Common public functions
@@ -718,6 +726,8 @@ void pit_init(void)
 		pit_get_length(ptn);
 		printf("... [PIT] pit init passes\n");
 		pit_show_info();
+		pit_gpt_chk();
+
 		return;
 	}
 err:
