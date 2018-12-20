@@ -21,7 +21,6 @@
 #include <dev/rpmb.h>
 
 #define CMD_STRING_MAX_SIZE 60
-#define AVB_PRELOAD_BASE 0xA0000000
 
 static uint32_t avbkey_is_trusted;
 static struct AvbOps ops;

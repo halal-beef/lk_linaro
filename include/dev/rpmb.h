@@ -20,12 +20,13 @@ extern "C" {
 #endif
 
 #include <arch/arm64.h>
+#include <platform/otp_v20.h>
 
 /* For debugging */
 //#define RPMB_DBG      1
 
 /* SMC id for CryptoManager function call */
-#define SMC_AARCH64_PREFIX			0xC2000000
+//#define SMC_AARCH64_PREFIX			0xC2000000
 #define SMC_CM_RPMB				0x1018
 #define SMC_CM_DRBG				0x1019
 #define SMC_SRPMB_PROVISIONED			0x3818

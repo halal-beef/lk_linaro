@@ -17,10 +17,17 @@
 #define SHA512_DIGEST_LEN               (64)
 #define SHA512_BLOCK_LEN                (128)
 
+#define SB_BL1_RP_COUNT_OFFSET		(16)
+#define SB_SB_CONTEXT_LEN		(1024)
+#define SB_SIGN_FIELD_HEADER_SIZE	(16)
+#define SB_MAX_RSA_KEY_N_LEN		(256)
+#define SB_MAX_RSA_SIGN_LEN		(SB_MAX_RSA_KEY_N_LEN)
+
 /* keystorage variable */
 #define SB_MAX_PUBKEY_LEN		(1056)
 
 /* AVB variable */
+#define AVB_PRELOAD_BASE		(0xA0000000)
 #define AVB_CMD_MAX_SIZE		(1024)
 /*
  * "androidboot.verifiedbootstate=" is 30
