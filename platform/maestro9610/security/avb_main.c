@@ -13,6 +13,7 @@
 #include <platform/secure_boot.h>
 #include <platform/sfr.h>
 #include <platform/otp_v20.h>
+#include <platform/ab_update.h>
 #include <dev/rpmb.h>
 #include <string.h>
 #include <pit.h>
@@ -28,8 +29,7 @@ uint32_t is_slot_marked_successful(void)
 {
 	uint32_t ret;
 
-	//TODO
-	ret = 1;
+	ret = ab_slot_successful(ab_current_slot());
 
 	return ret;
 }
