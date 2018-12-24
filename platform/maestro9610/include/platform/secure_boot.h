@@ -9,6 +9,9 @@
 /* SMC ID */
 #define SMC_CM_SECURE_BOOT		(0x101D)
 
+/* Error return */
+#define AVB_ERROR_RP_UPDATE_FAIL	(0xFDAA4001)
+
 /* secure boot crypto variable */
 #define SHA1_DIGEST_LEN                 (20)
 #define SHA1_BLOCK_LEN                  (64)

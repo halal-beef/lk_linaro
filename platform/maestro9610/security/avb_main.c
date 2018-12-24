@@ -105,6 +105,8 @@ uint32_t update_rp_count_avb(AvbOps *ops, AvbSlotVerifyData *ctx_ptr)
 						ctx_ptr->rollback_indexes[i]);
 				printf("[AVB 2.0]Updated RPMB RP count: %lld\n",
 						stored_rollback_index);
+				if (ctx_ptr->rollback_indexes[i] != stored_rollback_index)
+					ret = AVB_ERROR_RP_UPDATE_FAIL;
 			}
 		}
 	}
