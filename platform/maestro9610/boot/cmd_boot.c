@@ -341,7 +341,7 @@ static void configure_dtb(void)
 	sprintf(str, "<0x%x>", ECT_SIZE);
 	set_fdt_val("/ect", "parameter_size", str);
 
-	if (get_charger_mode()) {
+	if (get_charger_mode() && readl(EXYNOS9610_POWER_SYSIP_DAT0) != REBOOT_MODE_FACTORY) {
 		noff = fdt_path_offset (fdt_dtb, "/chosen");
 		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
 		snprintf(str, BUFFER_SIZE, "%s %s", np, "androidboot.mode=charger");
