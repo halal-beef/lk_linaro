@@ -89,15 +89,16 @@ static void phy_power_en(struct exynos_usbphy_info *info, u8 en)
 		else
 			reg |= (PWR_TEST_POWERDOWN_SSP);
 		writel(reg, reg_base + EXYNOS_USBCON_PWR);
+
 	} else if (main_version == EXYNOS_USBCON_VER_03_0_0) {
 		/* 2.0 PHY Power Down Control */
-	reg = readl(info->regs_base + EXYNOS_USBCON_HSP_TEST);
-	if (en)
-		reg &= ~HSP_TEST_SIDDQ;
-	else
-		reg |= HSP_TEST_SIDDQ;
-	writel(reg, info->regs_base + EXYNOS_USBCON_HSP_TEST);
-}
+		reg = readl(info->regs_base + EXYNOS_USBCON_HSP_TEST);
+		if (en)
+			reg &= ~HSP_TEST_SIDDQ;
+		else
+			reg |= HSP_TEST_SIDDQ;
+		writel(reg, info->regs_base + EXYNOS_USBCON_HSP_TEST);
+	}
 }
 
 static void phy_sw_rst_high(struct exynos_usbphy_info *info)
@@ -247,9 +248,6 @@ void phy_exynos_usb_v3p1_enable(struct exynos_usbphy_info *info)
 	/* Set PHY Reset High */
 	phy_sw_rst_high(info);
 
-	/* Enable PHY Power Mode */
-	phy_power_en(info, 1);
-
 	if (!ss_only_cap) {
 		reg = readl(regs_base + EXYNOS_USBCON_UTMI);
 		reg &= ~UTMI_FORCE_SUSPEND;
@@ -279,7 +277,35 @@ void phy_exynos_usb_v3p1_enable(struct exynos_usbphy_info *info)
 		writel(reg, ss_reg_base + EXYNOS_USBCON_CLKRST);
 	}
 	u_delay(100);
+
+	/* Follow setting sequence for USB Link */
+	/* 1. Set VBUS Valid and DP-Pull up control
+	 * by VBUS pad usage */
+	link_vbus_filter_en(info, false);
+	reg = readl(regs_base + EXYNOS_USBCON_UTMI);
+	reg_hsp = readl(regs_base + EXYNOS_USBCON_HSP);
+	reg |= UTMI_FORCE_BVALID;
+	reg |= UTMI_FORCE_VBUSVALID;
+	reg_hsp |= HSP_VBUSVLDEXTSEL;
+	reg_hsp |= HSP_VBUSVLDEXT;
+
+	writel(reg, regs_base + EXYNOS_USBCON_UTMI);
+	writel(reg_hsp, regs_base + EXYNOS_USBCON_HSP);
+
+	/* Set PHY tune para */
+	phy_exynos_usb_v3p1_tune(info);
+
+	/* Enable PHY Power Mode */
+	phy_power_en(info, 1);
+
+	/* before POR low, 10us delay is needed. */
+	udelay(10);
+
+	/* Set PHY POR Low */
 	phy_sw_rst_low(info);
+
+	/* after POR low and delay 75us, PHYCLOCK is guaranteed. */
+	u_delay(75);
 
 	if (ss_only_cap) {
 		phy_exynos_usb_v3p1_late_enable(info);
@@ -305,27 +331,6 @@ void phy_exynos_usb_v3p1_enable(struct exynos_usbphy_info *info)
 		writel(physel, regs_base + EXYNOS_USBCON_DUALPHYSEL);
 	}
 
-	/* Follow setting sequence for USB Link */
-	/* 1. Set VBUS Valid and DP-Pull up control
-	 * by VBUS pad usage */
-	reg = readl(regs_base + EXYNOS_USBCON_UTMI);
-	reg_hsp = readl(regs_base + EXYNOS_USBCON_HSP);
-	if (info->not_used_vbus_pad) {
-		link_vbus_filter_en(info, false);
-		reg |= UTMI_FORCE_BVALID;
-		reg |= UTMI_FORCE_VBUSVALID;
-		reg_hsp |= HSP_VBUSVLDEXTSEL;
-		reg_hsp |= HSP_VBUSVLDEXT;
-
-	} else {
-		link_vbus_filter_en(info, true);
-		reg &= ~UTMI_FORCE_BVALID;
-		reg &= ~UTMI_FORCE_VBUSVALID;
-		reg_hsp &= ~HSP_VBUSVLDEXTSEL;
-		reg_hsp &= ~HSP_VBUSVLDEXT;
-	}
-	writel(reg, regs_base + EXYNOS_USBCON_UTMI);
-	writel(reg_hsp, regs_base + EXYNOS_USBCON_HSP);
 
 	/* 2. OVC io usage */
 	reg = readl(regs_base + EXYNOS_USBCON_LINK_PORT);

@@ -17,6 +17,8 @@
 #include <lib/font_display.h>
 #include "usb.h"
 #include "usbd3-ss.h"
+#include <platform/pmic_s2mpu09.h>
+#include <platform/if_pmic_s2mu004.h>
 
 #undef USBD3_DBG
 #ifdef USBD3_DBG
@@ -1313,6 +1315,7 @@ static void exynos_usb_handle_dev_event(usbdev3_devt_t uDevEvent)
 				print_lcd_update(FONT_YELLOW, FONT_RED,
 						"USB cable disconnected...");
 				usb_cable_state = uDevEvent.b.evt_info;
+				muic_sw_usb();
 			}
 			//USBDEV3_HandleLinkStatusChange();
 			break;
@@ -2475,11 +2478,11 @@ extern int exynos_usb_wait_cable_insert(void)
 
 int exynos_usbc_activate (void)
 {
-	exynos_usb_runstop_device(1);
-
 	printf("Enable USB Interrupt!\n");
         register_int_handler(USB_INT_NUM, &usb_interrupt, NULL);
 	unmask_interrupt(USB_INT_NUM);
+
+	exynos_usb_runstop_device(1);
 
 	return 0;
 }
