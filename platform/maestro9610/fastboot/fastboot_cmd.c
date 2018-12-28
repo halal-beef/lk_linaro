@@ -39,7 +39,7 @@ unsigned int download_size;
 unsigned int downloaded_data_size;
 int extention_flag;
 static unsigned int is_ramdump = 0;
-
+extern int is_attached;
 static int rx_handler (const unsigned char *buffer, unsigned int buffer_size);
 int fastboot_tx_mem(u64 buffer, u64 buffer_size);
 
@@ -716,12 +716,15 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 	return 0;
 }
 
+void exynos_usb_runstop_device(u8 ucSet);
+
 int do_fastboot(int argc, const cmd_args *argv)
 {
 #if 0 /* For Polling mode */
 	int continue_from_disconnect = 0;
 #endif
 
+	is_attached = 0;
 	dprintf(ALWAYS, "This is do_fastboot\n");
 	dprintf(ALWAYS, "Enabling manual reset and disabling warm reset.\n");
 	/* To prevent entering fastboot mode after manual reset, clear ramdump scratch. */
@@ -762,6 +765,17 @@ int do_fastboot(int argc, const cmd_args *argv)
 
 	} while (continue_from_disconnect);
 #endif
+
+	while (is_attached == 0) {
+		print_lcd_update(FONT_GREEN, FONT_BLACK,
+				"USB Run -> Stop polling...", is_attached);
+		u_delay(2000000);
+		if (is_attached == 1)
+			break;
+		exynos_usb_runstop_device(0);
+		u_delay(100000);
+		exynos_usb_runstop_device(1);
+	}
 
 	return 0;
 }

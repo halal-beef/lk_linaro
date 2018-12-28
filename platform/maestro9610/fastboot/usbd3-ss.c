@@ -210,6 +210,7 @@ unsigned int exynos_usbd_dn_addr = 0;
 unsigned int exynos_usbd_dn_cnt = 0;
 /* Use only fastboot(not DNW) */
 int is_fastboot = 1;
+int is_attached = 0;
 int DNW;
 int exynos_got_header = 0;
 int exynos_receive_done = 0;
@@ -846,7 +847,7 @@ static int exynos_usb_activate_ep(USBDEV3_EP_DIR_e eEpDir, u8 ucEpNum)
 	return 1;
 }
 
-static void exynos_usb_runstop_device(u8 ucSet)
+void exynos_usb_runstop_device(u8 ucSet)
 {
 	usbdev3_dctl_t usbdev3_dctl;
 
@@ -1310,6 +1311,7 @@ static void exynos_usb_handle_dev_event(usbdev3_devt_t uDevEvent)
 				print_lcd_update(FONT_GREEN, FONT_BLACK,
 						"USB cable connected...");
 				usb_cable_state = uDevEvent.b.evt_info;
+				is_attached = 1;
 			} else if (uDevEvent.b.evt_info == 0x3 &&
 				usb_cable_state != uDevEvent.b.evt_info) {
 				print_lcd_update(FONT_YELLOW, FONT_RED,
