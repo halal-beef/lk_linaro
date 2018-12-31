@@ -11,6 +11,8 @@
 
 /* Error return */
 #define AVB_ERROR_RP_UPDATE_FAIL	(0xFDAA4001)
+#define AVB_ERROR_INVALID_COLOR		(0xFDAA4002)
+#define AVB_ERROR_AVBKEY_LEN_ZERO	(0xFDAA4003)
 
 /* secure boot crypto variable */
 #define SHA1_DIGEST_LEN                 (20)
@@ -97,8 +99,6 @@ uint32_t el3_verify_signature_using_image(
 /******************************************************************************/
 /* Secure Boot context used by LDFW */
 /******************************************************************************/
-/* define secure boot commands */
-#define SB_GET_AVB_KEY			(16)
 
 /******************************************************************************/
 /* Android verified boot */
@@ -110,5 +110,7 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate);
 uint32_t get_ops_addr(struct AvbOps **ops_addr);
 
 uint32_t get_avbkey_trust(void);
+
+uint32_t sb_get_avb_key(uint8_t *avb_pubkey, size_t public_key_length);
 
 #endif /* _SECURE_BOOT_H_ */

@@ -502,6 +502,8 @@ int cmd_boot(int argc, const cmd_args *argv)
 		} while(1);
 	}
 
+	load_boot_images();
+
 #if defined(CONFIG_USE_AVB20)
 	if (ab_current_slot())
 		avb_ret = avb_main("_b", cmdline, verifiedbootstate);
@@ -524,8 +526,6 @@ int cmd_boot(int argc, const cmd_args *argv)
 		}
 	}
 #endif
-
-	load_boot_images();
 
 	configure_dtb();
 	configure_ddi_id();

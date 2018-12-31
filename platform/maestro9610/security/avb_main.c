@@ -14,6 +14,8 @@
 #include <platform/sfr.h>
 #include <platform/otp_v20.h>
 #include <platform/ab_update.h>
+#include <platform/cm_api.h>
+#include <platform/bootimg.h>
 #include <dev/rpmb.h>
 #include <string.h>
 #include <pit.h>
@@ -22,8 +24,71 @@
 
 /* By convention, when a rollback index is not used the value remains zero. */
 static const uint64_t kRollbackIndexNotUsed = 0;
+static uint8_t avb_pubkey[SB_MAX_PUBKEY_LEN] __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
 
 void avb_print_lcd(const char *str);
+
+uint32_t avb_set_root_of_trust(uint32_t device_state, uint32_t boot_state)
+{
+	uint32_t ret = 0;
+	uint32_t boot_version = 0;
+	uint32_t boot_patch_level = 0;
+	uint32_t avb_pubkey_len = 0;
+	uint8_t *vbmeta_buf = NULL;
+	struct boot_img_hdr *b_hdr = (boot_img_hdr *)BOOT_BASE;
+	struct pit_entry *ptn;
+	struct AvbVBMetaImageHeader h;
+
+	if (ab_current_slot())
+		ptn = pit_get_part_info("vbmeta_b");
+	else
+		ptn = pit_get_part_info("vbmeta_a");
+	if (ptn == 0) {
+		printf("Partition 'vbmeta' does not exist\n");
+		return -1;
+	} else {
+		vbmeta_buf = avb_malloc(pit_get_length(ptn));
+		if (vbmeta_buf == NULL) {
+			printf("vbmeta allocation fail\n");
+			return -1;
+		}
+		pit_access(ptn, PIT_OP_LOAD, (u64)vbmeta_buf, 0);
+	}
+	avb_vbmeta_image_header_to_host_byte_order((const AvbVBMetaImageHeader*)vbmeta_buf, &h);
+	avb_pubkey_len = h.public_key_size;
+	if (avb_pubkey_len == 0) {
+		ret = AVB_ERROR_AVBKEY_LEN_ZERO;
+		goto out;
+	}
+	memcpy(avb_pubkey, (void *)((uint64_t)vbmeta_buf +
+				sizeof(AvbVBMetaImageHeader) +
+				h.authentication_data_block_size +
+				h.public_key_offset),
+			avb_pubkey_len);
+	ret = cm_secure_boot_set_pubkey(avb_pubkey, avb_pubkey_len);
+	if (ret)
+		goto out;
+	boot_version = (b_hdr->os_version & 0xFFFFF800) >> 11;
+	boot_patch_level = (b_hdr->os_version & 0x7FF) >> 0;
+	ret = cm_secure_boot_set_os_version(boot_version, boot_patch_level);
+	if (ret)
+		goto out;
+	ret = cm_secure_boot_set_vendor_boot_version(0, 0);
+	if (ret)
+		goto out;
+	ret = cm_secure_boot_set_device_state(device_state);
+	if (ret)
+		goto out;
+	ret = cm_secure_boot_set_boot_state(boot_state);
+	if (ret)
+		goto out;
+
+out:
+	avb_free(vbmeta_buf);
+	cm_secure_boot_block_cmd();
+
+	return ret;
+}
 
 uint32_t is_slot_marked_successful(void)
 {
@@ -122,6 +187,8 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 	uint32_t ret = 0;
 	uint32_t i = 0;
 	uint32_t tmp = 0;
+	uint32_t device_state;
+	uint32_t boot_state;
 	struct AvbOps *ops;
 	const char *partition_arr[] = {"boot", "dtbo", NULL};
 	char buf[100];
@@ -154,9 +221,33 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 	} else {
 		snprintf(buf, 100, "[AVB 2.0] authentication success (%s)\n", color);
 	}
+
+	device_state = !unlock;
+	switch (color[0]) {
+	case 'o':
+		boot_state = ORANGE;
+		break;
+	case 'y':
+		boot_state = YELLOW;
+		break;
+	case 'r':
+		boot_state = RED;
+		break;
+	case 'g':
+		boot_state = GREEN;
+		break;
+	default:
+		return AVB_ERROR_INVALID_COLOR;
+	}
+	/* Print log */
 	strcat(verifiedbootstate, color);
 	printf(buf);
 	avb_print_lcd(buf);
+
+	/* Set root of trust */
+	ret = avb_set_root_of_trust(device_state, boot_state);
+	if (ret)
+		return ret;
 
 	/* Update RP count */
 	if (!ret && is_slot_marked_successful()) {

@@ -18,6 +18,7 @@
 #include <platform/lock.h>
 #include <platform/secure_boot.h>
 #include <platform/smc.h>
+#include <platform/cm_api.h>
 #include <dev/rpmb.h>
 
 #define CMD_STRING_MAX_SIZE 60
@@ -26,6 +27,21 @@ static uint32_t avbkey_is_trusted;
 static struct AvbOps ops;
 
 int get_unique_guid(char *ptr_name, char *buf);
+
+uint32_t sb_get_avb_key(uint8_t *avb_pubkey, size_t public_key_length)
+{
+	uint32_t ret;
+
+	ret = exynos_smc((SMC_AARCH64_PREFIX | SMC_CM_SECURE_BOOT), SB_GET_AVB_KEY,
+			(uint64_t)avb_pubkey, public_key_length);
+	if (ret) {
+		printf("[AVB 2.0 ERR] Fail to read AVB pubkey [ret: 0x%X]\n", ret);
+	}
+
+	INV_DCACHE_RANGE(avb_pubkey, public_key_length);
+
+	return ret;
+}
 
 static AvbIOResult exynos_read_from_partition(AvbOps *ops,
 		const char *partition,
@@ -168,18 +184,14 @@ static AvbIOResult exynos_validate_vbmeta_public_key(AvbOps *ops,
 		bool *out_is_trusted)
 {
 	AvbIOResult ret = AVB_IO_RESULT_OK;
-	uint8_t buf[SB_MAX_PUBKEY_LEN] __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
+	uint8_t avb_pubkey[SB_MAX_PUBKEY_LEN] __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
 
-	ret = exynos_smc((SMC_AARCH64_PREFIX | SMC_CM_SECURE_BOOT), SB_GET_AVB_KEY,
-			(uint64_t)buf, public_key_length);
+	ret = sb_get_avb_key(avb_pubkey, public_key_length);
 	if (ret) {
 		*out_is_trusted = false;
-		printf("[AVB 2.0 ERR] Fail to read AVB pubkey [ret: 0x%X]\n", ret);
-		goto out;
 	}
 
-	INV_DCACHE_RANGE(buf, public_key_length)
-	*out_is_trusted = !memcmp(buf, public_key_data, public_key_length);
+	*out_is_trusted = !memcmp(avb_pubkey, public_key_data, public_key_length);
 	if (*out_is_trusted == false) {
 		printf("[AVB 2.0 ERR] AVB pubkey is not matched with vbmeta\n");
 		goto out;
