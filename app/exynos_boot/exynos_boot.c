@@ -35,9 +35,15 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	int fb_mode_failed = 0;
 	unsigned int *env_val;
 	struct pit_entry *ptn_env;
+	unsigned int soc, mif, apm;
 
 	printf("RST_STAT: 0x%x\n", rst_stat);
 
+	soc = readl(EXYNOS9610_POWER_BASE + 0x0f00);
+	mif = readl(EXYNOS9610_POWER_BASE + 0x0f04);
+	apm = readl(EXYNOS9610_POWER_BASE + 0x0f40);
+
+	printf("PMUDBG_CENTRAL_SEQ_*: apsoc 0x%x mif 0x%x apm 0x%x\n", soc, mif, apm);
 	printf("PMUDBG_CL0_*: ");
 	for (cpu = LITTLE_CORE_START; cpu <= LITTLE_CORE_LAST; cpu++)
 		printf("cpu%d: 0x%x ", cpu, dfd_get_pmudbg_stat(cpu));
