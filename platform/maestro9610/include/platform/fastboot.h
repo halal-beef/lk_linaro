@@ -12,5 +12,6 @@
 #define __FASTBOOT_H__
 
 int do_fastboot(int argc, const cmd_args *argv);
+int connect_usb(void);
 
 #endif	/* __FASTBOOT_H__ */

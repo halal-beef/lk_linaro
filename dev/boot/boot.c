@@ -11,8 +11,11 @@
 #include <reg.h>
 #include <sys/types.h>
 #include <dev/boot.h>
+#include <lib/console.h>
 #include <platform/sfr.h>
 #include <platform/smc.h>
+#include <platform/fastboot.h>
+#include <platform/wdt_recovery.h>
 
 static unsigned int get_boot_device_info(void)
 {
@@ -118,6 +121,17 @@ void set_first_boot_device_info(void)
 		boot_device = BOOT_UFS;
 
 	writel(boot_device, BOOT_DEV_INFO);
+}
+
+void run_into_usb_boot(void)
+{
+	if(get_current_boot_device() == BOOT_USB)
+		return;
+
+	clear_wdt_recovery_settings();
+	connect_usb();
+	force_wdt_recovery();
+
 }
 
 int get_boot_device(void)

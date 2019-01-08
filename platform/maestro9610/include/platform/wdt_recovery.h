@@ -12,5 +12,6 @@
 #define __WDT_RECOVERY_H__
 
 int clear_wdt_recovery_settings(void);
+int force_wdt_recovery(void);
 
 #endif	/* __WDT_RECOVERY_H__ */

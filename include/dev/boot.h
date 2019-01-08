@@ -37,6 +37,7 @@ int is_first_boot(void);
 void set_first_boot_device_info(void);
 int get_boot_device(void);
 unsigned int get_current_boot_device(void);
+void run_into_usb_boot(void);
 
 #endif
 

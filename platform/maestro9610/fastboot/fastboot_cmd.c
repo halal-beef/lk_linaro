@@ -780,6 +780,36 @@ int do_fastboot(int argc, const cmd_args *argv)
 	return 0;
 }
 
+int connect_usb(void)
+{
+	is_attached = 0;
+	dprintf(ALWAYS, "Connecting USB...\n");
+	print_lcd_update(FONT_GREEN, FONT_BLACK, "Connecting USB...");
+
+	muic_sw_usb();
+
+	printf("Initialization USB!!!!\n");
+	fastboot_init(&interface);
+	fastboot_poll();
+
+	while (is_attached == 0) {
+		print_lcd_update(FONT_GREEN, FONT_BLACK,
+				"USB Run -> Stop polling...");
+		printf("Delay. Connection status: %d\n", is_attached);
+		u_delay(1000000);
+		if (is_attached == 1)
+			break;
+		printf("Stop USB. Connection status: %d\n", is_attached);
+		exynos_usb_runstop_device(0);
+		u_delay(100000);
+		printf("Run USB. Connection status: %d\n", is_attached);
+		exynos_usb_runstop_device(1);
+		printf("Connection status: %d\n", is_attached);
+	}
+
+	return 0;
+}
+
 STATIC_COMMAND_START
 STATIC_COMMAND("fast", "usb fastboot", &do_fastboot)
 STATIC_COMMAND_END(usb_fastboot);

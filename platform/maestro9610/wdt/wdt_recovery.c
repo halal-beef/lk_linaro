@@ -26,3 +26,22 @@ void clear_wdt_recovery_settings(void)
 	reg &= ~0xF;
 	writel(reg, EXYNOS9610_POWER_DREX_CALIBRATION7);
 }
+
+void force_wdt_recovery(void)
+{
+	unsigned int reg;
+
+	printf("Set bootloader booting retry count to 1\nto enter USB booting after WDT reset\n");
+	reg = readl(EXYNOS9610_POWER_DREX_CALIBRATION7);
+	reg &= ~0xF;
+	reg |= 0x1;
+	writel(reg, EXYNOS9610_POWER_DREX_CALIBRATION7);
+
+	writel(0x1000, EXYNOS9610_WDT_WTCNT);
+	reg = readl(EXYNOS9610_POWER_MASK_WDT_RESET_REQUEST);
+	reg &= ~(0x1 << 23);
+	writel(reg, EXYNOS9610_POWER_MASK_WDT_RESET_REQUEST);
+	do {
+		asm volatile("wfi");
+	} while(1);
+}
