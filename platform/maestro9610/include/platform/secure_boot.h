@@ -13,6 +13,7 @@
 #define AVB_ERROR_RP_UPDATE_FAIL	(0xFDAA4001)
 #define AVB_ERROR_INVALID_COLOR		(0xFDAA4002)
 #define AVB_ERROR_AVBKEY_LEN_ZERO	(0xFDAA4003)
+#define AVB_ERROR_INVALID_KEYNAME_SIZE	(0xFDAA4004)
 
 /* secure boot crypto variable */
 #define SHA1_DIGEST_LEN                 (20)
@@ -30,6 +31,7 @@
 
 /* keystorage variable */
 #define SB_MAX_PUBKEY_LEN		(1056)
+#define SB_KST_MAX_KEY_NAME_LEN		(8)
 
 /* AVB variable */
 #define AVB_PRELOAD_BASE		(0xA0000000)
@@ -71,6 +73,15 @@ struct ace_hash_ctx {
 	unsigned int prelen_low;
 };
 
+typedef struct
+{
+	uint64_t ns_buf_addr;
+	uint64_t ns_buf_size;
+	uint8_t keyname[SB_KST_MAX_KEY_NAME_LEN];
+	uint64_t keyname_size;
+	uint8_t reserved[32];
+} KST_PUBKEY_ST;
+
 uint32_t el3_sss_hash_digest(
 	uint32_t addr,
 	uint32_t size,
@@ -111,6 +122,7 @@ uint32_t get_ops_addr(struct AvbOps **ops_addr);
 
 uint32_t get_avbkey_trust(void);
 
-uint32_t sb_get_avb_key(uint8_t *avb_pubkey, size_t public_key_length);
+uint32_t sb_get_avb_key(uint8_t *avb_pubkey, uint64_t pubkey_size,
+		const char *keyname);
 
 #endif /* _SECURE_BOOT_H_ */

@@ -25,15 +25,30 @@
 
 static uint32_t avbkey_is_trusted;
 static struct AvbOps ops;
+static KST_PUBKEY_ST ctx __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_64)));
 
 int get_unique_guid(char *ptr_name, char *buf);
 
-uint32_t sb_get_avb_key(uint8_t *avb_pubkey, size_t public_key_length)
+uint32_t sb_get_avb_key(uint8_t *avb_pubkey, uint64_t pubkey_size,
+		const char *keyname)
 {
 	uint32_t ret;
+	uint32_t keyname_size = strlen(keyname);
+
+	memset(&ctx, 0, sizeof(KST_PUBKEY_ST));
+	ctx.ns_buf_addr = (uint64_t)avb_pubkey;
+	ctx.ns_buf_size = pubkey_size;
+	ctx.keyname_size = keyname_size;
+	if (keyname_size > SB_MAX_PUBKEY_LEN)
+		return AVB_ERROR_INVALID_KEYNAME_SIZE;
+	memcpy(ctx.keyname, keyname, keyname_size);
+
+	FLUSH_DCACHE_RANGE(&ctx, sizeof(KST_PUBKEY_ST));
+	/* clean avb_pubkey */
+	FLUSH_DCACHE_RANGE(avb_pubkey, pubkey_size);
 
 	ret = exynos_smc((SMC_AARCH64_PREFIX | SMC_CM_SECURE_BOOT), SB_GET_AVB_KEY,
-			(uint64_t)avb_pubkey, public_key_length);
+			(uint64_t)&ctx, 0);
 	if (ret) {
 		printf("[AVB 2.0 ERR] Fail to read AVB pubkey [ret: 0x%X]\n", ret);
 	}
@@ -186,7 +201,7 @@ static AvbIOResult exynos_validate_vbmeta_public_key(AvbOps *ops,
 	AvbIOResult ret = AVB_IO_RESULT_OK;
 	uint8_t avb_pubkey[SB_MAX_PUBKEY_LEN] __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
 
-	ret = sb_get_avb_key(avb_pubkey, public_key_length);
+	ret = sb_get_avb_key(avb_pubkey, public_key_length, "vbmeta");
 	if (ret) {
 		*out_is_trusted = false;
 	}
