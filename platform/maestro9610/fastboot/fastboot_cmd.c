@@ -767,8 +767,10 @@ int do_fastboot(int argc, const cmd_args *argv)
 #endif
 
 	while (is_attached == 0) {
+		/*
 		print_lcd_update(FONT_GREEN, FONT_BLACK,
 				"USB Run -> Stop polling...", is_attached);
+		*/
 		u_delay(2000000);
 		if (is_attached == 1)
 			break;
