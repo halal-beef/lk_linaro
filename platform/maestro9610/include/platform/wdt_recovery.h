@@ -14,4 +14,8 @@
 int clear_wdt_recovery_settings(void);
 int force_wdt_recovery(void);
 
+void wdt_stop(void);
+void wdt_start(unsigned int timeout);
+void wdt_keepalive(void);
+
 #endif	/* __WDT_RECOVERY_H__ */

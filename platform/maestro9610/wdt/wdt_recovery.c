@@ -12,14 +12,91 @@
 #include <reg.h>
 #include <platform/sfr.h>
 
+#define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
+
+static unsigned int watchdog_count;
+
+void wdt_stop(void)
+{
+	unsigned long wtcon, pmu_reg;
+
+	pmu_reg = readl(EXYNOS9610_POWER_MASK_WDT_RESET_REQUEST);
+	pmu_reg |= (0x1 << EXYNOS9610_WDT_MASK_RESET_BIT);
+	writel(pmu_reg, EXYNOS9610_POWER_MASK_WDT_RESET_REQUEST);
+	printf("Watchdog mask_wdt_reset register mask!\n");
+
+	wtcon = readl(EXYNOS9610_WDT_WTCON);
+	wtcon &= ~(EXYNOS9610_WDT_WTCON_ENABLE | EXYNOS9610_WDT_WTCON_RSTEN);
+	writel(wtcon, EXYNOS9610_WDT_WTCON);
+
+	wtcon = readl(EXYNOS9610_WDT_WTCON);
+	printf("Watchdog cluster 0 stop done, WTCON = %lx\n", wtcon);
+	writel(1, EXYNOS9610_WDT_WTCLRINT);
+
+}
+
+void wdt_start(unsigned int timeout)
+{
+	unsigned int count = timeout * (EXYNOS9610_WDT_FREQ / EXYNOS9610_WDT_INIT_PRESCALER);
+	unsigned int divisor = 1;
+	unsigned long wtcon, pmu_reg;
+
+	printf("watchdog cl0 start, count = %x, timeout = %d\n", count, timeout);
+
+	if (count >= 0x10000) {
+		divisor = DIV_ROUND_UP(count, 0xffff);
+
+		if (divisor > 0x100)
+			divisor = 0x100;
+	}
+
+	printf("timeout=%d, divisor=%d, count=%d (%08x)\n",
+		timeout, divisor, count, DIV_ROUND_UP(count, divisor));
+
+	count = DIV_ROUND_UP(count, divisor);
+	watchdog_count = count;
+
+	/* update the pre-scaler */
+	wtcon = readl(EXYNOS9610_WDT_WTCON);
+	wtcon &= ~EXYNOS9610_WDT_PRESCALE_MASK;
+	wtcon |= EXYNOS9610_WDT_PRESCALE(divisor - 1);
+
+	writel(count, EXYNOS9610_WDT_WTDAT);
+	writel(wtcon, EXYNOS9610_WDT_WTCON);
+
+	/* watchdog start */
+	wdt_stop();
+
+	pmu_reg = readl(EXYNOS9610_POWER_MASK_WDT_RESET_REQUEST);
+	pmu_reg &= ~(0x1 << EXYNOS9610_WDT_MASK_RESET_BIT);
+	writel(pmu_reg, EXYNOS9610_POWER_MASK_WDT_RESET_REQUEST);
+	printf("Watchdog mask_wdt_reset register clear!\n");
+
+	wtcon = readl(EXYNOS9610_WDT_WTCON);
+	wtcon |= EXYNOS9610_WDT_WTCON_ENABLE | EXYNOS9610_WDT_WTCON_DIV128;
+
+	wtcon &= ~EXYNOS9610_WDT_WTCON_INTEN;
+	wtcon |= EXYNOS9610_WDT_WTCON_RSTEN;
+
+	writel(count, EXYNOS9610_WDT_WTDAT);
+	writel(count, EXYNOS9610_WDT_WTCNT);
+	writel(wtcon, EXYNOS9610_WDT_WTCON);
+
+	wtcon = readl(EXYNOS9610_WDT_WTCON);
+	printf("Watchdog cluster 0 start, WTCON = %lx\n", wtcon);
+
+}
+
+void wdt_keepalive(void)
+{
+	writel(watchdog_count, EXYNOS9610_WDT_WTCNT);
+}
+
 void clear_wdt_recovery_settings(void)
 {
 	unsigned int reg;
 
-	printf("Mask WDT reset request\n");
-	reg = readl(EXYNOS9610_POWER_MASK_WDT_RESET_REQUEST);
-	reg |= (0x1 << 23);
-	writel(reg, EXYNOS9610_POWER_MASK_WDT_RESET_REQUEST);
+	wdt_stop();
 
 	printf("Clear bootloader booting start flag\n");
 	reg = readl(EXYNOS9610_POWER_DREX_CALIBRATION7);
@@ -37,10 +114,8 @@ void force_wdt_recovery(void)
 	reg |= 0x1;
 	writel(reg, EXYNOS9610_POWER_DREX_CALIBRATION7);
 
-	writel(0x1000, EXYNOS9610_WDT_WTCNT);
-	reg = readl(EXYNOS9610_POWER_MASK_WDT_RESET_REQUEST);
-	reg &= ~(0x1 << 23);
-	writel(reg, EXYNOS9610_POWER_MASK_WDT_RESET_REQUEST);
+	wdt_start(1);
+
 	do {
 		asm volatile("wfi");
 	} while(1);
