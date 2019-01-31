@@ -563,8 +563,7 @@ static status_t scsi_secu_prot_out(struct bdev *dev, const void *buf, bnum_t blo
 	return ret;
 }
 
-static status_t scsi_scan_common(scsi_device_t *sdev, u32 i,
-					struct list_node *lu_list)
+static status_t scsi_scan_common(scsi_device_t *sdev, u32 i)
 {
 	status_t ret = NO_ERROR;
 
@@ -594,9 +593,6 @@ static status_t scsi_scan_common(scsi_device_t *sdev, u32 i,
 		printf("[SCSI] MODE SENSE failed: %d\n", ret);
 		goto err;
 	}
-
-	/* added to list if enumerated properly */
-	list_add_tail(&sdev->lu_node, lu_list);
 err:
 	return ret;
 }
@@ -607,7 +603,7 @@ err:
  * you can't see any 'target' literally.
  */
 status_t scsi_scan(scsi_device_t *sdev, u32 wlun, u32 dev_num, exec_t *func,
-				const char *name_s, bnum_t max_seg, struct list_node *lu_list)
+				const char *name_s, bnum_t max_seg)
 {
 	u32 i, j;
 	char name[16];
@@ -636,7 +632,7 @@ status_t scsi_scan(scsi_device_t *sdev, u32 wlun, u32 dev_num, exec_t *func,
 		sdev->dev.private = sdev;
 		sdev->exec = func;
 
-		ret = scsi_scan_common(sdev, i, lu_list);
+		ret = scsi_scan_common(sdev, i);
 		if (ret == ERR_NOT_FOUND)
 			continue;
 		else if (ret < 0)
@@ -718,7 +714,7 @@ status_t scsi_scan(scsi_device_t *sdev, u32 wlun, u32 dev_num, exec_t *func,
 }
 
 status_t scsi_scan_ssu(scsi_device_t *sdev, u32 wlun,
-			exec_t *func, get_sdev_t *func1, struct list_node *lu_list)
+			exec_t *func, get_sdev_t *func1)
 {
 	status_t ret = NO_ERROR;
 	char name[16];
@@ -730,7 +726,7 @@ status_t scsi_scan_ssu(scsi_device_t *sdev, u32 wlun,
 	sdev->exec = func;
 	sdev->get_ssu_sdev = func1;
 
-	ret = scsi_scan_common(sdev, wlun, lu_list);
+	ret = scsi_scan_common(sdev, wlun);
 
 	if (!ret) {
 		bio_initialize_bdev(&sdev->dev,
@@ -764,13 +760,15 @@ status_t scsi_do_ssu()
 	return ret;
 }
 
-void scsi_exit(struct list_node *lu_node, const char *prefix)
+void scsi_exit(const char *prefix)
 {
 	bdev_t *dev;
-	scsi_device_t *sdev;
 
-	while ((dev = bio_get_with_prefix(prefix))) {
-		sdev = (scsi_device_t *)dev->private;
-		bio_unregister_device(&sdev->dev);
-	}
+	do {
+		dev = bio_get_with_prefix(prefix);
+		if (!dev)
+			break;
+		bio_unregister_device(dev);
+		printf("[SCSI] entry '%s' removed\n", dev->name);
+	} while (1);
 }

@@ -69,10 +69,10 @@ enum scsi_opcode {
 
 /* External Functions */
 status_t scsi_scan(scsi_device_t *sdev, u32 wlun, u32 dev_num, exec_t *func,
-			const char *name_s, bnum_t max_seg, struct list_node *list);
+			const char *name_s, bnum_t max_seg);
 status_t scsi_scan_ssu(scsi_device_t *sdev, u32 wlun,
-			exec_t *func, get_sdev_t *func1, struct list_node *lu_list);
+			exec_t *func, get_sdev_t *func1);
 status_t scsi_do_ssu(void);
 status_t scsi_ufs_ffu(const void *buf, u32 len);
-void scsi_exit(struct list_node *lu_node, const char *prefix);
+void scsi_exit(const char *prefix);
 #endif				/* _SCSI_H */

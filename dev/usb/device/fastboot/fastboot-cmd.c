@@ -247,11 +247,11 @@ int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 	}
 	else if (!memcmp(cmd_buffer + 7, "erase-block-size", strlen("erase-block-size")))
 	{
-		sprintf(response + 4, "0x%x", UFS_BSIZE);
+		sprintf(response + 4, "0x%x", part_get_block_size());
 	}
 	else if (!memcmp(cmd_buffer + 7, "logical-block-size", strlen("logical-block-size")))
 	{
-		sprintf(response + 4, "0x%x", UFS_BSIZE);
+		sprintf(response + 4, "0x%x", part_get_erase_size());
 	}
 	else if (!memcmp(cmd_buffer + 7, "slot-count", strlen("slot-count")))
 	{

@@ -115,7 +115,6 @@ STATIC_COMMAND_END(ufs);
 static scsi_device_t *ufs_dev[SCSI_MAX_INITIATOR];
 static scsi_device_t ufs_dev_ssu;
 static scsi_device_t ufs_dev_rpmb;
-static struct list_node ufs_lu_list = LIST_INITIAL_VALUE(ufs_lu_list);
 
 
 
@@ -2086,7 +2085,7 @@ int ufs_set_configuration_descriptor(void)
 		puts("[UFS] LU config: PASS !!!\n");
 
 		/* remove enumerated bdevs*/
-		scsi_exit(&ufs_lu_list, "scsi");
+		scsi_exit("scsi");
 		ret = 1;
 	}
 
@@ -2117,9 +2116,6 @@ status_t ufs_init(int mode)
 	}
 #endif
 
-	ufs_lu_list.prev = 0;
-	ufs_lu_list.next = 0;
-
 	for (i = 0; i < SCSI_MAX_DEVICE; i++) {
 		if (LU_conf->unit[i].bLUEnable)
 			ufs_number_of_lus++;
@@ -2148,13 +2144,13 @@ status_t ufs_init(int mode)
 			goto out;
 
 		/* SCSI device enumeration */
-		scsi_scan(ufs_dev[i], 0, ufs_number_of_lus, scsi_exec, NULL, 128, &ufs_lu_list);
+		scsi_scan(ufs_dev[i], 0, ufs_number_of_lus, scsi_exec, NULL, 128);
 		if (r)
 			goto out;
-		scsi_scan(&ufs_dev_rpmb, 0x44, 0, scsi_exec, "rpmb", 128, &ufs_lu_list);
+		scsi_scan(&ufs_dev_rpmb, 0x44, 0, scsi_exec, "rpmb", 128);
 		if (r)
 			goto out;
-		scsi_scan_ssu(&ufs_dev_ssu, 0x50, scsi_exec, (get_sdev_t *)scsi_get_ssu_sdev, &ufs_lu_list);
+		scsi_scan_ssu(&ufs_dev_ssu, 0x50, scsi_exec, (get_sdev_t *)scsi_get_ssu_sdev);
 		if (r)
 			goto out;
 	}
