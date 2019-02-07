@@ -14,6 +14,15 @@
 #include <platform/delay.h>
 #include <platform/pmic_s2mpu09.h>
 
+/*
+ * S2MPU09 INT Register is Read & Clear type.
+ * Must use first read value.
+ * Also, first read poweronsrc is set before bootup.
+ */
+static unsigned char read_int_first = 0;
+static unsigned char read_int1_org, read_int2_org;
+static unsigned char read_pwronsrc, read_wtsr_smpl;
+
 void pmic_enable_manual_reset (void)
 {
 	unsigned char reg;
@@ -91,9 +100,10 @@ void display_pmic_rtc_time(void)
 		time[PMIC_RTC_HOUR] & (1 << 6) ? "PM" : "AM");
 #endif
 }
-void display_pmic_info_s2mpu09 (void)
+void read_pmic_info_s2mpu09 (void)
 {
-	unsigned char read_int1, read_int2, read_pwronsrc, read_offsrc, read_ctrl1, read_ctrl3, read_wtsr_smpl;
+	/* read_poweronsrc, read_wtsr_smpl value are being used in other function */
+	unsigned char read_int1, read_int2, read_offsrc, read_ctrl1, read_ctrl3;
 	unsigned char read_rtc_buf;
 #if 1
 	/* defined (CONFIG_MACH_MAESTRO9610) */
@@ -131,5 +141,41 @@ void display_pmic_info_s2mpu09 (void)
 	printf("S2MPU09_PM_LDO39_CTRL: 0x%x\n", read_ldo39_ctrl);
 #endif
 
+	if (!read_int_first) {
+		read_int_first = 1;
+		read_int1_org = read_int1;
+		read_int2_org = read_int2;
+	} else {
+		printf("S2MPU09_PM_INT1:(First read val): 0x%x\n", read_int1_org);
+		printf("S2MPU09_PM_INT2:(First read val): 0x%x\n", read_int2_org);
+	}
+
 	display_pmic_rtc_time();
+}
+
+int chk_smpl_wtsr_s2mpu09(void)
+{
+	int ret = PMIC_DETECT_NONE;
+
+	if (!read_int_first)
+		read_pmic_info_s2mpu09();
+
+	if ((read_pwronsrc & (1 << 7)) && (read_int2_org & (1 << 5)) && !(read_int1_org & (1 << 7))) {
+		/* WTSR detect condition - WTSR_ON && WTSR_INT && ! MRB_INT */
+		printf("chk_smpl_wtsr: WTSR detected\n");
+		ret = PMIC_DETECT_WTSR;
+	} else if ((read_pwronsrc & (1 << 6)) && (read_int2_org & (1 << 3)) && (read_wtsr_smpl & (1 << 7))) {
+		/* SMPL detect condition - SMPL_ON && SMPL_INT && SMPL_EN */
+		printf("chk_smpl_wtsr: SMPL detected\n");
+		ret = PMIC_DETECT_SMPL;
+	}
+
+#ifdef S2MPU09_PM_IGNORE_SMPL_DETECT
+	if (ret == PMIC_DETECT_SMPL) {
+		printf("chk_smpl_wtsr: Ignore SMPL detection\n");
+		ret = PMIC_DETECT_SMPL_IGNORE;
+	}
+#endif
+
+	return ret;
 }

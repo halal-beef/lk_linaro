@@ -273,7 +273,7 @@ void platform_init(void)
 	pmic_init();
 	fg_init_s2mu004();
 	check_charger_connect();
-	display_pmic_info_s2mpu09();
+	read_pmic_info_s2mpu09();
 
 	load_secure_payload();
 

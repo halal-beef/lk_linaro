@@ -23,6 +23,7 @@
 #include <platform/dfd.h>
 #include <dev/boot.h>
 #include <platform/gpio.h>
+#include <platform/pmic_s2mpu09.h>
 
 int cmd_boot(int argc, const cmd_args *argv);
 int ab_update_slot_info_bootloader(void);
@@ -30,7 +31,7 @@ int ab_update_slot_info_bootloader(void);
 static void exynos_boot_task(const struct app_descriptor *app, void *args)
 {
 	unsigned int rst_stat = readl(EXYNOS9610_POWER_RST_STAT);
-	int cpu;
+	int cpu, chk_smpl;
 	struct exynos_gpio_bank *bank = (struct exynos_gpio_bank *)EXYNOS9610_GPA1CON;
 	int fb_mode_failed = 0;
 	unsigned int *env_val;
@@ -86,18 +87,42 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	if (is_first_boot())
 		ab_update_slot_info_bootloader();
 
-	if (!is_first_boot() || (rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET)) ||
-		((readl(CONFIG_RAMDUMP_SCRATCH) == CONFIG_RAMDUMP_MODE) && get_charger_mode() == 0) ||
-		(fb_mode_failed == 1)) {
-		dfd_run_dump_gpr();
-		do_fastboot(0, 0);
-	} else {
-		/* Turn on dumpEN for DumpGPR */
-		dfd_set_dump_gpr(CACHE_RESET_EN | DUMPGPR_EN);
+	/* check SMPL & WTSR with S2MPU09 */
+	chk_smpl = chk_smpl_wtsr_s2mpu09();
+	if (chk_smpl)
+		print_lcd_update(FONT_RED, FONT_BLACK, "WTSR or SMPL DETECTED");
 
-		cmd_boot(0, 0);
+#ifdef S2MPU09_PM_IGNORE_SMPL_DETECT
+	if (chk_smpl == PMIC_DETECT_SMPL_IGNORE) {
+		print_lcd_update(FONT_RED, FONT_BLACK, ",But Ignore SMPL DETECTION");
+		writel(0, CONFIG_RAMDUMP_SCRATCH);
 	}
+#endif
 
+	if (!is_first_boot()) {
+		printf("Entering fastboot: not first_boot\n");
+		goto fastboot;
+	} else if (rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET)) {
+		printf("Entering fastboot: Abnormal RST_STAT: 0x%x\n", rst_stat);
+		goto fastboot;
+	} else if ((readl(CONFIG_RAMDUMP_SCRATCH) == CONFIG_RAMDUMP_MODE) && get_charger_mode() == 0) {
+		printf("Entering fastboot: Ramdump_Scratch & Charger\n");
+		goto fastboot;
+	} else if (fb_mode_failed == 1) {
+		printf("Entering fastboot: fastboot_reg | fb_mode\n");
+		goto fastboot;
+	} else
+		goto reboot;
+
+fastboot:
+	dfd_run_dump_gpr();
+	do_fastboot(0, 0);
+	return;
+
+reboot:
+	/* Turn on dumpEN for DumpGPR */
+	dfd_set_dump_gpr(CACHE_RESET_EN | DUMPGPR_EN);
+	cmd_boot(0, 0);
 	return;
 }
 

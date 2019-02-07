@@ -41,6 +41,9 @@
 #define S2MPU09_RTC_MON			0x00A
 #define S2MPU09_RTC_YEAR		0x00B
 
+/* If ignore SMPL Detection, activate below define */
+/* #define S2MPU09_PM_IGNORE_SMPL_DETECT */
+
 /* RTC Counter Register offsets */
 enum {
 	PMIC_RTC_SEC = 0,
@@ -51,6 +54,14 @@ enum {
 	PMIC_RTC_MONTH,
 	PMIC_RTC_YEAR,
 	NR_PMIC_RTC_CNT_REGS,
+};
+
+/* WTSR SMPL Detect */
+enum {
+	PMIC_DETECT_NONE = 0,
+	PMIC_DETECT_WTSR,
+	PMIC_DETECT_SMPL,
+	PMIC_DETECT_SMPL_IGNORE,
 };
 
 /*
@@ -83,7 +94,8 @@ enum {
 
 void pmic_init(void);
 void pmic_enable_manual_reset(void);
-void display_pmic_info_s2mpu09(void);
+void read_pmic_info_s2mpu09(void);
+int chk_smpl_wtsr_s2mpu09(void);
 
 #endif /*__S2MPU09_PMIC_H__*/
 
