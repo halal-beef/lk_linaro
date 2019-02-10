@@ -9,6 +9,7 @@
  */
 
 #include <reg.h>
+#include <stdlib.h>
 #include "uart_simple.h"
 #include <dev/ufs.h>
 #include <dev/boot.h>
@@ -28,6 +29,7 @@
 #include <platform/gpio.h>
 #include <platform/bl_sys_info.h>
 #include <platform/dram_training.h>
+#include <platform/environment.h>
 
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
@@ -248,6 +250,10 @@ void platform_early_init(void)
 
 	if (is_first_boot() && !(rst_stat & (WARM_RESET | LITTLE_WDT_RESET)))
 		muic_sw_uart();
+	if (get_current_boot_device() == BOOT_USB ||
+		rst_stat & (WARM_RESET | LITTLE_WDT_RESET)) {
+		uart_log_mode = 1;
+	}
 	uart_test_function();
 	printf("LK build date: %s, time: %s\n", __DATE__, __TIME__);
 
@@ -274,6 +280,21 @@ void platform_init(void)
 	ufs_init(2);
 	ufs_set_configuration_descriptor();
 	pit_init();
+
+	if (get_current_boot_device() != BOOT_USB &&
+		*(unsigned int *)DRAM_BASE == 0xabcdef &&
+		secure_os_loaded == 1) {
+		unsigned int *env_val;
+		struct pit_entry *ptn_env;
+
+		ptn_env = pit_get_part_info("env");
+		env_val = memalign(0x1000, pit_get_length(ptn_env));
+		pit_access(ptn_env, PIT_OP_LOAD, (u64)env_val, 0);
+		if(env_val[ENV_ID_UART_LOG_MODE] == UART_LOG_MODE_FLAG)
+			uart_log_mode = 1;
+
+		free(env_val);
+	}
 
 #ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
 	/* If the display_drv_init function is not called before,

@@ -163,6 +163,7 @@
 #define ECT_SIZE			0x32000
 
 #define FB_MODE_FLAG              	0x00FB00DE
+#define UART_LOG_MODE_FLAG        	0x0A4200DE
 
 /* GPIO */
 #define CONFIG_GPIO_4BIT_PUD

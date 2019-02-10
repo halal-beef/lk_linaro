@@ -588,6 +588,36 @@ int fb_do_oem(const char *cmd_buffer)
 		fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 
 		free(proinfo);
+	} else if (!strncmp(cmd_buffer + 4, "uart_log_enable", 15)) {
+		unsigned int *env_val;
+		struct pit_entry *ptn;
+
+		ptn = pit_get_part_info("env");
+		env_val = memalign(0x1000, pit_get_length(ptn));
+		pit_access(ptn, PIT_OP_LOAD, (u64)env_val, 0);
+
+		env_val[ENV_ID_UART_LOG_MODE] = UART_LOG_MODE_FLAG;
+		pit_access(ptn, PIT_OP_FLASH, (u64)env_val, 0);
+
+		free(env_val);
+
+		sprintf(response, "OKAY");
+		fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+	} else if (!strncmp(cmd_buffer + 4, "uart_log_disable", 16)) {
+		unsigned int *env_val;
+		struct pit_entry *ptn;
+
+		ptn = pit_get_part_info("env");
+		env_val = memalign(0x1000, pit_get_length(ptn));
+		pit_access(ptn, PIT_OP_LOAD, (u64)env_val, 0);
+
+		env_val[ENV_ID_UART_LOG_MODE] = 0;
+		pit_access(ptn, PIT_OP_FLASH, (u64)env_val, 0);
+
+		free(env_val);
+
+		sprintf(response, "OKAY");
+		fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 	} else if (!strncmp(cmd_buffer + 4, "fb_mode_set", 11)) {
 		unsigned int *env_val;
 		struct pit_entry *ptn;

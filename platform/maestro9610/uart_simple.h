@@ -18,6 +18,7 @@
 #ifndef UART_UART_SIMPLE_H_
 #define UART_UART_SIMPLE_H_
 
+extern unsigned int uart_log_mode;
 
 void uart_simple_GPIOInit(void);
 void uart_simple_UartInit(unsigned int uUartBase, unsigned int clk, unsigned int nBaudrate);

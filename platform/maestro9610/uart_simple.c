@@ -45,6 +45,7 @@
 #define rUART_USI_CON              0xc4
 
 unsigned int globalUartBase;
+unsigned int uart_log_mode = 0;
 
 
 
