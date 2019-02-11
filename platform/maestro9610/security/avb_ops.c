@@ -20,6 +20,7 @@
 #include <platform/smc.h>
 #include <platform/cm_api.h>
 #include <dev/rpmb.h>
+#include <platform/exynos9610.h>
 
 #define CMD_STRING_MAX_SIZE 60
 
@@ -155,26 +156,30 @@ static AvbIOResult exynos_get_preloaded_partition(AvbOps *ops,
 	const char *name;
 	unsigned int boot_dev;
 
-	boot_dev = get_boot_device();
-	if (boot_dev == BOOT_UFS)
-		name = "scsi0";
-	else {
-		printf("Boot device: 0x%x. Unsupported boot device!\n", boot_dev);
-		return AVB_IO_RESULT_ERROR_IO;
+	if (!memcmp(partition, "boot", 4)) {
+		*out_pointer = (uint8_t *)BOOT_BASE;
+	} else {
+		boot_dev = get_boot_device();
+		if (boot_dev == BOOT_UFS)
+			name = "scsi0";
+		else {
+			printf("Boot device: 0x%x. Unsupported boot device!\n", boot_dev);
+			return AVB_IO_RESULT_ERROR_IO;
+		}
+
+		dev = bio_open(name);
+
+		ptn = pit_get_part_info(partition);
+		if (ptn == 0)
+			return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
+
+		dev->new_read(dev, (void *)AVB_PRELOAD_BASE, ptn->blkstart, ptn->blknum);
+
+		*out_pointer = (uint8_t *)AVB_PRELOAD_BASE;
+
+		bio_close(dev);
 	}
-
-	dev = bio_open(name);
-
-	ptn = pit_get_part_info(partition);
-	if (ptn == 0)
-		return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
-
-	dev->new_read(dev, (void *)AVB_PRELOAD_BASE, ptn->blkstart, ptn->blknum);
-
-	*out_pointer = (uint8_t *)AVB_PRELOAD_BASE;
 	*out_num_bytes_preloaded = num_bytes;
-
-	bio_close(dev);
 
 	return AVB_IO_RESULT_OK;
 }
