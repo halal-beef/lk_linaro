@@ -19,6 +19,7 @@
 #include <part_gpt.h>
 #include <dev/boot.h>
 #include <dev/rpmb.h>
+#include <platform/mmu/mmu_func.h>
 #include <platform/exynos9610.h>
 #include <platform/smc.h>
 #include <platform/sfr.h>
@@ -315,8 +316,48 @@ static void configure_dtb(void)
 	printf("SEC_PGTBL_BASE[%#lx]\n", sec_pt_base);
 	printf("SEC_PGTBL_SIZE[%#x]\n", sec_pt_size);
 
-	/* DT control code must write after this function call. */
+	/*
+	 * In this here, it is enabled cache. So you don't use blk read/write function
+	 * If you modify dtb, you must use under set_bootargs function.
+	 * And if you modify bootargs, you will modify in set_bootargs function.
+	 */
+	invalidate_dcache_all();
+	cpu_common_init();
+	clean_invalidate_dcache_all();
+
 	merge_dto_to_main_dtb();
+
+	/* Secure memories are carved-out in case of EVT1 */
+	/*
+	 * 1st DRAM node
+	 */
+	add_dt_memory_node(DRAM_BASE,
+				sec_dram_base - DRAM_BASE);
+	/*
+	 * 2nd DRAM node
+	 */
+	if (sec_pt_base && sec_pt_size) {
+		add_dt_memory_node(sec_dram_end,
+					sec_pt_base - sec_dram_end);
+		add_dt_memory_node(sec_pt_end,
+					(DRAM_BASE + SIZE_2GB)
+					- sec_pt_end);
+	} else {
+		add_dt_memory_node(sec_dram_end,
+					(DRAM_BASE + SIZE_2GB)
+					- sec_dram_end);
+	}
+
+	/*
+	 * 3rd DRAM node
+	 */
+	add_dt_memory_node(DRAM_BASE2, SIZE_2GB);
+	if (dram_size == 0x180000000)
+		add_dt_memory_node(0x900000000, SIZE_2GB);
+
+	clean_invalidate_dcache_all();
+	disable_mmu_dcache();
+
 	resize_dt(SZ_4K);
 	set_usb_serialno();
 
@@ -357,34 +398,6 @@ static void configure_dtb(void)
 	else
 		snprintf(str, BUFFER_SIZE, "%s %s", np, "androidboot.slot_suffix=_a");
 	fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
-
-	/* Secure memories are carved-out in case of EVT1 */
-	/*
-	 * 1st DRAM node
-	 */
-	add_dt_memory_node(DRAM_BASE,
-				sec_dram_base - DRAM_BASE);
-	/*
-	 * 2nd DRAM node
-	 */
-	if (sec_pt_base && sec_pt_size) {
-		add_dt_memory_node(sec_dram_end,
-					sec_pt_base - sec_dram_end);
-		add_dt_memory_node(sec_pt_end,
-					(DRAM_BASE + SIZE_2GB)
-					- sec_pt_end);
-	} else {
-		add_dt_memory_node(sec_dram_end,
-					(DRAM_BASE + SIZE_2GB)
-					- sec_dram_end);
-	}
-
-	/*
-	 * 3rd DRAM node
-	 */
-	add_dt_memory_node(DRAM_BASE2, SIZE_2GB);
-	if (dram_size == 0x180000000)
-		add_dt_memory_node(0x900000000, SIZE_2GB);
 
 	noff = fdt_path_offset(fdt_dtb, "/reserved-memory/modem_if");
 	if (noff >= 0) {
