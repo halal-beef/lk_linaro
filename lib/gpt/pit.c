@@ -659,7 +659,7 @@ static int pit_copy_one_string(char **t, const char *s, char *org)
 	return 0;
 }
 
-int pit_lba_cumulation(void)
+static int pit_lba_cumulation(int only_check)
 {
 	int pit_index = 0;
 	u32 lun;
@@ -695,7 +695,8 @@ int pit_lba_cumulation(void)
 		goto err;
 
 	/* GPT check */
-	if (gpt_compare_chk(&pit, &gpt_if))
+	if (only_check && gpt_compare_chk(&pit, &gpt_if))
+		goto err;
 
 	/* for entries of others */
 	for (lun = 1; ; lun++) {
@@ -706,6 +707,7 @@ int pit_lba_cumulation(void)
 			break;
 	}
 
+	return 0;
 err:
 	return 1;
 }
@@ -768,7 +770,7 @@ void pit_init(void)
 		printf("pit signature check success\n");
 	}
 	/* Calculation Start LBA */
-	ret = pit_lba_cumulation();
+	ret = pit_lba_cumulation(1);
 	if (ret != 0)
 		goto err1;
 
@@ -875,7 +877,7 @@ int pit_update(void *buf, u32 size)
 	pit_save_pit(pit_buf);
 
 	/* Calculation Start LBA */
-	ret = pit_lba_cumulation();
+	ret = pit_lba_cumulation(0);
 	if (ret != 0)
 		goto err;
 
