@@ -474,12 +474,19 @@ int load_boot_images(void)
 		pit_access(ptn, PIT_OP_LOAD, (u64)BOOT_BASE, 0);
 	}
 
+	invalidate_dcache_all();
+	cpu_common_init();
+	clean_invalidate_dcache_all();
+
 	argv[1].u = BOOT_BASE;
 	argv[2].u = KERNEL_BASE;
 	argv[3].u = RAMDISK_BASE;
 	argv[4].u = DT_BASE;
 	argv[5].u = DTBO_BASE;
 	cmd_scatter_load_boot(5, argv);
+
+	clean_invalidate_dcache_all();
+	disable_mmu_dcache();
 
 	return 0;
 }
