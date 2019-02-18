@@ -743,6 +743,11 @@ void dead_battery_recovery(void)
 
 	IIC_S2MU106_FG_ESetport();
 
+	/* When Shutdown occurs during Low voltage W/A,
+	 * Voltage fix is not disabled. Disable voltage fix.
+	 */
+	IIC_S2MU106_FG_EWrite(S2MU106_FG_SLAVE_ADDR_W, 0x24, 0x00);
+
 	/* Read POR state & check */
 	if (s2mu106_check_por()) {
 		/* FG is not initialized, Activate ADC */
