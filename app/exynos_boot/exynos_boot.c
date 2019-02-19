@@ -27,6 +27,7 @@
 
 int cmd_boot(int argc, const cmd_args *argv);
 int ab_update_slot_info_bootloader(void);
+extern unsigned int uart_log_mode;
 
 static void exynos_boot_task(const struct app_descriptor *app, void *args)
 {
@@ -115,6 +116,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		goto reboot;
 
 fastboot:
+	uart_log_mode = 1;
 	dfd_run_dump_gpr();
 	do_fastboot(0, 0);
 	return;
