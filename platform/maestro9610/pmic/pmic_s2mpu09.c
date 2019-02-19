@@ -53,6 +53,7 @@ void pmic_init (void)
 	/* Enable Warm Reset */
 	speedy_read(S2MPU09_PM_ADDR, S2MPU09_PM_CTRL3, &reg);
 	reg |= WRSTEN;
+	reg &= ~MRSEL;
 	speedy_write(S2MPU09_PM_ADDR, S2MPU09_PM_CTRL3, reg);
 
 	/* Enable AP warm reset detection */
