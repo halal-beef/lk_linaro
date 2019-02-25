@@ -99,6 +99,12 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		writel(0, CONFIG_RAMDUMP_SCRATCH);
 	}
 #endif
+#ifdef S2MPU09_PM_IGNORE_WTSR_DETECT
+	if (chk_smpl == PMIC_DETECT_WTSR_IGNORE) {
+		print_lcd_update(FONT_RED, FONT_BLACK, ",But Ignore WTSR DETECTION");
+		writel(0, CONFIG_RAMDUMP_SCRATCH);
+	}
+#endif
 
 	if (!is_first_boot()) {
 		printf("Entering fastboot: not first_boot\n");

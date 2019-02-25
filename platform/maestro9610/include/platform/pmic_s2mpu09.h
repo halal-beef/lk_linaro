@@ -44,6 +44,9 @@
 /* If ignore SMPL Detection, activate below define */
 /* #define S2MPU09_PM_IGNORE_SMPL_DETECT */
 
+/* If ignore WTSR Detection, activate below define */
+/* #define S2MPU09_PM_IGNORE_WTSR_DETECT */
+
 /* RTC Counter Register offsets */
 enum {
 	PMIC_RTC_SEC = 0,
@@ -62,6 +65,7 @@ enum {
 	PMIC_DETECT_WTSR,
 	PMIC_DETECT_SMPL,
 	PMIC_DETECT_SMPL_IGNORE,
+	PMIC_DETECT_WTSR_IGNORE,
 };
 
 /*

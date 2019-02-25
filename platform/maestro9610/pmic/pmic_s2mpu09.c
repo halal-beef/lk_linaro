@@ -177,6 +177,12 @@ int chk_smpl_wtsr_s2mpu09(void)
 		ret = PMIC_DETECT_SMPL_IGNORE;
 	}
 #endif
+#ifdef S2MPU09_PM_IGNORE_WTSR_DETECT
+	if (ret == PMIC_DETECT_WTSR) {
+		printf("chk_smpl_wtsr: Ignore WTSR detection\n");
+		ret = PMIC_DETECT_WTSR_IGNORE;
+	}
+#endif
 
 	return ret;
 }
