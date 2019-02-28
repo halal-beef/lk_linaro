@@ -248,8 +248,6 @@ void platform_early_init(void)
 #endif
 	set_first_boot_device_info();
 
-	if (is_first_boot() && !(rst_stat & (WARM_RESET | LITTLE_WDT_RESET)))
-		muic_sw_uart();
 	if (get_current_boot_device() == BOOT_USB ||
 		rst_stat & (WARM_RESET | LITTLE_WDT_RESET)) {
 		uart_log_mode = 1;

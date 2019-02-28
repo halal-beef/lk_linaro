@@ -269,6 +269,23 @@ void IIC_S2MU106_ERead(unsigned char ChipId,
 	*IicData = data;
 }
 
+void muic_sw_init(void)
+{
+	unsigned char reg;
+	volatile int i;
+
+	IIC_S2MU106_ESetport();
+
+	IIC_S2MU106_ERead(S2MU106_MUIC_R_ADDR, S2MU106_AFC_CTRL1, &reg);
+	if (reg) {
+		IIC_S2MU106_EWrite(S2MU106_MUIC_W_ADDR, S2MU106_AFC_CTRL1, 0);
+		IIC_S2MU106_EWrite(S2MU106_MUIC_W_ADDR, S2MU106_AFC_CTRL2, 0);
+		IIC_S2MU106_EWrite(S2MU106_MUIC_W_ADDR, S2MU106_AFC_LOGIC_CTRL2, 0x1);
+		IIC_S2MU106_EWrite(S2MU106_MUIC_W_ADDR, S2MU106_LDOADC_VSETL, 0x7C);
+		for(i = 0; i < 50000; i++);
+	}
+}
+
 void muic_sw_open (void)
 {
 	unsigned char reg;
@@ -288,6 +305,8 @@ void muic_sw_usb (void)
 {
 	unsigned char reg;
 
+	muic_sw_init();
+
 	IIC_S2MU106_ESetport();
 	IIC_S2MU106_ERead(S2MU106_MUIC_R_ADDR, S2MU106_MUIC_CTRL1, &reg);
 	reg &= ~(0x1 << 2);
@@ -303,6 +322,8 @@ void muic_sw_usb (void)
 void muic_sw_uart (void)
 {
 	unsigned char reg;
+
+	muic_sw_init();
 
 	IIC_S2MU106_ESetport();
 	IIC_S2MU106_ERead(S2MU106_MUIC_R_ADDR, S2MU106_MUIC_CTRL1, &reg);
