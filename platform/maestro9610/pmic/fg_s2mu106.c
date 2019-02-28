@@ -705,6 +705,18 @@ void fg_init_s2mu106(void)
 {
 	IIC_S2MU106_FG_ESetport();
 
+	u8 temp;
+
+	/* Check Low VBAT */
+	IIC_S2MU106_FG_ERead(S2MU106_FG_SLAVE_ADDR_R, 0x49, &temp);
+	printf("%s: 0x49 = 0x%2x", __func__, temp);
+	if ((temp & 0x80) == 0x80) {
+		printf(" Low Vbat off detected!\n");
+		temp &= (~0x80);
+		IIC_S2MU106_FG_EWrite(S2MU106_FG_SLAVE_ADDR_W, 0x49, temp);
+	} else
+		printf("\n");
+
 	s2mu106_select_battery_table();
 
 	/* Check need to initialize FG */
