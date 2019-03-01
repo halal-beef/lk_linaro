@@ -370,10 +370,10 @@ static void configure_dtb(void)
 	} else if (readl(EXYNOS9610_POWER_SYSIP_DAT0) == REBOOT_MODE_FACTORY) {
 		noff = fdt_path_offset (fdt_dtb, "/chosen");
 		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
-		snprintf(str, BUFFER_SIZE, "%s %s", np, "androidboot.mode=factory");
+		snprintf(str, BUFFER_SIZE, "%s %s", np, "androidboot.mode=sfactory");
 		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
-		printf("Enter factory mode...");
-		print_lcd_update(FONT_GREEN, FONT_BLACK, "Enter factory mode...");
+		printf("Enter samsung factory mode...");
+		print_lcd_update(FONT_GREEN, FONT_BLACK, "Enter samsung factory mode...");
 	}
 
 	sprintf(str, "<0x%x>", ECT_BASE);
@@ -508,9 +508,9 @@ int cmd_boot(int argc, const cmd_args *argv)
 	val = exynos_gpio_get_value(bank, gpio);
 	if (!val) {
 		writel(REBOOT_MODE_FACTORY, EXYNOS9610_POWER_SYSIP_DAT0);
-		printf("Pressed key combination to enter factory mode!\n");
+		printf("Pressed key combination to enter samsung factory mode!\n");
 		print_lcd_update(FONT_GREEN, FONT_BLACK,
-			"Pressed key combination to enter factory mode!");
+			"Pressed key combination to enter samsung factory mode!");
 	}
 
 	ab_ret = ab_update_slot_info();
