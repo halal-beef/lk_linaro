@@ -100,6 +100,7 @@ void pmic_init(void);
 void pmic_enable_manual_reset(void);
 void read_pmic_info_s2mpu09(void);
 int chk_smpl_wtsr_s2mpu09(void);
+int get_pmic_rtc_time(char *buf);
 
 #endif /*__S2MPU09_PMIC_H__*/
 

@@ -28,6 +28,7 @@
 #include <platform/gpio.h>
 #include <platform/pmic_s2mpu09.h>
 #include <platform/gpio.h>
+#include <platform/debug-store-ramdump.h>
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
 #include "almighty.h"
@@ -138,12 +139,14 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 
 fastboot:
 	uart_log_mode = 1;
+	debug_store_ramdump();
 	do_fastboot(0, 0);
 	return;
 
 fastboot_dump_gpr:
 	uart_log_mode = 1;
 	dfd_run_dump_gpr();
+	debug_store_ramdump();
 	do_fastboot(0, 0);
 	return;
 

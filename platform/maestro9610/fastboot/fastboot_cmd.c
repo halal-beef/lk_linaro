@@ -30,6 +30,7 @@
 #include <platform/dfd.h>
 #include <platform/chip_id.h>
 #include <platform/mmu/mmu_func.h>
+#include <platform/debug-store-ramdump.h>
 #include <dev/boot.h>
 #include <dev/rpmb.h>
 #include <dev/scsi.h>
@@ -254,6 +255,10 @@ int fb_do_getvar(const char *cmd_buffer)
 
 		sprintf(response + 4, uid_str);
 	}
+	else if (!memcmp(cmd_buffer + 7, "str_ram", strlen("str_ram")))
+	{
+		debug_store_ramdump_getvar(cmd_buffer + 15, response + 4);
+	}
 	else
 	{
 		debug_snapshot_getvar_item(cmd_buffer + 7, response + 4);
@@ -404,6 +409,7 @@ int fb_do_reboot(const char *cmd_buffer)
 		writel(0, CONFIG_RAMDUMP_SCRATCH);
 
 	clean_invalidate_dcache_range(CONFIG_RAMDUMP_SCRATCH, CONFIG_RAMDUMP_SCRATCH + 64);
+	clean_invalidate_dcache_range(CONFIG_RAMDUMP_REASON, CONFIG_RAMDUMP_REASON + 64);
 
 	writel(0x1, EXYNOS9610_SWRESET);
 
@@ -440,14 +446,14 @@ int fb_do_download(const char *cmd_buffer)
 
 static void start_ramdump(void *buf)
 {
-	struct fastboot_ramdump_hdr *hdr = buf;
+	struct fastboot_ramdump_hdr hdr = *(struct fastboot_ramdump_hdr *)buf;
 	static uint32_t ramdump_cnt = 0;
 
-	printf("\nramdump start address is [0x%lx]\n", hdr->base);
-	printf("ramdump size is [0x%lx]\n", hdr->size);
-	printf("version is [0x%lx]\n", hdr->version);
+	printf("\nramdump start address is [0x%lx]\n", hdr.base);
+	printf("ramdump size is [0x%lx]\n", hdr.size);
+	printf("version is [0x%lx]\n", hdr.version);
 
-	if (hdr->version != 2) {
+	if (hdr.version != 2) {
 		printf("you are using wrong version of fastboot!!!\n");
 	}
 
@@ -455,7 +461,12 @@ static void start_ramdump(void *buf)
 	if (ramdump_cnt++ == 0)
 		set_tzasc_action(0);
 
-	if (!fastboot_tx_mem(hdr->base, hdr->size)) {
+	if (debug_store_ramdump_redirection(&hdr)) {
+		printf("Failed ramdump~! \n");
+		return;
+	}
+
+	if (!fastboot_tx_mem(hdr.base, hdr.size)) {
 		printf("Failed ramdump~! \n");
 	} else {
 		printf("Finished ramdump~! \n");
@@ -665,6 +676,12 @@ int fb_do_oem(const char *cmd_buffer)
 			pit_access(ptn, PIT_OP_LOAD, (u64)CFG_FASTBOOT_MMC_BUFFER, 0);
 			sprintf(response, "OKAY");
 		}
+	} else if (!strncmp(cmd_buffer + 4, "str_ram", 7)) {
+		if (!debug_store_ramdump_oem(cmd_buffer + 12))
+			sprintf(response, "OKAY");
+		else
+			sprintf(response, "FAILunsupported command");
+
 		fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 	} else {
 		printf("Unsupported oem command!\n");

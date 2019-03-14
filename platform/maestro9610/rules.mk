@@ -43,7 +43,8 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/fdt.c \
 	$(LOCAL_DIR)/dram_training/dram_training.c \
 	$(LOCAL_DIR)/mmu/cpu_a.S \
-	$(LOCAL_DIR)/mmu/mmu.c
+	$(LOCAL_DIR)/mmu/mmu.c \
+	$(LOCAL_DIR)/debug-store-ramdump.c
 
 MODULE_DEPS += \
     dev/interrupt/arm_gic \
