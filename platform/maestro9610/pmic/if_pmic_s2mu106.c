@@ -10,6 +10,7 @@
 
 #include <debug.h>
 #include <sys/types.h>
+#include <platform/delay.h>
 #include <platform/if_pmic_s2mu106.h>
 
 #define SMALL_CHARGER_CURRENT 100
@@ -352,6 +353,23 @@ int s2mu106_muic_get_vbus(void)
 	return ret;
 }
 
+void s2mu106_muic_check_cdp(void)
+{
+
+	unsigned char reg;
+
+	IIC_S2MU106_ESetport();
+	IIC_S2MU106_ERead(S2MU106_MUIC_R_ADDR, 0x47, &reg);
+	if (reg & 0x20) {
+		printf("%s dev_typ1(%#x): handle init cdp\n", __func__, reg);
+		muic_sw_open();
+		mdelay(10);
+		IIC_S2MU106_EWrite(S2MU106_MUIC_W_ADDR, S2MU106_AFC_CTRL1, 0x99);
+		mdelay(10);
+		IIC_S2MU106_EWrite(S2MU106_MUIC_W_ADDR, S2MU106_AFC_CTRL1, 0x0);
+	}
+}
+
 void s2mu106_charger_set_mode(int mode)
 {
 	u8 reg;
@@ -488,4 +506,6 @@ void s2mu106_charger_init(void)
 
 	s2mu106_charger_reg_init();
 	s2mu106_charger_set_charging_current(SMALL_CHARGER_CURRENT);
+
+	s2mu106_muic_check_cdp();
 }
