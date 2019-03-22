@@ -571,3 +571,8 @@ int muic_get_vbus(void)
 
 	return vbvolt;
 }
+
+void init_muic_interrupt(void)
+{
+	return;
+}

@@ -765,6 +765,8 @@ int do_fastboot(int argc, const cmd_args *argv)
 	/* display all entries */
 	pit_show_info();
 
+	init_muic_interrupt();
+
 	muic_sw_usb();
 
 	printf("Initialization USB!!!!\n");

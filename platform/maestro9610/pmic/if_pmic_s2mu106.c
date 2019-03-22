@@ -12,6 +12,10 @@
 #include <sys/types.h>
 #include <platform/delay.h>
 #include <platform/if_pmic_s2mu106.h>
+#include <platform/gpio.h>
+#include <platform/interrupts.h>
+#include <platform/exynos9610.h>
+#include <reg.h>
 
 #define SMALL_CHARGER_CURRENT 100
 
@@ -353,6 +357,92 @@ int s2mu106_muic_get_vbus(void)
 	return ret;
 }
 
+int s2mu106_muic_get_ta_attached(void)
+{
+	unsigned char reg;
+	int ret = 0;
+
+	IIC_S2MU106_ESetport();
+	IIC_S2MU106_ERead(S2MU106_MUIC_R_ADDR, S2MU106_DEVICE_TYPE1, &reg);
+
+	printf("%s: 0x47 = 0x%02x\n", __func__, reg);
+
+	ret = (reg & 0x40) ? 1 : 0;
+
+	return ret;
+}
+
+int s2mu106_muic_get_usb_attached(void)
+{
+	unsigned char reg;
+	int ret = 0;
+
+	IIC_S2MU106_ESetport();
+	IIC_S2MU106_ERead(S2MU106_MUIC_R_ADDR, S2MU106_DEVICE_TYPE1, &reg);
+
+	printf("%s: 0x47 = 0x%02x\n", __func__, reg);
+
+	ret = (reg & 0x04) ? 1 : 0;
+
+	return ret;
+}
+
+int s2mu106_muic_get_cdp_attached(void)
+{
+	unsigned char reg;
+	int ret = 0;
+
+	IIC_S2MU106_ESetport();
+	IIC_S2MU106_ERead(S2MU106_MUIC_R_ADDR, S2MU106_DEVICE_TYPE1, &reg);
+
+	printf("%s: 0x47 = 0x%02x\n", __func__, reg);
+
+	ret = (reg & 0x20) ? 1 : 0;
+
+	return ret;
+}
+
+int muic_get_ta(void)
+{
+	return s2mu106_muic_get_ta_attached();
+}
+
+void s2mu106_set_charger_by_type(void)
+{
+	set_charger_mode(CHG_MODE_CHG);
+	if (s2mu106_muic_get_ta_attached()) {
+		set_charger_current(1300, 1500);
+	} else if (s2mu106_muic_get_cdp_attached()) {
+		muic_sw_usb();
+		set_charger_current(1300, 1500);
+	} else if (s2mu106_muic_get_usb_attached()) {
+		muic_sw_usb();
+		set_charger_current(500, 500);
+	}
+}
+
+void muic_interrupt_handler(void)
+{
+	unsigned char reg, reg_muic;
+
+	printf("%s: Enter\n", __func__);
+	IIC_S2MU106_ESetport();
+
+	IIC_S2MU106_EWrite(S2MU106_CHG_W_ADDR, 0x7, 0xFB);
+	IIC_S2MU106_ERead(S2MU106_MUIC_R_ADDR, S2MU106_MUIC_INT1, &reg_muic);
+	IIC_S2MU106_ERead(S2MU106_MUIC_R_ADDR, S2MU106_MUIC_INT2, &reg);
+
+	if (reg_muic & 0x1) {
+		s2mu106_set_charger_by_type();
+	} else if (reg_muic & 0x2) {
+		printf("%s: open the path, for the next bc1.2\n", __func__);
+		set_charger_mode(S2MU106_CHG_MODE_BUCK);
+		muic_sw_open();
+	} else {
+		s2mu106_set_charger_by_type();
+	}
+}
+
 void s2mu106_muic_check_cdp(void)
 {
 
@@ -493,6 +583,8 @@ void s2mu106_charger_reg_init(void)
 	reg |= 0x8;
 	IIC_S2MU106_EWrite(S2MU106_CHG_W_ADDR, 0xe5, reg);
 	printf("%s, 0xe5(%x)\n", __func__, reg);
+
+	IIC_S2MU106_EWrite(S2MU106_CHG_W_ADDR, 0x7, 0x0);
 }
 
 void s2mu106_charger_init(void)
@@ -508,4 +600,54 @@ void s2mu106_charger_init(void)
 	s2mu106_charger_set_charging_current(SMALL_CHARGER_CURRENT);
 
 	s2mu106_muic_check_cdp();
+}
+
+
+void set_charger_current(int input, int charging)
+{
+	s2mu106_charger_set_input_current(input);
+	s2mu106_charger_set_charging_current(charging);
+}
+
+void set_charger_mode(int mode)
+{
+	int s2mu106_mode = -1;
+
+	switch (mode) {
+		case CHG_MODE_OFF:
+			s2mu106_mode = S2MU106_CHG_MODE_OFF;
+			break;
+		case CHG_MODE_CHG:
+			s2mu106_mode = S2MU106_CHG_MODE_CHG;
+			break;
+		case CHG_MODE_BUCK:
+		default:
+			s2mu106_mode = S2MU106_CHG_MODE_BUCK;
+			break;
+	}
+
+	s2mu106_charger_set_mode(s2mu106_mode);
+}
+
+#define CHARGER_GPIO_INT_NUM	(17 + 32)
+
+static enum handler_return charger_gpio_interrupt(void *arg)
+{
+	printf("EXYNOS9610_WEINT_GPA2_PEND: %x\n", readl(EXYNOS9610_WEINT_GPA2_PEND));
+	writel(readl(EXYNOS9610_WEINT_GPA2_PEND) | (1 << 1), EXYNOS9610_WEINT_GPA2_PEND);
+	muic_interrupt_handler();
+	return INT_NO_RESCHEDULE;
+}
+
+void init_muic_interrupt(void)
+{
+	exynos_gpio_cfg_pin((struct exynos_gpio_bank *)EXYNOS9610_GPA2CON, 1, 0xF);
+	writel(readl(EXYNOS9610_GPA2PUD) & ~(0xF0), EXYNOS9610_GPA2PUD);
+	writel(readl(EXYNOS9610_WEINT_GPA2_PEND) | (1 << 1), EXYNOS9610_WEINT_GPA2_PEND);
+	writel(readl(EXYNOS9610_WEINT_GPA2_MASK) & ~(1 << 1), EXYNOS9610_WEINT_GPA2_MASK);
+	writel((readl(EXYNOS9610_WEINT_GPA2_CON) & ~(0x7 << (4 * 1))) | (0x2 << (4 * 1)), EXYNOS9610_WEINT_GPA2_CON);
+	printf("Enable charger GPIO interrupt!!!\n");
+	register_int_handler(CHARGER_GPIO_INT_NUM, &charger_gpio_interrupt, NULL);
+	unmask_interrupt(CHARGER_GPIO_INT_NUM);
+	muic_interrupt_handler();
 }

@@ -58,5 +58,5 @@ void chg_init_s2mu004(void);
 void muic_sw_usb(void);
 void muic_sw_uart(void);
 int muic_get_vbus(void);
-
+void init_muic_interrupt(void);
 #endif /*__IF_PMIC_S2MU004_H__*/

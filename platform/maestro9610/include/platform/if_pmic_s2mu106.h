@@ -39,9 +39,19 @@
 #define S2MU106_MUIC_W_ADDR	0x7C
 #define S2MU106_MUIC_R_ADDR	0x7D
 
+#define S2MU106_AFC_INT		0x0
+#define S2MU106_MUIC_INT1	0x1
+#define S2MU106_MUIC_INT2	0x2
+#define S2MU106_PM_VAL_UP1	0x3
+#define S2MU106_PM_VAL_UP2	0x4
+#define S2MU106_PM_INT1		0x5
+#define S2MU106_PM_INT2		0x6
+#define S2MU106_MST_INT		0x7
+
 #define S2MU106_AFC_CTRL1		0x2B
 #define S2MU106_AFC_CTRL2		0x2C
 #define S2MU106_AFC_LOGIC_CTRL2		0x41
+#define S2MU106_DEVICE_TYPE1	0x47
 #define S2MU106_DEVICE_APPLE		0x4E
 #define S2MU106_MUIC_CTRL1		0x6D
 #define S2MU106_MANUAL_SW_CTRL		0x70
@@ -69,6 +79,12 @@
 #define S2MU106_CHG_MODE_BUCK	1
 #define S2MU106_CHG_MODE_CHG	3
 
+enum charger_mode {
+	CHG_MODE_OFF,
+	CHG_MODE_BUCK,
+	CHG_MODE_CHG,
+};
+
 void IIC_S2MU106_ESetport(void);
 void IIC_S2MU106_ERead(unsigned char ChipId,
 		unsigned char IicAddr, unsigned char *IicData);
@@ -78,6 +94,7 @@ void muic_sw_open(void);
 void muic_sw_usb(void);
 void muic_sw_uart(void);
 int s2mu106_muic_get_vbus(void);
+void init_muic_interrupt(void);
 
 void s2mu106_charger_set_mode(int mode);
 int s2mu106_charger_get_mode(void);
