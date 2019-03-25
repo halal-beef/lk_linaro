@@ -1495,7 +1495,7 @@ static int ufs_init_interface(struct ufs_host *ufs)
 	struct ufs_uic_cmd uic_cmd = { UIC_CMD_DME_LINK_STARTUP, 0, 0, 0};
 	struct ufs_uic_cmd get_a_lane_cmd = { UIC_CMD_DME_GET, (0x1540 << 16), 0, 0 };
 	struct uic_pwr_mode *pmd = &ufs->pmd_cxt;
-	int ret = ERR_GENERIC;
+	int res = -1;
 
 	if (ufs_pre_setup(ufs))
 		goto out;
@@ -1564,10 +1564,10 @@ static int ufs_init_interface(struct ufs_host *ufs)
 
 	printf("Power mode change: M(%d)G(%d)L(%d)HS-series(%d)\n",
 			(pmd->mode & 0xF), pmd->gear, pmd->lane, pmd->hs_series);
-	ret = NO_ERROR;
+	res = 0;
 
 out:
-	return ret;
+	return res;
 }
 
 static void ufs_init_mem(struct ufs_host *ufs)
