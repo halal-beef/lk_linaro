@@ -14,13 +14,18 @@
 #include <platform/exynos9610.h>
 #include <platform/tmu.h>
 
-void display_tmu_info(void)
-{
-	unsigned int tmu_base = EXYNOS9610_TMU_TOP_BASE;
-	unsigned int tmu_probe_num = EXYNOS9610_TMU_TOP_PROBE;
-	unsigned int ps_hold_control;
+unsigned int tmu_base = EXYNOS9610_TMU_TOP_BASE;
+unsigned int is_2point_calib;
+const char *tz_name[3] = {"G3D", "LIT", "BIG"};
+int fuse_25[3] = {0, 0, 0};
+int fuse_85[3] = {0, 0, 0};
+int tmu_init_flag = 0;
 
-	unsigned int trim, ctrl, con1, avgc, offset;
+void tmu_initialize(void)
+{
+	unsigned int tmu_probe_num = EXYNOS9610_TMU_TOP_PROBE;
+
+	unsigned int trim, ctrl, con1, avgc;
 	unsigned int is_2point_calib;
 	unsigned int t_buf_vref_sel;
 	unsigned int t_buf_slope_sel;
@@ -28,21 +33,24 @@ void display_tmu_info(void)
 	unsigned int rising_threshold;
 	unsigned int counter_value;
 	unsigned int t_bgri_trim, t_vref_trim, t_vbei_trim;
+	unsigned int ps_hold_control;
 
-	int fuse_25;
-	int fuse_85;
-	int tmu_temp, temp_code, trip_code;
+	int trip_code, cnt = 0;
 
 	trim = readl(tmu_base + EXYNOS9610_TMU_TRIMINFO_0_OFFSET);
-	fuse_25 = trim & 0x1ff;
-	fuse_85 = (trim >> 9) & 0x1ff;
+	fuse_25[0] = trim & 0x1ff;
+	fuse_85[0] = (trim >> 9) & 0x1ff;
 	t_buf_vref_sel = (trim >> 18) & 0x1f;
 	is_2point_calib = (trim >> 23) & 0x1;
 
 	trim = readl(tmu_base + EXYNOS9610_TMU_TRIMINFO_1_OFFSET);
+	fuse_25[1] = trim & 0x1ff;
+	fuse_85[1] = (trim >> 9) & 0x1ff;
 	t_buf_slope_sel = (trim >> 18) & 0xf;
 
 	trim = readl(tmu_base + EXYNOS9610_TMU_TRIMINFO_2_OFFSET);
+	fuse_25[2] = trim & 0x1ff;
+	fuse_85[2] = (trim >> 9) & 0x1ff;
 	avg_mode = (trim >> 18) & 0x7;
 
 	/* set BUF_VREF_SEL, BUF_SLOPE_SEL */
@@ -97,9 +105,9 @@ void display_tmu_info(void)
 	/* enable HW TRIP */
 	if (is_2point_calib) {
 		trip_code = (EXYNOS_TMU_HWTRIP_TEMP - 25) *
-			(fuse_85 - fuse_25) / (85 - 25) + fuse_25;
+			(fuse_85[0] - fuse_25[0]) / (85 - 25) + fuse_25[0];
 	} else
-		trip_code = EXYNOS_TMU_HWTRIP_TEMP + fuse_25 - 25;
+		trip_code = EXYNOS_TMU_HWTRIP_TEMP + fuse_25[0] - 25;
 
 	rising_threshold = readl(tmu_base + EXYNOS9610_TMU_TEMP_RISE7_6_OFFSET);
 	rising_threshold &= ~(0x1ff << 16);
@@ -112,26 +120,59 @@ void display_tmu_info(void)
 	ctrl |= 0x1;
 	writel(ctrl, tmu_base + EXYNOS9610_TMU_CONTROL_OFFSET);
 
-	if (!fuse_25)
-		printf("[TMU]Not calibrated\n");
+	for (cnt = 0; cnt < 3; cnt++) {
+		if (!fuse_25[cnt])
+			printf("[TMU][%s] Not calibrated\n", tz_name[cnt]);
+	}
 
 	u_delay(10000);
-
-	offset = EXYNOS9610_TMU_CURRENT_TEMP0_1_OFFSET;
-	temp_code = readl(tmu_base + offset) & 0x1ff;
-
-	if (is_2point_calib) {
-		tmu_temp = (temp_code - fuse_25) *
-			(85 - 25) / (fuse_85 - fuse_25) + 25;
-	} else
-		tmu_temp = temp_code - fuse_25 + 25;
-
-	printf("[TMU:%d]\n", tmu_temp);
 
 	/* enable PMU HW TRIP */
 	ps_hold_control = readl(EXYNOS9610_POWER_BASE + 0x330c);
 	ps_hold_control |= (1 << 31);
 	writel(ps_hold_control, EXYNOS9610_POWER_BASE + 0x330c);
+
+	tmu_init_flag = 1;
+}
+
+int read_temperature(unsigned int tmu_id, unsigned int *temp, unsigned int print)
+{
+	unsigned int offset;
+	unsigned int temp_code = 0, tmu_temp = 0;
+
+	if (!tmu_init_flag) {
+		printf("Error : TMU is not initialized \n");
+		return -1;
+	}
+
+	/* tmu_id
+	   0 : G3D
+	   1 : LIT, ISP
+	   2 : BIG
+	*/
+	if (tmu_id == 0) {
+		offset = EXYNOS9610_TMU_CURRENT_TEMP0_1_OFFSET;
+		temp_code = readl(tmu_base + offset) & 0x1ff;
+	} else if (tmu_id == 1) {
+		offset = EXYNOS9610_TMU_CURRENT_TEMP0_1_OFFSET;
+		temp_code = (readl(tmu_base + offset) >> 9) & 0x1ff;
+	} else if (tmu_id == 2) {
+		offset = EXYNOS9610_TMU_CURRENT_TEMP2_4_OFFSET;
+		temp_code = readl(tmu_base + offset) & 0x1ff;
+	}
+
+	if (is_2point_calib) {
+		tmu_temp = (temp_code - fuse_25[tmu_id]) *
+			(85 - 25) / (fuse_85[tmu_id] - fuse_25[tmu_id]) + 25;
+	} else
+		tmu_temp = temp_code - fuse_25[tmu_id] + 25;
+
+	if (print)
+		printf("TMU[%s]:%d \n", tz_name[tmu_id], tmu_temp);
+
+	*temp = tmu_temp;
+
+	return 0;
 }
 
 void display_trip_info(void)

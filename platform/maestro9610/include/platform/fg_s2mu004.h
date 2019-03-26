@@ -66,5 +66,6 @@ void IIC_S2MU004_FG_ERead(unsigned char ChipId,
 void IIC_S2MU004_FG_ESetport(void);
 
 void fg_init_s2mu004(void);
+int s2mu004_get_avgvbat(void);
 
 #endif /*__FG_S2MU004_H__*/

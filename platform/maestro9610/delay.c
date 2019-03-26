@@ -24,7 +24,8 @@ void Dmc_StartTimer(u32 uTsel)
 	u32 uEnInt=0;
 	u32 uDivider=0;
 	u32 uDzlen=0;
-	u32 uPrescaler=66;					/*- Silicon : uPrescaler=66   /  FPGA : uPrescaler=24*/
+	u32 uPrescaler=26;					/*- Silicon : uPrescaler=66   /  FPGA : uPrescaler=24*/
+	/* PWM clock is 26MHz by yongseob.kim */
 	u32 uEnDz=0;
 	u32 uAutoreload=1;
 	u32 uEnInverter=0;

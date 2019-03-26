@@ -11,10 +11,19 @@
 #ifndef __TMU_H__
 #define __TMU_H__
 
-void display_tmu_info(void);
+void tmu_initialize(void);
+int read_temperature(unsigned int tmu_id, unsigned int *temp, unsigned int print);
 void display_trip_info(void);
 
 #define	EXYNOS_TMU_HWTRIP_TEMP			(115)
+
+#define	TZ_G3D					(0)
+#define	TZ_LIT					(1)
+#define	TZ_BIG					(2)
+#define	TZ_ISP					(1)
+
+#define	NO_PRINT				(0)
+#define	PRINT					(1)
 
 /* Exynos 9610 */
 #define	EXYNOS9610_TMU_TRIMINFO_0_OFFSET	0x0000

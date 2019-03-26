@@ -648,6 +648,21 @@ int fb_do_oem(const char *cmd_buffer)
 
 		sprintf(response, "OKAY");
 		fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+	} else if (!strncmp(cmd_buffer + 4, "logdump", 7)) {
+		struct pit_entry *ptn;
+
+		ptn = pit_get_part_info("logbuf");
+		if (ptn == 0) {
+			printf("Partition 'logbuf' does not exist.\n");
+			print_lcd_update(FONT_RED, FONT_BLACK, "Partition 'logbuf' does not exist.\n");
+			sprintf(response, "FAILPartition 'logbuf' does not exist.");
+		} else {
+			printf("Loading 'logbuf' partition on 0xC0000000\n");
+			print_lcd_update(FONT_GREEN, FONT_BLACK, "Loading 'logbuf' partition on 0xC0000000\n");
+			pit_access(ptn, PIT_OP_LOAD, (u64)CFG_FASTBOOT_MMC_BUFFER, 0);
+			sprintf(response, "OKAY");
+		}
+		fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 	} else {
 		printf("Unsupported oem command!\n");
 		sprintf(response, "FAILunsupported command");

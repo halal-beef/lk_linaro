@@ -423,7 +423,7 @@ static int s2mu004_get_avgcurrent(void)
 	return curr;
 }
 
-static int s2mu004_get_avgvbat(void)
+int s2mu004_get_avgvbat(void)
 {
 	u16 data, check_data;
 	u32 new_vbat, old_vbat = 0;

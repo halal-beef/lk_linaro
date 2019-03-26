@@ -21,12 +21,21 @@
 #include <platform/charger.h>
 #include <platform/fastboot.h>
 #include <platform/dfd.h>
+#include <platform/fg_s2mu004.h>
+#include <platform/tmu.h>
 #include <dev/boot.h>
 #include <platform/gpio.h>
 #include <platform/pmic_s2mpu09.h>
+#include <platform/gpio.h>
+#include <lib/font_display.h>
+#include <lib/logo_display.h>
+#include "almighty.h"
+#include "drex_v3_3.h"
+#include "mct.h"
 
 int cmd_boot(int argc, const cmd_args *argv);
 int ab_update_slot_info_bootloader(void);
+static void do_memtester(unsigned int loop);
 extern unsigned int uart_log_mode;
 
 static void exynos_boot_task(const struct app_descriptor *app, void *args)
@@ -38,6 +47,9 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	unsigned int *env_val;
 	struct pit_entry *ptn_env;
 	unsigned int soc, mif, apm;
+	int vol_up_val;
+	int vol_down_val;
+	struct pit_entry *ptn;
 
 	printf("RST_STAT: 0x%x\n", rst_stat);
 
@@ -128,10 +140,79 @@ fastboot:
 	return;
 
 reboot:
+	vol_up_val = exynos_gpio_get_value(bank, 5);
+	vol_down_val = exynos_gpio_get_value(bank, 6);
+
+	if ((vol_up_val == 0) && (vol_down_val == 0)) {
+		do_memtester(0);
+
+		ptn = pit_get_part_info("logbuf");
+		if (ptn == 0) {
+			printf("Partition 'logbuf' does not exist.\n");
+			print_lcd_update(FONT_RED, FONT_BLACK, "Partition 'logbuf' does not exist.");
+		} else {
+			printf("Saving memory test logs to 'logbuf' partition.\n");
+			print_lcd_update(FONT_GREEN, FONT_BLACK, "Saving memory test logs to 'logbuf' partition.");
+			pit_access(ptn, PIT_OP_FLASH, (u64)CONFIG_RAMDUMP_LOGBUF, 0);
+		}
+	}
+
 	/* Turn on dumpEN for DumpGPR */
 	dfd_set_dump_gpr(CACHE_RESET_EN | DUMPGPR_EN);
 	cmd_boot(0, 0);
 	return;
+}
+
+static void print_status(int iter)
+{
+	int vbat;
+	unsigned int cpu_temp;
+	int i, j;
+	/* Get status */
+	vbat = s2mu004_get_avgvbat();
+	read_temperature(TZ_LIT, &cpu_temp, NO_PRINT);
+
+	/* print cpu temp and vbat gauge */
+	printf("[%d] CPU : %d, BATT : %d DRAM: ", 0, cpu_temp, vbat);
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "[%d] CPU: %d, BATT: %d \n", iter, cpu_temp, vbat);
+	clean_invalidate_dcache_all();
+	for (i = 0; i < MC_CH_ALL; i++) {
+		for (j = 1; j < MC_RANK_ALL; j++) {
+			printf("[CH%d.CS%d].MR4 = %d\n", i, j - 1, mc_driver.command.mode_read(i, j, 4));
+		}
+	}
+	printf("\n");
+
+}
+
+static void do_memtester(unsigned int loop)
+{
+	int iter = 0, dram_freq;
+
+	dram_freq = almighty_get_dram_freq();
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "DRAM Test will start at %dMHz\n", dram_freq);
+	cpu_common_init();
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "Cache is enabled.\n");
+	clean_invalidate_dcache_all();
+
+	do {
+		mct.init();
+
+		if (almighty_pattern_test(1)) {	/* '-1' is all pattern(8ea), '0 ~ 7' is fixed pattern */
+			printf("test fail\n");
+			print_lcd_update(FONT_RED, FONT_BLACK, "DRAM test failed\n");
+			break;
+		}
+
+		print_status(++iter);
+		mct.deinit();
+	} while (loop-- > 0);
+
+	print_lcd_update(FONT_BLUE, FONT_BLACK, "DRAM test passed.\n");
+
+	/* After the test */
+	clean_invalidate_dcache_all();
+	disable_mmu_dcache();
 }
 
 APP_START(exynos_boot)

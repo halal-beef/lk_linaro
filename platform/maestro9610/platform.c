@@ -263,6 +263,7 @@ void platform_early_init(void)
 void platform_init(void)
 {
 	u32 ret = 0;
+	u32 temp = 0;
 	struct bl_sys_info *bl_sys = (struct bl_sys_info *)BL_SYS_INFO;
 
 	printf("bootloader partition start block(512 Byte): %d\n",
@@ -310,7 +311,10 @@ void platform_init(void)
 #endif
 	read_dram_info();
 
-	display_tmu_info();
+	tmu_initialize();
+	read_temperature(TZ_G3D, &temp, PRINT);
+	read_temperature(TZ_LIT, &temp, PRINT);
+	read_temperature(TZ_BIG, &temp, PRINT);
 	display_trip_info();
 	dfd_display_reboot_reason();
 	if (is_first_boot() && *(unsigned int *)DRAM_BASE == 0xabcdef)
