@@ -19,6 +19,8 @@
 #include <part_gpt.h>
 #include <dev/boot.h>
 #include <dev/rpmb.h>
+#include <dev/usb/gadget.h>
+#include <dev/phy-usb.h>
 #include <platform/mmu/mmu_func.h>
 #include <platform/exynos9610.h>
 #include <platform/smc.h>
@@ -34,7 +36,6 @@
 #include <platform/chip_id.h>
 #include <platform/gpio.h>
 #include <pit.h>
-#include "../fastboot/usbd3-ss.h"
 
 /* Memory node */
 #define SIZE_2GB (0x80000000)
@@ -387,8 +388,8 @@ static void configure_dtb(void)
 	resize_dt(SZ_4K);
 	set_usb_serialno();
 
-	/* Disable CCI unit for USB */
-	exynos_usb_cci_control(0);
+	/* Disable CCI unit and isolate phy for USB */
+	phy_usb_terminate();
 
 	if (readl(EXYNOS9610_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY) {
 		sprintf(str, "<0x%x>", RAMDISK_BASE);
@@ -545,7 +546,7 @@ int cmd_boot(int argc, const cmd_args *argv)
 	ab_ret = ab_update_slot_info();
 	if (ab_ret < 0) {
 		printf("AB update error! Error code: %d\n", ab_ret);
-		do_fastboot(0, 0);
+		start_usb_gadget();
 		do {
 			asm volatile("wfi");
 		} while(1);
@@ -586,7 +587,7 @@ int cmd_boot(int argc, const cmd_args *argv)
 		writel(0, EXYNOS9610_POWER_SYSIP_DAT0);
 		printf("Entering fastboot.\n");
 		print_lcd_update(FONT_RED, FONT_BLACK, "Entering fastboot.");
-		do_fastboot(0, 0);
+		start_usb_gadget();
 	}
 	/* notify EL3 Monitor end of bootloader */
 	exynos_smc(SMC_CMD_END_OF_BOOTLOADER, 0, 0, 0);

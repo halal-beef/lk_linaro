@@ -10,9 +10,7 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/delay.c \
 	$(LOCAL_DIR)/ufs.c \
 	$(LOCAL_DIR)/ufs-cal-9610.c \
-	$(LOCAL_DIR)/fastboot/usbd3-ss.c \
-	$(LOCAL_DIR)/fastboot/phy-exynos-usb3p1.c \
-	$(LOCAL_DIR)/fastboot/fastboot_cmd.c \
+	$(LOCAL_DIR)/usb.c \
 	$(LOCAL_DIR)/fastboot/decompress_ext4.c \
 	$(LOCAL_DIR)/boot/cmd_scatter_load_boot.c \
 	$(LOCAL_DIR)/boot/cmd_boot.c \
@@ -44,13 +42,18 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/dram_training/dram_training.c \
 	$(LOCAL_DIR)/mmu/cpu_a.S \
 	$(LOCAL_DIR)/mmu/mmu.c \
-	$(LOCAL_DIR)/debug-store-ramdump.c
+	$(LOCAL_DIR)/debug-store-ramdump.c \
+	$(LOCAL_DIR)/power.c
 
 MODULE_DEPS += \
 	dev/interrupt/arm_gic \
 	dev/timer/arm_generic \
 	dev/scsi \
-	lib/cksum
+	lib/cksum \
+	dev/usb/dwc3 \
+	dev/usb/phy/exynos \
+	dev/usb/device/fastboot \
+	dev/usb/device/cdc-acm
 
 LINKER_SCRIPT += $(BUILDDIR)/system-onesegment.ld
 

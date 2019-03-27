@@ -26,6 +26,7 @@
 #include <platform/tmu.h>
 #include <platform/xct.h>
 #include <dev/boot.h>
+#include <dev/usb/gadget.h>
 #include <platform/gpio.h>
 #include <platform/pmic_s2mpu09.h>
 #include <platform/gpio.h>
@@ -70,7 +71,9 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 
 	if (*(unsigned int *)DRAM_BASE != 0xabcdef) {
 		printf("Running on DRAM by TRACE32: skip auto booting\n");
-		do_fastboot(0, 0);
+// have to modify
+//		do_fastboot(0, 0);
+		start_usb_gadget();
 		return;
 	}
 
@@ -141,7 +144,7 @@ reboot:
 	if (is_xct_boot()) {
 		cpu = cmd_xct(0, 0);
 		printf("Entering fastboot: xct boot fail code - %d\n", cpu);
-		do_fastboot(0, 0);
+		start_usb_gadget();
 		return;
 	}
 	vol_up_val = exynos_gpio_get_value(bank, 5);
@@ -179,7 +182,7 @@ fastboot:
 	cmd_boot(0, 0);
 #else
 	debug_store_ramdump();
-	do_fastboot(0, 0);
+	start_usb_gadget();
 #endif
 	return;
 }
