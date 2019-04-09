@@ -89,7 +89,7 @@ static scsi_device_t ufs_dev_rpmb;
 
 
 static int ufs_send_upiu(ufs_upiu_cmd cmd, int enable);
-static int ufs_link_startup(struct ufs_host *ufs);
+static int ufs_link_startup(struct ufs_host *ufs, int retry);
 
 /*********************************************************************************
  * forward declerations
@@ -1216,7 +1216,7 @@ static status_t scsi_exec(scm * pscm)
 
 		if (err) {
 			/* Re-init UFS & retry transection */
-			ufs_link_startup(ufs);
+			ufs_link_startup(ufs, retry);
 			dprintf(INFO, "%s: error %d, retrying %d ... \n", __func__, err, ++retry);
 		} else {
 			retry = 0;
@@ -1719,7 +1719,7 @@ static int ufs_device_power(struct ufs_host *ufs, int onoff)
 	return 0;
 }
 
-static int ufs_pre_setup(struct ufs_host *ufs)
+static int ufs_pre_setup(struct ufs_host *ufs, int retry)
 {
 	u32 reg;
 	int res = 0;
@@ -1744,6 +1744,10 @@ static int ufs_pre_setup(struct ufs_host *ufs)
 	if ((reg >> 20) & 0x1)
 		writel(reg, (ufs->vs_addr + VS_IS));
 
+	if (retry > 0) {
+		ufs_device_power(ufs, 0);
+		u_delay(500000);
+	}
 
 	ufs_device_power(ufs, 1);
 	u_delay(1000);
@@ -1860,14 +1864,14 @@ out:
 	return res;
 }
 
-static int ufs_link_startup(struct ufs_host *ufs)
+static int ufs_link_startup(struct ufs_host *ufs, int retry)
 {
 	struct ufs_uic_cmd uic_cmd = { UIC_CMD_DME_LINK_STARTUP, 0, 0, 0};
 	struct ufs_uic_cmd get_a_lane_cmd = { UIC_CMD_DME_GET, (0x1540 << 16), 0, 0 };
 	struct uic_pwr_mode *pmd = &ufs->pmd_cxt;
 	int ret = ERR_GENERIC;
 
-	if (ufs_pre_setup(ufs))
+	if (ufs_pre_setup(ufs, retry))
 		goto out;
 
 	ufs_pre_vendor_setup(ufs);
@@ -2099,7 +2103,7 @@ static int ufs_host_init(int host_index, struct ufs_host *ufs)
 		goto out;
 
 	do {
-		res = ufs_link_startup(ufs);
+		res = ufs_link_startup(ufs, rst_cnt);
 		if (!res)
 			break;
 		rst_cnt++;
