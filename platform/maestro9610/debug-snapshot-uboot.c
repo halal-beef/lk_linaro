@@ -13,7 +13,6 @@
 #include <pit.h>
 #include <part_gpt.h>
 #include <lib/console.h>
-#include <platform/exynos9610.h>
 #include <platform/sfr.h>
 #include <platform/sizes.h>
 #include <platform/ab_update.h>
@@ -55,20 +54,16 @@ static int debug_snapshot_load_dt(void)
 {
 	struct pit_entry *ptn;
 
-	if (ab_current_slot())
-		ptn = pit_get_part_info("dtb_b");
-	else
-		ptn = pit_get_part_info("dtb_a");
+	ptn = pit_get_part_info("boot");
 
 	if (ptn == 0) {
-		printf("Partition 'dtb' does not exist\n");
+		printf("Partition 'boot' does not exist\n");
 		return -1;
 	} else {
-		pit_access(ptn, PIT_OP_LOAD, (u64)DT_BASE, 0);
+		pit_access(ptn, PIT_OP_LOAD, (u64)BOOT_BASE, 0);
 	}
 
 	fdt_dtb = (struct fdt_header *)DT_BASE;
-
 
 	return 0;
 }
@@ -98,7 +93,7 @@ static int debug_snapshot_get_items_from_dt(void)
 	}
 
 	printf("debug-snapshot kernel physical memory layout:\n");
-	for (i = 0; i < ARRAY_SIZE(dss_items); i++) {
+	for (i = 0; i < (int)ARRAY_SIZE(dss_items); i++) {
 		if (dss_items[i].enabled)
 			printf("%-15s: phys:0x%lx / size:0x%lx\n",
 					dss_items[i].name,
@@ -147,6 +142,18 @@ unsigned long debug_snapshot_get_item_paddr(const char *name)
 	return 0;
 }
 
+unsigned long debug_snapshot_get_item_size(const char *name)
+{
+	unsigned int i;
+
+	for (i = 0; i < ARRAY_SIZE(dss_items); i++) {
+		if (!strncmp(dss_items[i].name, name, strlen(name)))
+			return dss_items[i].rmem.size;
+	}
+
+	return 0;
+}
+
 void debug_snapshot_fdt_init(void)
 {
 	if (debug_snapshot_load_dt())
@@ -175,6 +182,15 @@ int debug_snapshot_getvar_item(const char *name, char *response)
 		sprintf(response, "%lX, %lX, %lX", cp_rmem.paddr, cp_rmem.size - 1,
 				cp_rmem.paddr + cp_rmem.size - 1);
 		return 0;
+	}
+
+	if (!strcmp(name, "header")) {
+		item = debug_snapshot_get_item("header");
+		if (!item)
+			return -1;
+
+		sprintf(response, "%lX, %lX, %lX",
+			item->rmem.paddr, item->rmem.size - 1, item->rmem.paddr + item->rmem.size - 1);
 	}
 
 	snprintf(log_name, 16, "log_%s", name);
