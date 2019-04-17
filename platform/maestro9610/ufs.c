@@ -8,13 +8,17 @@
  * to third parties without the express written permission of Samsung Electronics.
  */
 
+#include <reg.h>
 #include <dev/ufs.h>
+#include <platform/sfr.h>
 
 struct ufs_host;
 
 int ufs_board_init(int host_index, struct ufs_host *ufs)
 {
 	u32 reg;
+	unsigned int rst_stat = readl(EXYNOS9610_POWER_RST_STAT);
+	unsigned int dfd_en = readl(EXYNOS9610_POWER_RESET_SEQUENCER_CONFIGURATION);
 	//u32 err;
 
 	if (host_index) {
@@ -54,6 +58,14 @@ int ufs_board_init(int host_index, struct ufs_host *ufs)
 	reg &= ~(0xFF);
 	reg |= 0x33;
 	*(volatile u32 *)0x13490000 = reg;
+
+	if (!((rst_stat & (WARM_RESET | LITTLE_WDT_RESET)) &&
+			dfd_en & EXYNOS9610_EDPCSR_DUMP_EN)) {
+		/* Enable UFS IO cache coherency in SYSREG */
+		reg = *(volatile u32 *)0x13411010;
+		reg |= 0x300;
+		*(volatile u32 *)0x13411010 = reg;
+	}
 
 	return 0;
 }
