@@ -591,6 +591,12 @@ void s2mu106_charger_reg_init(void)
 	reg &= 0x7F;
 	IIC_S2MU106_EWrite(S2MU106_CHG_W_ADDR, 0x3D, reg);
 	printf("%s, 0x3D(%x)\n", __func__, reg);
+
+	/* CHGIN IVR 4.5V */
+	IIC_S2MU106_ERead(S2MU106_CHG_R_ADDR, S2MU106_CHG_CTRL4, &reg);
+	reg |= 0x0C;
+	IIC_S2MU106_EWrite(S2MU106_CHG_W_ADDR, S2MU106_CHG_CTRL4, reg);
+	printf("%s, CTRL4(%x)\n", __func__, reg);
 }
 
 void s2mu106_charger_init(void)
