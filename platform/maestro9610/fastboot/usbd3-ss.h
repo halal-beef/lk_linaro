@@ -1208,4 +1208,7 @@ extern int DNW;
 extern int exynos_got_header;
 extern int exynos_receive_done;
 
+#define SYSREG_USB_BASE (0x13010000)
+void exynos_usb_cci_control(int onoff);
+
 #endif

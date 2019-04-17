@@ -2508,12 +2508,32 @@ int exynos_udc_int_hndlr(void)
 	return OK;
 }
 
+void exynos_usb_cci_control(int on_off)
+{
+	u32 reg;
+
+	reg = readl(SYSREG_USB_BASE + 0x700);
+
+	if (on_off) {
+		dprintf(ALWAYS, "USB CCI unit is enabled.\n");
+		reg |= (0x3 << 12);
+	} else {
+		dprintf(ALWAYS, "USB CCI unit is disabled.\n");
+		reg &= ~(0x3 << 12);
+	}
+
+	writel(reg, SYSREG_USB_BASE + 0x700);
+}
+
 int exynos_usbctl_init(void)
 {
 	usbdev3_gusb2phycfg_t usbdev3_gusb2phycfg;
 	usbdev3_gusb3pipectl_t usbdev3_gusb3pipectl;
 	usbdev3_gctl_t usbdev3_gctl;
 	USBDEV3_SPEED_e eSpeed = USBDEV3_SPEED_HIGH;
+
+	/* Enable CCI unit for USB */
+	exynos_usb_cci_control(1);
 
 	// . to initialize variables for usb device
 	//--------------------------------

@@ -34,6 +34,7 @@
 #include <platform/chip_id.h>
 #include <platform/gpio.h>
 #include <pit.h>
+#include "../fastboot/usbd3-ss.h"
 
 /* Memory node */
 #define SIZE_2GB (0x80000000)
@@ -369,6 +370,9 @@ static void configure_dtb(void)
 
 	resize_dt(SZ_4K);
 	set_usb_serialno();
+
+	/* Disable CCI unit for USB */
+	exynos_usb_cci_control(0);
 
 	if (readl(EXYNOS9610_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY) {
 		sprintf(str, "<0x%x>", RAMDISK_BASE);
