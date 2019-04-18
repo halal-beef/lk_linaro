@@ -21,6 +21,7 @@ extern "C" {
 
 #include <arch/arm64.h>
 #include <platform/otp_v20.h>
+#include <platform/mmu/mmu_func.h>
 
 /* For debugging */
 //#define RPMB_DBG      1
@@ -62,9 +63,9 @@ extern "C" {
  * below definitions and macros should be defined
  * and also mercos should be defined
  */
-//#define CACHE_ENABLED
-#define CACHE_CLEAN(addr, len)
-#define CACHE_CLEAN_INVALIDATE(addr, len)
+#define CACHE_ENABLED
+#define CACHE_CLEAN(addr, len)			clean_invalidate_dcache_all()
+#define CACHE_CLEAN_INVALIDATE(addr, len)	clean_invalidate_dcache_all()
 
 /* RPMB function number */
 	enum {

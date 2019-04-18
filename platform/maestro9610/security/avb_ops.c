@@ -21,6 +21,7 @@
 #include <platform/cm_api.h>
 #include <dev/rpmb.h>
 #include <platform/exynos9610.h>
+#include <platform/mmu/mmu_func.h>
 
 #define CMD_STRING_MAX_SIZE 60
 

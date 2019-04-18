@@ -331,9 +331,6 @@ static void configure_dtb(void)
 	 * If you modify dtb, you must use under set_bootargs function.
 	 * And if you modify bootargs, you will modify in set_bootargs function.
 	 */
-	invalidate_dcache_all();
-	cpu_common_init();
-	clean_invalidate_dcache_all();
 
 	merge_dto_to_main_dtb();
 
@@ -364,9 +361,6 @@ static void configure_dtb(void)
 	add_dt_memory_node(DRAM_BASE2, SIZE_2GB);
 	if (dram_size == 0x180000000)
 		add_dt_memory_node(0x900000000, SIZE_2GB);
-
-	clean_invalidate_dcache_all();
-	disable_mmu_dcache();
 
 	resize_dt(SZ_4K);
 	set_usb_serialno();
@@ -487,19 +481,12 @@ int load_boot_images(void)
 		pit_access(ptn, PIT_OP_LOAD, (u64)BOOT_BASE, 0);
 	}
 
-	invalidate_dcache_all();
-	cpu_common_init();
-	clean_invalidate_dcache_all();
-
 	argv[1].u = BOOT_BASE;
 	argv[2].u = KERNEL_BASE;
 	argv[3].u = RAMDISK_BASE;
 	argv[4].u = DT_BASE;
 	argv[5].u = DTBO_BASE;
 	cmd_scatter_load_boot(5, argv);
-
-	clean_invalidate_dcache_all();
-	disable_mmu_dcache();
 
 	return 0;
 }
@@ -570,6 +557,9 @@ int cmd_boot(int argc, const cmd_args *argv)
 
 	/* before jumping to kernel. disble arch_timer */
 	arm_generic_timer_disable();
+
+	clean_invalidate_dcache_all();
+	disable_mmu_dcache();
 
 	void (*kernel_entry)(int r0, int r1, int r2, int r3);
 

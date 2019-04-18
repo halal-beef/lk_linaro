@@ -27,6 +27,8 @@
 #include <sys/types.h>
 #include <string.h>
 #include <platform/otp_v20.h>
+#include <platform/secure_boot.h>
+#include <platform/mmu/mmu_func.h>
 
 typedef struct otp_data
 {

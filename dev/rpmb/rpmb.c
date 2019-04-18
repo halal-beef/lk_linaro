@@ -23,6 +23,7 @@
 #include <lib/console.h>
 #include <dev/rpmb.h>
 #include <platform/sfr.h>
+#include <platform/mmu/mmu_func.h>
 
 #define SECU_PROT_IN    0
 #define SECU_PROT_OUT   1

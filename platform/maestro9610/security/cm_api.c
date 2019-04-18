@@ -12,6 +12,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <platform/cm_api.h>
+#include <platform/secure_boot.h>
+#include <platform/mmu/mmu_func.h>
 
 static inline uint64_t exynos_cm_smc(uint64_t *cmd, uint64_t *arg1,
 				     uint64_t *arg2, uint64_t *arg3)

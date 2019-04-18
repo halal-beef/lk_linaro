@@ -30,6 +30,7 @@
 #include <platform/bl_sys_info.h>
 #include <platform/dram_training.h>
 #include <platform/environment.h>
+#include <platform/mmu/mmu_func.h>
 
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
@@ -230,7 +231,15 @@ void arm_generic_timer_disable(void)
 void platform_early_init(void)
 {
 	unsigned int rst_stat = readl(EXYNOS9610_POWER_RST_STAT);
+	unsigned int dfd_en = readl(EXYNOS9610_POWER_RESET_SEQUENCER_CONFIGURATION);
 	struct exynos_gpio_bank *bank = (struct exynos_gpio_bank *)EXYNOS9610_GPA1CON;
+
+	if (!((rst_stat & (WARM_RESET | LITTLE_WDT_RESET)) &&
+			dfd_en & EXYNOS9610_EDPCSR_DUMP_EN)) {
+		invalidate_dcache_all();
+		cpu_common_init();
+		clean_invalidate_dcache_all();
+	}
 
 	read_chip_id();
 
