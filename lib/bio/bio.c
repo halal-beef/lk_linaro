@@ -344,7 +344,7 @@ static uint bio_new_read(struct bdev *dev, void *_buf, bnum_t _block, uint count
 	}
 
 	/* Loop */
-	do {
+	while (count - block_read >= native_block_size) {
 		block_per_time = count - block_read;
 		if (block_per_time) {
 			if (block_per_time >= max_blkcnt)
@@ -359,11 +359,7 @@ static uint bio_new_read(struct bdev *dev, void *_buf, bnum_t _block, uint count
 		block_read += block_per_time;
 		buf += block_per_time * USER_BLOCK_SIZE;
 		block += block_per_time;
-
-		if (count - block_read < native_block_size)
-			break;
-
-	} while (1);
+	}
 
 
 	/* handle partial last block */
@@ -431,7 +427,7 @@ static uint bio_new_write(struct bdev *dev, const void *_buf, bnum_t _block, uin
 	}
 
 	/* Loop */
-	do {
+	while (count - block_written >= native_block_size) {
 		block_per_time = count - block_written;
 		if (block_per_time) {
 			if (block_per_time >= max_blkcnt)
@@ -446,11 +442,7 @@ static uint bio_new_write(struct bdev *dev, const void *_buf, bnum_t _block, uin
 		block_written += block_per_time;
 		buf += block_per_time * USER_BLOCK_SIZE;
 		block += block_per_time;
-
-		if (count - block_written < native_block_size)
-			break;
-
-	} while (1);
+	}
 
 	/* handle partial last block */
 	if (((count - block_written) % native_block_size) != 0) {
