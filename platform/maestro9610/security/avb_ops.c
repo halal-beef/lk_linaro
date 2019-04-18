@@ -55,7 +55,7 @@ uint32_t sb_get_avb_key(uint8_t *avb_pubkey, uint64_t pubkey_size,
 		printf("[AVB 2.0 ERR] Fail to read AVB pubkey [ret: 0x%X]\n", ret);
 	}
 
-	INV_DCACHE_RANGE(avb_pubkey, public_key_length);
+	INV_DCACHE_RANGE(avb_pubkey, pubkey_size);
 
 	return ret;
 }
