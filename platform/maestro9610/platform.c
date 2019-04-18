@@ -15,6 +15,7 @@
 #include <dev/boot.h>
 #include <dev/rpmb.h>
 #include <pit.h>
+#include <lib/sysparam.h>
 #include <dev/interrupt/arm_gic.h>
 #include <dev/timer/arm_generic.h>
 #include <platform/interrupts.h>
@@ -29,7 +30,6 @@
 #include <platform/gpio.h>
 #include <platform/bl_sys_info.h>
 #include <platform/dram_training.h>
-#include <platform/environment.h>
 #include <platform/mmu/mmu_func.h>
 
 #include <lib/font_display.h>
@@ -292,16 +292,15 @@ void platform_init(void)
 	if (get_current_boot_device() != BOOT_USB &&
 		*(unsigned int *)DRAM_BASE == 0xabcdef &&
 		secure_os_loaded == 1) {
-		unsigned int *env_val;
-		struct pit_entry *ptn_env;
+		unsigned int env_val = 0;
 
-		ptn_env = pit_get_part_info("env");
-		env_val = memalign(0x1000, pit_get_length(ptn_env));
-		pit_access(ptn_env, PIT_OP_LOAD, (u64)env_val, 0);
-		if(env_val[ENV_ID_UART_LOG_MODE] == UART_LOG_MODE_FLAG)
-			uart_log_mode = 1;
-
-		free(env_val);
+		if (sysparam_read("uart_log_enable", &env_val, sizeof(env_val)) > 0) {
+			if (env_val == UART_LOG_MODE_FLAG)
+				uart_log_mode = 1;
+			else
+				uart_log_mode = 0;
+		} else
+			uart_log_mode = 0;
 	}
 
 #ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY

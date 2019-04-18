@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <err.h>
 #include <lib/console.h>
+#include <lib/sysparam.h>
 #include <lib/font_display.h>
 #include "fastboot.h"
 #include <pit.h>
@@ -306,7 +307,6 @@ static void flash_using_pit(char *key, char *response,
 {
 	struct pit_entry *ptn;
 	unsigned long long length;
-	u32 *env_val;
 
 	/*
 	 * In case of flashing pit, this should be
@@ -344,14 +344,16 @@ static void flash_using_pit(char *key, char *response,
 	}
 
 	if (!strcmp(key, "ramdisk")) {
-		ptn = pit_get_part_info("env");
-		env_val = memalign(0x1000, pit_get_length(ptn));
-		pit_access(ptn, PIT_OP_LOAD, (u64)env_val, 0);
+		u32 env_val = 0;
+		int param_sz;
 
-		env_val[ENV_ID_RAMDISK_SIZE] = size;
-		pit_access(ptn, PIT_OP_FLASH, (u64)env_val, 0);
-
-		free(env_val);
+		/* Check value on the sysparam */
+		param_sz = sysparam_read("ram_disk_size", &env_val, sizeof(env_val));
+		if (param_sz > 0)
+			sysparam_remove("ram_disk_size");
+		env_val = size;
+		sysparam_add("ram_disk_size", &env_val, sizeof(env_val));
+		sysparam_write();
 	}
 }
 
@@ -571,6 +573,8 @@ int fb_do_oem(const char *cmd_buffer)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
+	unsigned int env_val = 0;
+	ssize_t param_sz;
 
 	if (!strncmp(cmd_buffer + 4, "trackid write", 13)) {
 		struct pit_entry *ptn;
@@ -603,63 +607,43 @@ int fb_do_oem(const char *cmd_buffer)
 		fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 
 		free(proinfo);
+
 	} else if (!strncmp(cmd_buffer + 4, "uart_log_enable", 15)) {
-		unsigned int *env_val;
-		struct pit_entry *ptn;
-
-		ptn = pit_get_part_info("env");
-		env_val = memalign(0x1000, pit_get_length(ptn));
-		pit_access(ptn, PIT_OP_LOAD, (u64)env_val, 0);
-
-		env_val[ENV_ID_UART_LOG_MODE] = UART_LOG_MODE_FLAG;
-		pit_access(ptn, PIT_OP_FLASH, (u64)env_val, 0);
-
-		free(env_val);
+		/* Check value on the sysparam */
+		param_sz = sysparam_read("uart_log_enable", &env_val, sizeof(env_val));
+		if (param_sz > 0)
+			sysparam_remove("uart_log_enable");
+		env_val = UART_LOG_MODE_FLAG;
+		sysparam_add("uart_log_enable", &env_val, sizeof(env_val));
+		sysparam_write();
 
 		sprintf(response, "OKAY");
 		fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 	} else if (!strncmp(cmd_buffer + 4, "uart_log_disable", 16)) {
-		unsigned int *env_val;
-		struct pit_entry *ptn;
-
-		ptn = pit_get_part_info("env");
-		env_val = memalign(0x1000, pit_get_length(ptn));
-		pit_access(ptn, PIT_OP_LOAD, (u64)env_val, 0);
-
-		env_val[ENV_ID_UART_LOG_MODE] = 0;
-		pit_access(ptn, PIT_OP_FLASH, (u64)env_val, 0);
-
-		free(env_val);
+		param_sz = sysparam_read("uart_log_enable", &env_val, sizeof(env_val));
+		if (param_sz > 0) {
+			sysparam_remove("uart_log_enable");
+			sysparam_write();
+		}
 
 		sprintf(response, "OKAY");
 		fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 	} else if (!strncmp(cmd_buffer + 4, "fb_mode_set", 11)) {
-		unsigned int *env_val;
-		struct pit_entry *ptn;
-
-		ptn = pit_get_part_info("env");
-		env_val = memalign(0x1000, pit_get_length(ptn));
-		pit_access(ptn, PIT_OP_LOAD, (u64)env_val, 0);
-
-		env_val[ENV_ID_FB_MODE] = FB_MODE_FLAG;
-		pit_access(ptn, PIT_OP_FLASH, (u64)env_val, 0);
-
-		free(env_val);
+		param_sz = sysparam_read("fb_mode_set", &env_val, sizeof(env_val));
+		if (param_sz > 0)
+			sysparam_remove("fb_mode_set");
+		env_val = UART_LOG_MODE_FLAG;
+		sysparam_add("fb_mode_set", &env_val, sizeof(env_val));
+		sysparam_write();
 
 		sprintf(response, "OKAY");
 		fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 	} else if (!strncmp(cmd_buffer + 4, "fb_mode_clear", 13)) {
-		unsigned int *env_val;
-		struct pit_entry *ptn;
-
-		ptn = pit_get_part_info("env");
-		env_val = memalign(0x1000, pit_get_length(ptn));
-		pit_access(ptn, PIT_OP_LOAD, (u64)env_val, 0);
-
-		env_val[ENV_ID_FB_MODE] = 0;
-		pit_access(ptn, PIT_OP_FLASH, (u64)env_val, 0);
-
-		free(env_val);
+		param_sz = sysparam_read("fb_mode_set", &env_val, sizeof(env_val));
+		if (param_sz > 0) {
+			sysparam_remove("fb_mode_set");
+			sysparam_write();
+		}
 
 		sprintf(response, "OKAY");
 		fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);

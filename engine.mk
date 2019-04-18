@@ -148,16 +148,13 @@ $(info TARGET = $(TARGET))
 
 include arch/$(ARCH)/rules.mk
 include top/rules.mk
-include lib/bio/rules.mk
 include lib/gpt/rules.mk
 include lib/font/rules.mk
 include lib/logo/rules.mk
 include lib/libavb/rules.mk
-include dev/scsi/rules.mk
 include dev/rpmb/rules.mk
 include dev/boot/rules.mk
 include dev/dpu/rules.mk
-include external/lib/cksum/rules.mk
 include external/lib/fdt/rules.mk
 include external/lib/ufdt/rules.mk
 include dev/adc/rules.mk

@@ -25,6 +25,7 @@
 #include <stdbool.h>
 #include <sys/types.h>
 #include <lib/bio.h>
+#include <config.h>
 
 #ifndef SYSPARAM_ALLOW_WRITE
 #define SYSPARAM_ALLOW_WRITE 0

@@ -12,6 +12,9 @@
 
 #include <dev/scsi.h>
 #include <lib/font_display.h>
+#include <trace.h>
+
+#define LOCAL_TRACE 0
 
 #define	SCSI_UNMAP_DESC_LEN	16
 
@@ -155,6 +158,33 @@ static status_t scsi_parse_status(u8 status)
 	return ret;
 }
 
+static ssize_t scsi_read_10_sz(struct bdev *dev, void *buf, bnum_t block, uint count)
+{
+	scsi_device_t *sdev = (scsi_device_t *)dev->private;
+	status_t ret = NO_ERROR;
+
+	g_scm.sdev = sdev;
+	g_scm.buf = (u8 *)buf;
+	g_scm.datalen = (u32)count * dev->block_size;
+
+	/*
+	 * Prepare CDB
+	 *
+	 * RDPROTECT is always zero here for UFS
+	 */
+	memset((void *)g_scm.cdb, 0, sizeof(g_scm.cdb));
+	g_scm.cdb[0] = SCSI_OP_READ_10;
+	set_dword_le(&g_scm.cdb[2], (u32)block);
+	set_word_le(&g_scm.cdb[7], (u16)count);
+
+	/* Actual issue */
+	ret = sdev->exec(&g_scm);
+	if (!ret)
+		ret = scsi_parse_status(g_scm.status);
+
+	return count * dev->block_size;
+}
+
 static status_t scsi_read_10(struct bdev *dev, void *buf, bnum_t block, uint count)
 {
 	scsi_device_t *sdev = (scsi_device_t *)dev->private;
@@ -182,6 +212,34 @@ static status_t scsi_read_10(struct bdev *dev, void *buf, bnum_t block, uint cou
 	return ret;
 }
 
+static ssize_t scsi_write_10_sz(struct bdev *dev, const void *buf,
+					bnum_t block, uint count)
+{
+	scsi_device_t *sdev = (scsi_device_t *)dev->private;
+	status_t ret = NO_ERROR;
+
+	g_scm.sdev = sdev;
+	g_scm.buf = (u8 *)buf;
+	g_scm.datalen = (u32)count * dev->block_size;
+
+	/*
+	 * Prepare CDB
+	 *
+	 * RDPROTECT is always zero here for UFS
+	 */
+	memset((void *)g_scm.cdb, 0, sizeof(g_scm.cdb));
+	g_scm.cdb[0] = SCSI_OP_WRITE_10;
+	set_dword_le(&g_scm.cdb[2], (u32)block);
+	set_word_le(&g_scm.cdb[7], (u16)count);
+
+	/* Actual issue */
+	ret = sdev->exec(&g_scm);
+	if (!ret)
+		ret = scsi_parse_status(g_scm.status);
+
+	return block * dev->block_size;
+}
+
 static status_t scsi_write_10(struct bdev *dev, const void *buf,
 					bnum_t block, uint count)
 {
@@ -191,6 +249,8 @@ static status_t scsi_write_10(struct bdev *dev, const void *buf,
 	g_scm.sdev = sdev;
 	g_scm.buf = (u8 *)buf;
 	g_scm.datalen = (u32)count * dev->block_size;
+
+	LTRACEF("Scsi Write10 block:%d, count:%d\n", block, count);
 
 	/*
 	 * Prepare CDB
@@ -249,6 +309,14 @@ static status_t scsi_unmap(struct bdev *dev,
 
 	return ret;
 
+}
+
+static ssize_t scsi_unmap_len(struct bdev *dev, off_t offset, size_t len)
+{
+
+	scsi_unmap(dev, offset / dev->block_size, len / dev->block_size);
+
+	return len * dev->block_size;
 }
 
 int scsi_start_stop_unit(struct bdev *dev)
@@ -553,8 +621,11 @@ status_t scsi_scan(scsi_device_t *sdev, u32 wlun, u32 dev_num, exec_t *func,
 		/* Override operations */
 		if (wlun == 0) {
 			sdev->dev.new_read_native = scsi_read_10;
+			sdev->dev.read_block = scsi_read_10_sz;
 			sdev->dev.new_write_native = scsi_write_10;
+			sdev->dev.write_block = scsi_write_10_sz;
 			sdev->dev.new_erase_native = scsi_unmap;
+			sdev->dev.erase = scsi_unmap_len;
 		} else {
 			sdev->dev.new_read_native = scsi_secu_prot_in;
 			sdev->dev.new_write_native = scsi_secu_prot_out;

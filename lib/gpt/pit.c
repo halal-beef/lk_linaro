@@ -17,6 +17,10 @@
 #include <dev/boot.h>
 #include <platform/decompress_ext4.h>
 #include <platform/secure_boot.h>
+#include <lib/sysparam.h>
+#include <trace.h>
+
+#define LOCAL_TRACE 0
 
 // TODO:
 /*
@@ -667,6 +671,26 @@ int pit_gpt_chk(void)
 	return ret;
 }
 
+static void pit_sysparam_scan(void)
+{
+    struct pit_entry *ptn;
+    status_t sts;
+
+    if (!pit_dev)
+         return;
+
+    ptn = pit_get_part_info("env");
+    if (!ptn)
+         return;
+
+    LTRACEF("PIT Block Start:0x%x, blknum:0x%x\n", ptn->blkstart, ptn->blknum);
+    sts = sysparam_scan(pit_dev, ptn->blkstart * PIT_SECTOR_SIZE, ptn->blknum * PIT_SECTOR_SIZE);
+    if (sts < 0)
+         LTRACEF("sysparam scan fail, error code:%d\n", sts);
+    else
+         LTRACEF("sysparam size:%d\n", sts);
+}
+
 /*
  * ---------------------------------------------------------------------------
  * Common public functions
@@ -727,6 +751,7 @@ void pit_init(void)
 		printf("... [PIT] pit init passes\n");
 		pit_show_info();
 		pit_gpt_chk();
+		pit_sysparam_scan();
 
 		return;
 	}

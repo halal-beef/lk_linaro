@@ -11,66 +11,58 @@
 #include <debug.h>
 #include <stdlib.h>
 #include <part_gpt.h>
-#include <pit.h>
-#include <platform/environment.h>
+#include <lib/sysparam.h>
+#include <platform/lock.h>
 
 void lock(int state)
 {
-	unsigned int *env_val;
-	struct pit_entry *ptn;
+	unsigned int env_val = 0;
 
-	ptn = pit_get_part_info("env");
-	env_val = memalign(0x1000, pit_get_length(ptn));
-	pit_access(ptn, PIT_OP_LOAD, (u64)env_val, 0);
+	if (sysparam_read(LOCK_SYSPARAM_NAME, &env_val, sizeof(env_val)) > 0) {
+		/* The device should prompt users to warn them that
+		  they may encounter problems with unofficial images.
+		  After acknowledging, a factory data reset should be
+		  done to prevent unauthorized data access. */
+		if ((env_val == 1) && (state == 0)) {
 
-	/* The device should prompt users to warn them that
-	  they may encounter problems with unofficial images.
-	  After acknowledging, a factory data reset should be
-	  done to prevent unauthorized data access. */
-	if ((env_val[ENV_ID_LOCKED] == 1) && (state == 0)) {
+		}
+
+		env_val = state;
+		sysparam_remove(LOCK_SYSPARAM_NAME);
+	} else {
+		env_val = state;
 	}
+	sysparam_add(LOCK_SYSPARAM_NAME, &env_val, sizeof(env_val));
 
-	env_val[ENV_ID_LOCKED] = state;
-	pit_access(ptn, PIT_OP_FLASH, (u64)env_val, 0);
-
-	free(env_val);
+	sysparam_write();
 }
 
 int get_lock_state(void)
 {
-	unsigned int *env_val;
-	struct pit_entry *ptn;
-	int lock_state;
+	unsigned int env_val = 0;
 
-	ptn = pit_get_part_info("env");
-	env_val = memalign(0x1000, pit_get_length(ptn));
-	pit_access(ptn, PIT_OP_LOAD, (u64)env_val, 0);
+	if (sysparam_read(LOCK_SYSPARAM_NAME, &env_val, sizeof(env_val)) <= 0)
+		return env_val;
 
-	lock_state = env_val[ENV_ID_LOCKED];
-
-	free(env_val);
-
-	return lock_state;
+	return (int) env_val;
 }
 
 void lock_critical(int state)
 {
-	unsigned int *env_val;
-	struct pit_entry *ptn;
+	unsigned int env_val = 0;
 
-	ptn = pit_get_part_info("env");
-	env_val = memalign(0x1000, pit_get_length(ptn));
-	pit_access(ptn, PIT_OP_LOAD, (u64)env_val, 0);
+	if (sysparam_read(LOCK_CRITICAL_SYSPARAM_NAME, &env_val, sizeof(env_val)) > 0) {
+		/* Transitioning from locked to unlocked state should
+		  require a physical interaction with the device. */
+		if ((env_val == 1) && (state == 0)) {
 
-	/* Transitioning from locked to unlocked state should
-	  require a physical interaction with the device. */
-	if ((env_val[ENV_ID_LOCKED_CRITICAL] == 1) && (state == 0)) {
+		}
+		sysparam_remove(LOCK_CRITICAL_SYSPARAM_NAME);
 	}
+	env_val = state;
 
-	env_val[ENV_ID_LOCKED_CRITICAL] = state;
-	pit_access(ptn, PIT_OP_FLASH, (u64)env_val, 0);
-
-	free(env_val);
+	sysparam_add(LOCK_CRITICAL_SYSPARAM_NAME, &env_val, sizeof(env_val));
+	sysparam_write();
 }
 
 int get_unlock_ability(void)

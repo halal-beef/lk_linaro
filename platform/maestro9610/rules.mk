@@ -47,8 +47,10 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/debug-store-ramdump.c
 
 MODULE_DEPS += \
-    dev/interrupt/arm_gic \
-	dev/timer/arm_generic
+	dev/interrupt/arm_gic \
+	dev/timer/arm_generic \
+	dev/scsi \
+	lib/cksum
 
 LINKER_SCRIPT += $(BUILDDIR)/system-onesegment.ld
 

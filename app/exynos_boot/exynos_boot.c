@@ -16,7 +16,7 @@
 #include <lib/console.h>
 #include <lib/font_display.h>
 #include <platform/mmu/mmu_func.h>
-#include <platform/environment.h>
+#include <lib/sysparam.h>
 #include <platform/wdt_recovery.h>
 #include <platform/sfr.h>
 #include <platform/charger.h>
@@ -46,8 +46,6 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	int cpu, chk_smpl;
 	struct exynos_gpio_bank *bank = (struct exynos_gpio_bank *)EXYNOS9610_GPA1CON;
 	int fb_mode_failed = 0;
-	unsigned int *env_val;
-	struct pit_entry *ptn_env;
 	unsigned int soc, mif, apm;
 	int vol_up_val;
 	int vol_down_val;
@@ -76,17 +74,19 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	}
 
 	if (is_first_boot()) {
-		ptn_env = pit_get_part_info("env");
-		env_val = memalign(0x1000, pit_get_length(ptn_env));
-		pit_access(ptn_env, PIT_OP_LOAD, (u64)env_val, 0);
-		if(env_val[ENV_ID_FB_MODE] == FB_MODE_FLAG) {
-			printf("Fastboot is not completed on a prior booting.\n");
-			printf("Entering fastboot.\n");
-			print_lcd_update(FONT_RED, FONT_BLACK, "Fastboot is not completed on a prior booting.");
-			print_lcd_update(FONT_RED, FONT_BLACK, "Entering fastboot.");
-			fb_mode_failed = 1;
+		unsigned int env_val = 0;
+
+		printf("Fastboot is not completed on a prior booting.\n");
+		printf("Entering fastboot.\n");
+		if (sysparam_read("fb_mode_set", &env_val, sizeof(env_val)) > 0) {
+			if (env_val == FB_MODE_FLAG) {
+				print_lcd_update(FONT_RED, FONT_BLACK,
+						"Fastboot is not completed on a prior booting.");
+				print_lcd_update(FONT_RED, FONT_BLACK,
+						"Entering fastboot.");
+				fb_mode_failed = 1;
+			}
 		}
-		free(env_val);
 	}
 
 	dfd_display_reboot_reason();
