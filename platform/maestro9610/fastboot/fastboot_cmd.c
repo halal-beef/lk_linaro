@@ -668,6 +668,27 @@ int fb_do_oem(const char *cmd_buffer)
 			sprintf(response, "FAILunsupported command");
 
 		fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+	} else if (!strncmp(cmd_buffer + 4, "xct-on", 11)) {
+		char xct_on[8] = { 0, };
+
+		param_sz = sysparam_read("xct", xct_on, 8);
+		if (param_sz > 0)
+			sysparam_remove("xct");
+		sprintf(xct_on, "xct-on");
+		sysparam_add("xct", xct_on, strlen(xct_on));
+		sysparam_write();
+
+		sprintf(response, "OKAY");
+		fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+	} else if (!strncmp(cmd_buffer + 4, "xct-off", 13)) {
+		char xct_on[8] = { 0, };
+
+		param_sz = sysparam_read("xct", xct_on, 8);
+		if (param_sz > 0) {
+			sysparam_remove("xct");
+			sysparam_write();
+		}
+		fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 	} else {
 		printf("Unsupported oem command!\n");
 		sprintf(response, "FAILunsupported command");

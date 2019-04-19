@@ -116,7 +116,8 @@ uint32_t el3_sss_hash_digest(
 
 uint32_t el3_verify_signature_using_image(
 	uint64_t signed_img_ptr,
-	uint64_t signed_img_len)
+	uint64_t signed_img_len,
+	uint64_t signed_img_type)
 {
 	uint32_t ret;
 	CHECK_IMAGE_INFO check_info_image __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
@@ -132,7 +133,7 @@ uint32_t el3_verify_signature_using_image(
 	FLUSH_DCACHE_RANGE(signed_img_ptr, signed_img_len);
 
 	ret = exynos_smc(SMC_CMD_CHECK_SIGNATURE, 0,
-			(uint64_t)&check_info_image, 0);
+			(uint64_t)&check_info_image, signed_img_type);
 
 	return ret;
 }

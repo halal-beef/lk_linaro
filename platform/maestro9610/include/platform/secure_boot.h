@@ -107,7 +107,8 @@ uint32_t el3_sss_hash_final(
 
 uint32_t el3_verify_signature_using_image(
 	uint64_t signed_img_ptr,
-	uint64_t signed_img_len);
+	uint64_t signed_img_len,
+	uint64_t signed_img_type);
 
 void clean_dcache_range(unsigned long long start, unsigned long long end);
 void invalidate_dcache_range(unsigned long long start, unsigned long long end);

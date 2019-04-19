@@ -269,6 +269,8 @@ void platform_early_init(void)
 	arm_generic_timer_init(ARCH_TIMER_IRQ, 26000000);
 }
 
+extern bool is_xct_boot(void);
+
 void platform_init(void)
 {
 	u32 ret = 0;
@@ -325,6 +327,9 @@ void platform_init(void)
 	read_temperature(TZ_BIG, &temp, PRINT);
 	display_trip_info();
 	dfd_display_reboot_reason();
+	if (is_xct_boot())
+		return;
+
 	if (is_first_boot() && *(unsigned int *)DRAM_BASE == 0xabcdef)
 		debug_snapshot_fdt_init();
 

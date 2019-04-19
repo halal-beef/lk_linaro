@@ -24,6 +24,7 @@
 #include <platform/dfd.h>
 #include <platform/fg_s2mu004.h>
 #include <platform/tmu.h>
+#include <platform/xct.h>
 #include <dev/boot.h>
 #include <platform/gpio.h>
 #include <platform/pmic_s2mpu09.h>
@@ -149,6 +150,12 @@ fastboot_dump_gpr:
 	return;
 
 reboot:
+	if (is_xct_boot()) {
+		cpu = cmd_xct(0, 0);
+		printf("Entering fastboot: xct boot fail code - %d\n", cpu);
+		do_fastboot(0, 0);
+		return;
+	}
 	vol_up_val = exynos_gpio_get_value(bank, 5);
 	vol_down_val = exynos_gpio_get_value(bank, 6);
 

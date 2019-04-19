@@ -131,12 +131,19 @@ static inline void pit_open_dev(void)
 	unsigned int len;
 
 	boot_dev = get_boot_device();
-	if (boot_dev == BOOT_UFS)
+	if (is_first_boot()) {
+		if (boot_dev == BOOT_UFS)
+			pit_if = PIT_UFS;
+		else if (boot_dev == BOOT_EMMC || boot_dev == BOOT_MMCSD)
+			pit_if = PIT_MMC;
+		else
+			pit_if = PIT_NONE;
+	} else {
+		/* TODO: Get First boot device from target */
 		pit_if = PIT_UFS;
-	else if (boot_dev == BOOT_EMMC)
-		pit_if = PIT_MMC;
-	else
-		pit_if = PIT_NONE;
+	}
+
+	printf("[PIT] boot device:%d, PIT IF:%d\n", boot_dev, pit_if);
 
 	if (pit_if == PIT_NONE) {
 		printf("[PIT] block dev not set\n");
@@ -722,7 +729,7 @@ void pit_init(void)
 	pit_load_pit(pit_buf);
 	LOAD_PIT(&pit, pit_buf);
 
-	ret = el3_verify_signature_using_image((uint64_t)&pit, sizeof(pit));
+	ret = el3_verify_signature_using_image((uint64_t)&pit, sizeof(pit), 0);
 	if (ret) {
 		printf("[SB ERR] pit signature check fail [ret: 0x%X]\n", ret);
 	} else {
