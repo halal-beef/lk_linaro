@@ -16,6 +16,7 @@
 #include <dev/ufs.h>
 #include <dev/ufs_provision.h>
 #include <platform/delay.h>
+#include <platform/mmu/barrier.h>
 
 #define be16_to_cpu(x) \
 	((((x) & 0xff00) >> 8) | \
@@ -1208,6 +1209,7 @@ static status_t scsi_exec(scm * pscm)
 		if (err)
 			return err;
 
+		wmb();
 		err = send_cmd(ufs);
 
 #ifdef	SCSI_UFS_DEBUG
@@ -1496,7 +1498,7 @@ static int ufs_send_upiu(ufs_upiu_cmd cmd, int enable)
 #ifdef	SCSI_UFS_DEBUG
 	print_ufs_upiu(UFS_DEBUG_UPIU_ALL2);
 #endif
-
+	wmb();
 	res = send_cmd(ufs);
 
 #ifdef	SCSI_UFS_DEBUG
