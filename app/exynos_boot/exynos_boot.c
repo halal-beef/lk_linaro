@@ -123,7 +123,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		goto fastboot;
 	} else if (rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET)) {
 		printf("Entering fastboot: Abnormal RST_STAT: 0x%x\n", rst_stat);
-		goto fastboot;
+		goto fastboot_dump_gpr;
 	} else if ((readl(CONFIG_RAMDUMP_SCRATCH) == CONFIG_RAMDUMP_MODE) && get_charger_mode() == 0) {
 		printf("Entering fastboot: Ramdump_Scratch & Charger\n");
 		goto fastboot;
@@ -134,6 +134,11 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		goto reboot;
 
 fastboot:
+	uart_log_mode = 1;
+	do_fastboot(0, 0);
+	return;
+
+fastboot_dump_gpr:
 	uart_log_mode = 1;
 	dfd_run_dump_gpr();
 	do_fastboot(0, 0);
