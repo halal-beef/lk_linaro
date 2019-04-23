@@ -82,6 +82,10 @@ void dfd_display_reboot_reason(void)
 		printf("0x%x - User Reboot(S/W Reboot)\n", ret);
 		print_lcd_update(FONT_WHITE, FONT_BLACK, "0x%x - User Reboot(S/W Reboot)", ret);
 		break;
+	case RAMDUMP_SIGN_BL_REBOOT:
+		printf("0x%x - BL Reboot(S/W Reboot)\n", ret);
+		print_lcd_update(FONT_WHITE, FONT_BLACK, "0x%x - BL Reboot(S/W Reboot)", ret);
+		break;
 	case RAMDUMP_SIGN_FORCE_REBOOT:
 		printf("0x%x - Forced Reboot(S/W Reboot)\n", ret);
 		print_lcd_update(FONT_WHITE, FONT_BLUE, "0x%x - Forced Reboot(S/W Reboot)", ret);

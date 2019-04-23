@@ -408,6 +408,9 @@ int fb_do_reboot(const char *cmd_buffer)
 	else
 		writel(0, CONFIG_RAMDUMP_SCRATCH);
 
+	/* write reboot reasen (bootloader reboot) */
+	writel(RAMDUMP_SIGN_BL_REBOOT, CONFIG_RAMDUMP_REASON);
+
 	clean_invalidate_dcache_range(CONFIG_RAMDUMP_SCRATCH, CONFIG_RAMDUMP_SCRATCH + 64);
 	clean_invalidate_dcache_range(CONFIG_RAMDUMP_REASON, CONFIG_RAMDUMP_REASON + 64);
 
