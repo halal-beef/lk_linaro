@@ -29,6 +29,7 @@
 #include <platform/if_pmic_s2mu004.h>
 #include <platform/dfd.h>
 #include <platform/chip_id.h>
+#include <platform/mmu/mmu_func.h>
 #include <dev/boot.h>
 #include <dev/rpmb.h>
 #include <dev/scsi.h>
@@ -402,6 +403,8 @@ int fb_do_reboot(const char *cmd_buffer)
 	else
 		writel(0, CONFIG_RAMDUMP_SCRATCH);
 
+	clean_invalidate_dcache_range(CONFIG_RAMDUMP_SCRATCH, CONFIG_RAMDUMP_SCRATCH + 64);
+
 	writel(0x1, EXYNOS9610_SWRESET);
 
 	return 0;
@@ -774,6 +777,7 @@ int do_fastboot(int argc, const cmd_args *argv)
 	dprintf(ALWAYS, "Enabling manual reset and disabling warm reset.\n");
 	/* To prevent entering fastboot mode after manual reset, clear ramdump scratch. */
 	writel(0, CONFIG_RAMDUMP_SCRATCH);
+	clean_invalidate_dcache_range(CONFIG_RAMDUMP_SCRATCH, CONFIG_RAMDUMP_SCRATCH + 64);
 	pmic_enable_manual_reset();
 	print_lcd_update(FONT_GREEN, FONT_BLACK, "Entering fastboot mode.");
 
