@@ -16,7 +16,7 @@
  * Almighty: dram test tool for customer
  */
 
-#include "mmu.h"
+#include <platform/mmu/mmu.h>
 #include <debug.h>
 #include <reg.h>
 #include <platform/delay.h>

@@ -398,14 +398,14 @@ static void s5e9610_mmu_table_init(void)
 			| TT_S1_TABLE;
 
 	/* Generate L2 TT - Block */
-	set_tt_entry((u64 *)0x00000000, (u64 *)0x9FFFFFFFF, (u64 *)0x00000000, TT_S1_FAULT);
+	set_tt_entry((u64 *)0x00000000, (u64 *)0xBFFFFFFFF, (u64 *)0x00000000, TT_S1_FAULT);
 	set_tt_entry((u64 *)0x02000000, (u64 *)0x021FFFFF, (u64 *)0x02000000, TT_DEVICE);
 	set_tt_entry((u64 *)0x03000000, (u64 *)0x031FFFFF, (u64 *)0x03000000, TT_PERI);
 	set_tt_entry((u64 *)0x04000000, (u64 *)0x05FFFFFF, (u64 *)0x04000000, TT_PERI);
 	set_tt_entry((u64 *)0x06000000, (u64 *)0x0FFFFFFF, (u64 *)0x06000000, TT_PERI);	/* SIREX virtual iRAM */
 	set_tt_entry((u64 *)0x10000000, (u64 *)0x1FFFFFFF, (u64 *)0x10000000, TT_PERI);
 	set_tt_entry((u64 *)0x80000000, (u64 *)0xFFFFFFFF, (u64 *)0x80000000, TT_RAM);
-	set_tt_entry((u64 *)0x880000000, (u64 *)0x8FFFFFFFF, (u64 *)0x880000000, TT_RAM);
+	set_tt_entry((u64 *)0x880000000, (u64 *)0xAFFFFFFFF, (u64 *)0x880000000, TT_RAM);
 }
 
 void cpu_common_init(void)

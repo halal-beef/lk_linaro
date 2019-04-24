@@ -1,5 +1,5 @@
 #include "mct.h"
-#include "mmu.h"
+#include <platform/mmu/mmu.h>
 #include <reg.h>
 
 static cycle_t divided_clk_rate = CONFIG_FIN_HZ;
