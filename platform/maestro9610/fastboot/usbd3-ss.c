@@ -1317,7 +1317,6 @@ static void exynos_usb_handle_dev_event(usbdev3_devt_t uDevEvent)
 				print_lcd_update(FONT_YELLOW, FONT_RED,
 						"USB cable disconnected...");
 				usb_cable_state = uDevEvent.b.evt_info;
-				muic_sw_usb();
 			}
 			//USBDEV3_HandleLinkStatusChange();
 			break;
