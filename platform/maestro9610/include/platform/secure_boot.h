@@ -52,8 +52,10 @@
 #define CACHE_WRITEBACK_GRANULE_64	(1 << CACHE_WRITEBACK_SHIFT_6)
 #define CACHE_WRITEBACK_GRANULE_128	(1 << CACHE_WRITEBACK_SHIFT_7)
 
-#define FLUSH_DCACHE_RANGE(addr, length)	clean_dcache_range((unsigned long long)addr, (unsigned long long)(addr + length))
-#define INV_DCACHE_RANGE(addr, length)		invalidate_dcache_range((unsigned long long)addr, (unsigned long long)(addr + length))
+#define FLUSH_DCACHE_RANGE(addr, length) \
+	clean_dcache_range((unsigned long long)addr, (unsigned long long)(addr + length))
+#define INV_DCACHE_RANGE(addr, length) \
+	invalidate_dcache_range((unsigned long long)addr, (unsigned long long)(addr + length))
 
 /******************************************************************************/
 /* Secure Boot context used by EL3 */
@@ -106,6 +108,9 @@ uint32_t el3_sss_hash_final(
 uint32_t el3_verify_signature_using_image(
 	uint64_t signed_img_ptr,
 	uint64_t signed_img_len);
+
+void clean_dcache_range(unsigned long long start, unsigned long long end);
+void invalidate_dcache_range(unsigned long long start, unsigned long long end);
 
 /******************************************************************************/
 /* Secure Boot context used by LDFW */
