@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <lib/console.h>
 #include <lib/font_display.h>
+#include <platform/mmu/mmu_func.h>
 #include <platform/environment.h>
 #include <platform/wdt_recovery.h>
 #include <platform/sfr.h>
@@ -109,12 +110,14 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	if (chk_smpl == PMIC_DETECT_SMPL_IGNORE) {
 		print_lcd_update(FONT_RED, FONT_BLACK, ",But Ignore SMPL DETECTION");
 		writel(0, CONFIG_RAMDUMP_SCRATCH);
+		clean_invalidate_dcache_range(CONFIG_RAMDUMP_SCRATCH, CONFIG_RAMDUMP_SCRATCH + 64);
 	}
 #endif
 #ifdef S2MPU09_PM_IGNORE_WTSR_DETECT
 	if (chk_smpl == PMIC_DETECT_WTSR_IGNORE) {
 		print_lcd_update(FONT_RED, FONT_BLACK, ",But Ignore WTSR DETECTION");
 		writel(0, CONFIG_RAMDUMP_SCRATCH);
+		clean_invalidate_dcache_range(CONFIG_RAMDUMP_SCRATCH, CONFIG_RAMDUMP_SCRATCH + 64);
 	}
 #endif
 
