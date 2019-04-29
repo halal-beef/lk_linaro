@@ -411,9 +411,7 @@ int fb_do_reboot(const char *cmd_buffer)
 	/* write reboot reasen (bootloader reboot) */
 	writel(RAMDUMP_SIGN_BL_REBOOT, CONFIG_RAMDUMP_REASON);
 
-	clean_invalidate_dcache_range(CONFIG_RAMDUMP_SCRATCH, CONFIG_RAMDUMP_SCRATCH + 64);
-	clean_invalidate_dcache_range(CONFIG_RAMDUMP_REASON, CONFIG_RAMDUMP_REASON + 64);
-
+	/* SW reset */
 	writel(0x1, EXYNOS9610_SWRESET);
 
 	return 0;
@@ -795,9 +793,10 @@ int do_fastboot(int argc, const cmd_args *argv)
 	is_attached = 0;
 	dprintf(ALWAYS, "This is do_fastboot\n");
 	dprintf(ALWAYS, "Enabling manual reset and disabling warm reset.\n");
+
 	/* To prevent entering fastboot mode after manual reset, clear ramdump scratch. */
 	writel(0, CONFIG_RAMDUMP_SCRATCH);
-	clean_invalidate_dcache_range(CONFIG_RAMDUMP_SCRATCH, CONFIG_RAMDUMP_SCRATCH + 64);
+
 	pmic_enable_manual_reset();
 	print_lcd_update(FONT_GREEN, FONT_BLACK, "Entering fastboot mode.");
 
