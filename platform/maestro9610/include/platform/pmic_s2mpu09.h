@@ -40,6 +40,7 @@
 #define S2MPU09_RTC_DAY			0x009
 #define S2MPU09_RTC_MON			0x00A
 #define S2MPU09_RTC_YEAR		0x00B
+#define S2MPU09_PM_ETC_OTP		0x013
 
 /* If ignore SMPL Detection, activate below define */
 /* #define S2MPU09_PM_IGNORE_SMPL_DETECT */
