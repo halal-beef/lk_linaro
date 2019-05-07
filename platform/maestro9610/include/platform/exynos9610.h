@@ -122,6 +122,7 @@
 #define CONFIG_DRAM_TRAINING_AREA_SIZE						0x4000
 #define CONFIG_DRAM_TRAINING_AREA_BLOCK_OFFSET					528
 
+#define SWRESET									(1 << 29)
 #define WARM_RESET								(1 << 28)
 #define LITTLE_WDT_RESET							(1 << 23)
 #define BIG_WDT_RESET								(1 << 24)

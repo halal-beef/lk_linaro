@@ -51,6 +51,26 @@ void arm_generic_timer_disable(void);
 static char cmdline[AVB_CMD_MAX_SIZE];
 static char verifiedbootstate[AVB_VBS_MAX_SIZE]="androidboot.verifiedbootstate=";
 
+static void update_boot_reason(char *buf)
+{
+	u32 val = readl(CONFIG_RAMDUMP_REASON);
+	unsigned int rst_stat = readl(EXYNOS9610_POWER_RST_STAT);
+
+	if (rst_stat & WARM_RESET)
+		snprintf(buf, 16, "hard_reset");
+	else if (rst_stat & PIN_RESET)
+		snprintf(buf, 16, "coldboot");
+	else if (rst_stat & (LITTLE_WDT_RESET | BIG_WDT_RESET))
+		snprintf(buf, 16, "watchdog");
+	else if (rst_stat & SWRESET)
+		if (val == RAMDUMP_SIGN_PANIC)
+			snprintf(buf, 16, "kernel_panic");
+		else
+			snprintf(buf, 16, "reboot");
+	else
+		snprintf(buf, 16, "unknown");
+}
+
 struct bootargs_prop {
 	char prop[128];
 	char val[128];
@@ -235,6 +255,7 @@ static void set_usb_serialno(void)
 static void configure_dtb(void)
 {
 	char str[BUFFER_SIZE];
+	char buf[16];
 	u32 soc_ver = 0;
 	unsigned long sec_dram_base = 0;
 	unsigned int sec_dram_size = 0;
@@ -388,6 +409,13 @@ static void configure_dtb(void)
 
 	sprintf(str, "<0x%x>", ECT_SIZE);
 	set_fdt_val("/ect", "parameter_size", str);
+
+	memset(buf, 0, sizeof(buf));
+	update_boot_reason(buf);
+	noff = fdt_path_offset(fdt_dtb, "/chosen");
+	np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
+	snprintf(str, BUFFER_SIZE, "%s androidboot.bootreason=%s", np, buf);
+	fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
 
 	if (get_charger_mode() && readl(EXYNOS9610_POWER_SYSIP_DAT0) != REBOOT_MODE_FACTORY) {
 		noff = fdt_path_offset (fdt_dtb, "/chosen");
