@@ -44,6 +44,7 @@
 
 #define REBOOT_MODE_RECOVERY	0xFF
 #define REBOOT_MODE_FACTORY	0xFD
+#define REBOOT_MODE_FASTBOOT	0xFC
 
 void configure_ddi_id(void);
 void arm_generic_timer_disable(void);
@@ -523,7 +524,7 @@ int cmd_boot(int argc, const cmd_args *argv)
 {
 	struct exynos_gpio_bank *bank = (struct exynos_gpio_bank *)EXYNOS9610_GPA1CON;
 	int gpio = 5;	/* Volume Up */
-	int val;
+	unsigned int val;
 
 	fdt_dtb = (struct fdt_header *)DT_BASE;
 	dtbo_table = (struct dt_table_header *)DTBO_BASE;
@@ -578,8 +579,15 @@ int cmd_boot(int argc, const cmd_args *argv)
 	configure_dtb();
 	configure_ddi_id();
 
-	if (readl(EXYNOS9610_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY || readl(EXYNOS9610_POWER_SYSIP_DAT0) == REBOOT_MODE_FACTORY)
+	val = readl(EXYNOS9610_POWER_SYSIP_DAT0);
+	if (val == REBOOT_MODE_RECOVERY || val == REBOOT_MODE_FACTORY) {
 		writel(0, EXYNOS9610_POWER_SYSIP_DAT0);
+	} else if (val == REBOOT_MODE_FASTBOOT) {
+		writel(0, EXYNOS9610_POWER_SYSIP_DAT0);
+		printf("Entering fastboot.\n");
+		print_lcd_update(FONT_RED, FONT_BLACK, "Entering fastboot.");
+		do_fastboot(0, 0);
+	}
 	/* notify EL3 Monitor end of bootloader */
 	exynos_smc(SMC_CMD_END_OF_BOOTLOADER, 0, 0, 0);
 
