@@ -1,4 +1,5 @@
 #include <reg.h>
+#include <string.h>
 #include <pit.h>
 #include <arch/ops.h>
 #include <lib/font_display.h>
@@ -6,8 +7,8 @@
 #include <platform/smc.h>
 #include <platform/delay.h>
 #include <platform/dfd.h>
-#include <lib/font_display.h>
 
+#define ARRAY_SIZE(x)  (int)(sizeof(x) / sizeof((x)[0]))
 #define DEBUG_PRINT
 extern u64 cpu_boot(u64 id, u64 cpu, u64 fn);
 
@@ -544,6 +545,46 @@ void reset_prepare_board(void)
 	printf("%s: disable asserting rstdisable L1/L2 cache\n", __func__);
 	dfd_set_dump_gpr(0);
 	dfd_set_big_cluster_rstcon();
+}
+
+const char *debug_level_val[] = {
+	"low",
+	"mid",
+};
+
+void set_debug_level(const char *buf)
+{
+	int i, debug_level = DEBUG_LEVEL_MID;
+
+	if (!buf)
+		return;
+
+	for (i = 0; i < (int)ARRAY_SIZE(debug_level_val); i++) {
+		if (!strncmp(buf, debug_level_val[i],
+			strlen(debug_level_val[i]))) {
+			debug_level = i;
+			goto debug_level_print;
+		}
+	}
+
+debug_level_print:
+	/* Update debug_level to reserved region */
+	writel(debug_level | DEBUG_LEVEL_PREFIX, CONFIG_RAMDUMP_DEBUG_LEVEL);
+	printf("debug level: %s\n", debug_level_val[debug_level]);
+}
+
+void set_debug_level_by_env(void)
+{
+#if 0
+	char buf[16] = {0, };
+	int ret;
+
+	ret = getenv_s("debug_level", buf, sizeof(buf));
+	if (ret > 0) {
+		printf("Change ");
+		set_debug_level(buf);
+	}
+#endif
 }
 
 void avb_print_lcd(const char *str)

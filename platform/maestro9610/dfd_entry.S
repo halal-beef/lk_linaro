@@ -7,6 +7,7 @@
  * project.
  */
 
+#define __ASSEMBLY__
 #include <asm.h>
 #include <arch/ops.h>
 #include <arch/defines.h>

@@ -162,6 +162,16 @@
 #define RESET_DISABLE_L2RESET		(1 << 16)
 
 #ifndef __ASSEMBLY__
+enum {
+	DEBUG_LEVEL_NONE = -1,
+	DEBUG_LEVEL_LOW = 0,
+	DEBUG_LEVEL_MID = 1,
+};
+#define DEBUG_LEVEL_PREFIX      (0xDB9 << 16)
+extern int debug_level;
+
+extern void set_debug_level(const char *buf);
+extern void set_debug_level_by_env(void);
 #ifdef CONFIG_RAMDUMP_GPR
 void dfd_run_dump_gpr(void);
 void dfd_set_dump_gpr(int en);
