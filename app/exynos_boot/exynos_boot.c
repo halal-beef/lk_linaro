@@ -126,7 +126,8 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		goto fastboot;
 	} else if (rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET)) {
 		printf("Entering fastboot: Abnormal RST_STAT: 0x%x\n", rst_stat);
-		goto fastboot_dump_gpr;
+		dfd_run_dump_gpr();
+		goto fastboot;
 	} else if ((readl(CONFIG_RAMDUMP_SCRATCH) == CONFIG_RAMDUMP_MODE) && get_charger_mode() == 0) {
 		printf("Entering fastboot: Ramdump_Scratch & Charger\n");
 		goto fastboot;
@@ -135,19 +136,6 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		goto fastboot;
 	} else
 		goto reboot;
-
-fastboot:
-	uart_log_mode = 1;
-	debug_store_ramdump();
-	do_fastboot(0, 0);
-	return;
-
-fastboot_dump_gpr:
-	uart_log_mode = 1;
-	dfd_run_dump_gpr();
-	debug_store_ramdump();
-	do_fastboot(0, 0);
-	return;
 
 reboot:
 	if (is_xct_boot()) {
@@ -173,9 +161,26 @@ reboot:
 		}
 	}
 
-	/* Turn on dumpEN for DumpGPR */
+#ifdef RAMDUMP_MODE_OFF
+	dfd_set_dump_gpr(0);
+	set_debug_level("low");
+#else
 	dfd_set_dump_gpr(CACHE_RESET_EN | DUMPGPR_EN);
+	set_debug_level("mid");
+#endif
+	set_debug_level_by_env();
+
 	cmd_boot(0, 0);
+	return;
+
+fastboot:
+	uart_log_mode = 1;
+#ifdef RAMDUMP_MODE_OFF
+	cmd_boot(0, 0);
+#else
+	debug_store_ramdump();
+	do_fastboot(0, 0);
+#endif
 	return;
 }
 
