@@ -16,6 +16,7 @@
 #include <dev/rpmb.h>
 #include <pit.h>
 #include <lib/sysparam.h>
+#include <lib/console.h>
 #include <dev/interrupt/arm_gic.h>
 #include <dev/timer/arm_generic.h>
 #include <platform/interrupts.h>
@@ -31,6 +32,7 @@
 #include <platform/bl_sys_info.h>
 #include <platform/dram_training.h>
 #include <platform/mmu/mmu_func.h>
+#include <platform/fastboot.h>
 
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
@@ -327,6 +329,9 @@ void platform_init(void)
 	read_temperature(TZ_BIG, &temp, PRINT);
 	display_trip_info();
 	dfd_display_reboot_reason();
+	if ((get_current_boot_device() != BOOT_USB) &&
+		*(unsigned int *)DRAM_BASE == 0xabcdef)
+		init_fastboot_variables();
 	if (is_xct_boot())
 		return;
 

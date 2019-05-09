@@ -14,7 +14,9 @@
 
 #include <debug.h>
 #include <string.h>
+#include <lib/console.h>
 #include <platform/chip_id.h>
+#include <platform/fastboot.h>
 #include "fastboot.h"
 #ifdef USE_WAIT_EVENT
 #include <kernel/event.h>
@@ -33,10 +35,6 @@
 #define FBOOT_USBD_IS_CONNECTED() (1)
 #define FBOOT_USBD_DETECT_IRQ() EXYNOS_USBD_DETECT_IRQ()
 #define FBOOT_USBD_CLEAR_IRQ()  EXYNOS_USBD_CLEAR_IRQ()
-/* from include/configs/exynos9610_aarch64-common.h */
-#define CFG_FASTBOOT_PAGESIZE		  (2048)
-#define CFG_FASTBOOT_TRANSFER_BUFFER	  (0X8A000000)
-#define CFG_FASTBOOT_TRANSFER_BUFFER_SIZE (0x30000000)
 
 #define FBOOT_CHIPID_SIZE	16
 #define FBOOT_STRING_DESC3_SIZE	((FBOOT_CHIPID_SIZE * 2) + 2)

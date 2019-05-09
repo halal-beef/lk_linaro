@@ -32,6 +32,7 @@
 #include <platform/chip_id.h>
 #include <platform/mmu/mmu_func.h>
 #include <platform/debug-store-ramdump.h>
+#include <platform/fastboot.h>
 #include <dev/boot.h>
 #include <dev/rpmb.h>
 #include <dev/scsi.h>
@@ -62,6 +63,178 @@ struct cmd_fastboot {
 	const char *cmd_name;
 	int (*handler)(const char *);
 };
+
+#define CMD_FASTBOOT_MAX_VAR_NR 64
+#define CMD_FASTBOOT_MAX_VAR_LEN 64
+struct cmd_fastboot_variable {
+	char name[CMD_FASTBOOT_MAX_VAR_LEN];
+	char string[CMD_FASTBOOT_MAX_VAR_LEN];
+};
+
+static struct cmd_fastboot_variable fastboot_var_list[CMD_FASTBOOT_MAX_VAR_NR];
+static int fastboot_var_nr = 0;
+
+static int add_fastboot_variable(const char *name, const char *string)
+{
+	int name_len;
+	int string_len;
+
+	if (name != NULL) {
+		name_len = strlen(name);
+	} else {
+		printf("Input string is null\n");
+		return -1;
+	}
+
+	if (string != NULL) {
+		string_len = strlen(string);
+	} else {
+		printf("Input string is null\n");
+		return -1;
+	}
+
+	if (name_len < CMD_FASTBOOT_MAX_VAR_LEN) {
+		strncpy((void *)&fastboot_var_list[fastboot_var_nr].name, name, name_len);
+	} else {
+		printf("Input string size is bigger than buffer size\n");
+		return -1;
+	}
+
+	if (name_len < CMD_FASTBOOT_MAX_VAR_LEN) {
+		strncpy((void *)&fastboot_var_list[fastboot_var_nr].string, string, string_len);
+	} else {
+		printf("Input string size is bigger than buffer size\n");
+		return -1;
+	}
+
+	fastboot_var_nr++;
+
+	return 0;
+}
+
+static int get_fastboot_variable(char *name, char *buf)
+{
+	int i;
+
+	for (i = 0; i < CMD_FASTBOOT_MAX_VAR_NR; i++) {
+		if (!strcmp(name, fastboot_var_list[i].name)) {
+			strcpy(buf, fastboot_var_list[i].string);
+			break;
+		}
+	}
+
+	if (i == CMD_FASTBOOT_MAX_VAR_NR)
+		return -1;
+	else
+		return 0;
+}
+
+u8 serial_id[16] = {0};	/* string for chip id */
+
+static void simple_hextostr(u32 hex, u8 *str)
+{
+	u8 i;
+
+	for (i = 0; i < 8; i++) {
+		if ((hex & 0xF) > 9)
+			*str++ = 'a' + (hex & 0xF) - 10;
+		else
+			*str++ = '0' + (hex & 0xF);
+
+		hex >>= 4;
+	}
+}
+
+static void set_serial_number(void)
+{
+	u8 tmp_serial_id[16];	/* string for chip id */
+	u8 i;
+
+	simple_hextostr(s5p_chip_id[1], tmp_serial_id+8);
+	simple_hextostr(s5p_chip_id[0], tmp_serial_id);
+
+	for (i = 0; i < 12; i++)
+		serial_id[11 - i] = tmp_serial_id[i];
+}
+
+int init_fastboot_variables(void)
+{
+	char tmp[64] = {0};
+	struct pit_entry *ptn;
+
+	memset(fastboot_var_list, 0, sizeof(struct cmd_fastboot_variable) * CMD_FASTBOOT_MAX_VAR_NR);
+
+	add_fastboot_variable("version-baseband", "N/A");
+	add_fastboot_variable("version", FASTBOOT_VERSION);
+	add_fastboot_variable("version-bootloader", FASTBOOT_VERSION_BOOTLOADER);
+	add_fastboot_variable("product", "maestro9610");
+	set_serial_number();
+	add_fastboot_variable("serialno", (const char *)serial_id);
+	add_fastboot_variable("secure", "yes");
+	add_fastboot_variable("unlocked", "yes");
+	add_fastboot_variable("off-mode-charge", "0");
+	add_fastboot_variable("variant", "maestro9610");
+	add_fastboot_variable("battery-voltage", "2700mV");
+	add_fastboot_variable("battery-soc-ok", "yes");
+	add_fastboot_variable("partition-type:efs", "ext4");
+	ptn = pit_get_part_info("efs");
+	sprintf(tmp, "0x%llx", pit_get_length(ptn));
+	add_fastboot_variable("partition-size:efs", (const char *)tmp);
+	add_fastboot_variable("partition-type:efsbk", "ext4");
+	ptn = pit_get_part_info("efsbk");
+	sprintf(tmp, "0x%llx", pit_get_length(ptn));
+	add_fastboot_variable("partition-size:efsbk", (const char *)tmp);
+	add_fastboot_variable("partition-type:persist", "ext4");
+	ptn = pit_get_part_info("persist");
+	sprintf(tmp, "0x%llx", pit_get_length(ptn));
+	add_fastboot_variable("partition-size:persist", (const char *)tmp);
+	add_fastboot_variable("partition-type:metadata", "ext4");
+	ptn = pit_get_part_info("metadata");
+	sprintf(tmp, "0x%llx", pit_get_length(ptn));
+	add_fastboot_variable("partition-size:metadata", (const char *)tmp);
+	add_fastboot_variable("partition-type:system_a", "ext4");
+	ptn = pit_get_part_info("system_a");
+	sprintf(tmp, "0x%llx", pit_get_length(ptn));
+	add_fastboot_variable("partition-size:system_a", (const char *)tmp);
+	add_fastboot_variable("partition-type:system_b", "ext4");
+	ptn = pit_get_part_info("system_b");
+	sprintf(tmp, "0x%llx", pit_get_length(ptn));
+	add_fastboot_variable("partition-size:system_b", (const char *)tmp);
+	add_fastboot_variable("partition-type:vendor_a", "ext4");
+	ptn = pit_get_part_info("vendor_a");
+	sprintf(tmp, "0x%llx", pit_get_length(ptn));
+	add_fastboot_variable("partition-size:vendor_a", (const char *)tmp);
+	add_fastboot_variable("partition-type:vendor_b", "ext4");
+	ptn = pit_get_part_info("vendor_b");
+	sprintf(tmp, "0x%llx", pit_get_length(ptn));
+	add_fastboot_variable("partition-size:vendor_b", (const char *)tmp);
+	add_fastboot_variable("partition-type:userdata", "ext4");
+	ptn = pit_get_part_info("userdata");
+	sprintf(tmp, "0x%llx", pit_get_length(ptn));
+	add_fastboot_variable("partition-size:userdata", (const char *)tmp);
+	sprintf(tmp, "0x%x", CFG_FASTBOOT_TRANSFER_BUFFER_SIZE);
+	add_fastboot_variable("max-download-size", (const char *)tmp);
+	sprintf(tmp, "0x%x", 0x1000);
+	add_fastboot_variable("erase-block-size", (const char *)tmp);
+	add_fastboot_variable("logical-block-size", (const char *)tmp);
+	add_fastboot_variable("has-slot:efs", "no");
+	add_fastboot_variable("has-slot:efsbk", "no");
+	add_fastboot_variable("has-slot:persist", "no");
+	add_fastboot_variable("has-slot:metadata", "no");
+	add_fastboot_variable("has-slot:system", "yes");
+	add_fastboot_variable("has-slot:vendor", "yes");
+	add_fastboot_variable("has-slot:userdata", "no");
+	add_fastboot_variable("current-slot", "a");
+	add_fastboot_variable("slot-count", "2");
+	add_fastboot_variable("slot-successful", "a:yes");
+	add_fastboot_variable("slot-unbootable", "a:no");
+	add_fastboot_variable("slot-retry-count", "a:0");
+	add_fastboot_variable("slot-successful", "b:no");
+	add_fastboot_variable("slot-unbootable", "b:no");
+	add_fastboot_variable("slot-retry-count", "b:7");
+
+	return 0;
+}
 
 static void simple_byte_hextostr(u8 hex, char *str)
 {
@@ -259,6 +432,21 @@ int fb_do_getvar(const char *cmd_buffer)
 	else if (!memcmp(cmd_buffer + 7, "str_ram", strlen("str_ram")))
 	{
 		debug_store_ramdump_getvar(cmd_buffer + 15, response + 4);
+	}
+	else if (!memcmp(cmd_buffer + 7, "all", strlen("all")))
+	{
+		int i;
+
+		for (i = 0; i < fastboot_var_nr; i++) {
+			strncpy(response,"INFO", 4);
+			strncpy(response + 4, fastboot_var_list[i].name, strlen(fastboot_var_list[i].name));
+			strncpy(response + 4 + strlen(fastboot_var_list[i].name), ":", 1);
+			strcpy(response + 4 + strlen(fastboot_var_list[i].name) + 1, fastboot_var_list[i].string);
+			fastboot_tx_status(response, strlen(response), FASTBOOT_TX_SYNC);
+		}
+
+		strcpy(response,"OKAY");
+		strcpy(response + 4,"Done!");
 	}
 	else
 	{

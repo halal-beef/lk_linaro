@@ -13,5 +13,12 @@
 
 int do_fastboot(int argc, const cmd_args *argv);
 int connect_usb(void);
+int init_fastboot_variables(void);
+
+#define CFG_FASTBOOT_PAGESIZE		  (2048)
+#define CFG_FASTBOOT_TRANSFER_BUFFER	  (0X8A000000)
+#define CFG_FASTBOOT_TRANSFER_BUFFER_SIZE (0x30000000)
+
+#define FASTBOOT_VERSION_BOOTLOADER	"MAESTRO9610-LK-20190509-1"
 
 #endif	/* __FASTBOOT_H__ */
