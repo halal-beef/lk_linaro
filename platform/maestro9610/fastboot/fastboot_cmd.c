@@ -167,13 +167,13 @@ int init_fastboot_variables(void)
 	add_fastboot_variable("version-baseband", "N/A");
 	add_fastboot_variable("version", FASTBOOT_VERSION);
 	add_fastboot_variable("version-bootloader", FASTBOOT_VERSION_BOOTLOADER);
-	add_fastboot_variable("product", "maestro9610");
+	add_fastboot_variable("product", "erd9610");
 	set_serial_number();
 	add_fastboot_variable("serialno", (const char *)serial_id);
 	add_fastboot_variable("secure", "yes");
 	add_fastboot_variable("unlocked", "yes");
 	add_fastboot_variable("off-mode-charge", "0");
-	add_fastboot_variable("variant", "maestro9610");
+	add_fastboot_variable("variant", "erd9610");
 	add_fastboot_variable("battery-voltage", "2700mV");
 	add_fastboot_variable("battery-soc-ok", "yes");
 	add_fastboot_variable("partition-type:efs", "ext4");

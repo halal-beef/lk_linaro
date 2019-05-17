@@ -46,7 +46,7 @@
 #define ERROR	-1
 
 static char manufacturer_name[] = "Samsung S.LSI";
-static char product_name[] = "CONFIG_BOARD_NAME";
+static char product_name[] = "erd9610";
 static char config_name[] =  "Android Fasstboot";
 static char interface_name[] = "Android Fastboot";
 
