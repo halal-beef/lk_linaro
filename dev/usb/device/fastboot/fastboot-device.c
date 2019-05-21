@@ -24,7 +24,7 @@
 
 #include "usb-def.h"
 #include "dev/usb/gadget.h"
-#include "fastboot.h"
+#include "dev/usb/fastboot.h"
 
 #define LOCAL_TRACE 0
 
@@ -42,6 +42,7 @@ struct fastboot_infor {
 	int tx_response_buf_sz;
 
 	volatile bool tx_sts_done;
+	volatile bool just_info;
 
 	event_t rx_done_event;
 	event_t tx_done_event;
@@ -129,6 +130,10 @@ static void tx_status_callback(void *handle)
 
 	fastboot_h.tx_sts_done = 0;
 	event_signal(&fastboot_h.tx_done_event, true);
+	if (fastboot_h.just_info) {
+		fastboot_h.just_info = 0;
+		return;
+	}
 	/* Make bulk out ep to rx command from host if not payload phase*/
 	if (!fastboot_h.payload_phase)
 		ready_to_rx_cmd();
@@ -159,6 +164,30 @@ void fastboot_set_payload_data(int dir, void *buf, unsigned int len)
 void fasboot_set_rx_sz(unsigned int prot_req_sz)
 {
 	fastboot_h.prot_req_rx_sz = prot_req_sz;
+}
+
+void fastboot_send_info(char *response, unsigned int len)
+{
+	LTRACE_ENTRY;
+
+	/* Check Last TX status transfer done */
+	if (fastboot_h.tx_sts_done) {
+		event_wait(&fastboot_h.tx_done_event);
+		event_unsignal(&fastboot_h.tx_done_event);
+	}
+
+	fastboot_h.tx_sts_done = 1;
+	/* Mark for not trasiante state mahcine */
+	fastboot_h.just_info = 1;
+	memcpy(fastboot_h.tx_response_buf, response, len);
+	gadget_ep_set_buf(fastboot_h.bulk_in_ep, fastboot_h.tx_response_buf, len, GADGET_BUF_LAST);
+	gadget_ep_start(fastboot_h.bulk_in_ep);
+
+	/* Check transfer done */
+	event_wait(&fastboot_h.tx_done_event);
+	event_unsignal(&fastboot_h.tx_done_event);
+
+	LTRACE_EXIT;
 }
 
 void fastboot_send_status(char *response, unsigned int len, int sync)

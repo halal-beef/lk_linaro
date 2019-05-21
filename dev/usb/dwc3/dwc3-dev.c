@@ -19,6 +19,7 @@
 #include <malloc.h>
 #include <lk/init.h>
 #include <platform/delay.h>
+#include <platform/mmu/barrier.h>
 
 #include "dev/usb/gadget.h"
 #include "dwc3-reg.h"

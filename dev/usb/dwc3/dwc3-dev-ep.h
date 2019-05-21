@@ -343,6 +343,7 @@ u8 dwc3_dev_ep_cmd(DWC3_DEV_EP_HANDLER hEP, USB3_DEV_DEPCMD_TYPE_e eEPCMD,
 						   LNKSTS_REMOTEWKUP);
 		}
 	}
+	wmb();
 	// Set EP Command to EP Command Register
 	DWC3_REG_WR32(uEPCMD, oDEPCMD.data);
 	// Wait Command Completion

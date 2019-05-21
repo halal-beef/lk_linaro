@@ -18,6 +18,17 @@
 #define NULL 0
 #endif
 
+#define CMD_FASTBOOT_MAX_VAR_NR 64
+#define CMD_FASTBOOT_MAX_VAR_LEN 64
+struct cmd_fastboot_variable {
+	char name[CMD_FASTBOOT_MAX_VAR_LEN];
+	char string[CMD_FASTBOOT_MAX_VAR_LEN];
+};
+
+#define CFG_FASTBOOT_PAGESIZE		  (2048)
+#define CFG_FASTBOOT_TRANSFER_BUFFER	  (0X8A000000)
+#define CFG_FASTBOOT_TRANSFER_BUFFER_SIZE (0x30000000)
+
 /* From fastboot client.. */
 #define FASTBOOT_INTERFACE_CLASS     0xff
 #define FASTBOOT_INTERFACE_SUB_CLASS 0x42
@@ -31,6 +42,8 @@
 #ifndef CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE
 #define CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE 2048
 #endif
+
+#define FASTBOOT_VERSION_BOOTLOADER	"MAESTRO9610-LK-20190509-1"
 
 struct cmd_fastboot_interface
 {

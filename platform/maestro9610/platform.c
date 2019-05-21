@@ -272,6 +272,7 @@ void platform_early_init(void)
 }
 
 extern bool is_xct_boot(void);
+extern int init_fastboot_variables(void);
 
 void platform_init(void)
 {

@@ -588,6 +588,7 @@ int cmd_boot(int argc, const cmd_args *argv)
 		printf("Entering fastboot.\n");
 		print_lcd_update(FONT_RED, FONT_BLACK, "Entering fastboot.");
 		start_usb_gadget();
+		return 0;
 	}
 	/* notify EL3 Monitor end of bootloader */
 	exynos_smc(SMC_CMD_END_OF_BOOTLOADER, 0, 0, 0);

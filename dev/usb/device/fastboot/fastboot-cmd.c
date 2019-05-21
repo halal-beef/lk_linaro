@@ -20,7 +20,6 @@
 #include <lib/console.h>
 #include <lib/sysparam.h>
 #include <lib/font_display.h>
-#include "fastboot.h"
 #include <pit.h>
 #include <platform/sfr.h>
 #include <platform/smc.h>
@@ -29,19 +28,17 @@
 #include <platform/environment.h>
 #include <platform/if_pmic_s2mu004.h>
 #include <platform/dfd.h>
+#include <dev/usb/fastboot.h>
 #include <dev/boot.h>
 #include <dev/rpmb.h>
 #include <dev/scsi.h>
 
 #include "usb-def.h"
 
+extern void fastboot_send_info(char *response, unsigned int len);
 extern void fastboot_send_status(char *response, unsigned int len, int sync);
 extern void fastboot_set_payload_data(int dir, void *buf, unsigned int len);
 extern void fasboot_set_rx_sz(unsigned int prot_req_sz);
-
-#define CFG_FASTBOOT_PAGESIZE		  (2048)
-#define CFG_FASTBOOT_TRANSFER_BUFFER	  (0X8A000000)
-#define CFG_FASTBOOT_TRANSFER_BUFFER_SIZE (0x30000000)
 
 #define FB_RESPONSE_BUFFER_SIZE 128
 #define LOCAL_TRACE 0
@@ -64,7 +61,7 @@ struct cmd_fastboot_interface interface =
 
 struct cmd_fastboot {
 	const char *cmd_name;
-	int (*handler)(const char *);
+	int (*handler)(const char *, unsigned int);
 };
 
 __attribute__((weak)) void platform_prepare_reboot(void)
@@ -102,7 +99,34 @@ __attribute__((weak)) const char * fastboot_get_serialno_string(void)
 	return NULL;
 }
 
-int fb_do_getvar(const char *cmd_buffer)
+__attribute__((weak)) struct cmd_fastboot_variable *fastboot_get_var_head(void)
+{
+	/* WARNING : NOT MODIFY THIS FUNCTION
+	 * If you need to get product string address
+	 * please implementate on the platform.
+	 */
+	return NULL;
+}
+
+__attribute__((weak)) int fastboot_get_var_num(void)
+{
+	/* WARNING : NOT MODIFY THIS FUNCTION
+	 * If you need to get product string address
+	 * please implementate on the platform.
+	 */
+	return -1;
+}
+
+__attribute__((weak)) int init_fastboot_variables(void)
+{
+	/* WARNING : NOT MODIFY THIS FUNCTION
+	 * If you need to get product string address
+	 * please implementate on the platform.
+	 */
+	return -1;
+}
+
+int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
@@ -265,6 +289,29 @@ int fb_do_getvar(const char *cmd_buffer)
 		else
 			sprintf(response + 4, "no");
 	}
+	else if (!memcmp(cmd_buffer + 7, "all", strlen("all")))
+	{
+		int i, var_cnt;
+		struct cmd_fastboot_variable *var_head;
+
+		var_head = fastboot_get_var_head();
+		var_cnt = fastboot_get_var_num();
+
+		if (var_cnt == -1 || var_head == NULL) {
+			strcpy(response,"FAIL");
+		} else {
+			for (i = 0; i < var_cnt; i++) {
+				strncpy(response,"INFO", 4);
+				strncpy(response + 4, var_head[i].name, strlen(var_head[i].name));
+				strncpy(response + 4 + strlen(var_head[i].name), ":", 1);
+				strcpy(response + 4 + strlen(var_head[i].name) + 1, var_head[i].string);
+				fastboot_send_info(response, strlen(response));
+			}
+
+			strcpy(response,"OKAY");
+			strcpy(response + 4,"Done!");
+		}
+	}
 	else
 	{
 		LTRACEF("fast cmd:vendor\n");
@@ -276,7 +323,7 @@ int fb_do_getvar(const char *cmd_buffer)
 	return 0;
 }
 
-int fb_do_erase(const char *cmd_buffer)
+int fb_do_erase(const char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
@@ -363,7 +410,7 @@ static void flash_using_pit(char *key, char *response,
 	}
 }
 
-int fb_do_flash(const char *cmd_buffer)
+int fb_do_flash(const char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
@@ -396,7 +443,7 @@ int fb_do_flash(const char *cmd_buffer)
 
 extern void fastboot_rx_datapayload(int dir, const unsigned char *addr, unsigned int len);
 
-int fb_do_reboot(const char *cmd_buffer)
+int fb_do_reboot(const char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
@@ -411,7 +458,7 @@ int fb_do_reboot(const char *cmd_buffer)
 	return 0;
 }
 
-int fb_do_download(const char *cmd_buffer)
+int fb_do_download(const char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
@@ -457,7 +504,7 @@ static void start_ramdump(void *buffer)
 	fastboot_send_status(buf, strlen(buf), FASTBOOT_TX_SYNC);
 }
 
-int fb_do_ramdump(const char *cmd_buffer)
+int fb_do_ramdump(const char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
@@ -486,7 +533,7 @@ int fb_do_ramdump(const char *cmd_buffer)
 	return 0;
 }
 
-int fb_do_set_active(const char *cmd_buffer)
+int fb_do_set_active(const char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
@@ -512,7 +559,7 @@ int fb_do_set_active(const char *cmd_buffer)
 }
 
 /* Lock/unlock device */
-int fb_do_flashing(const char *cmd_buffer)
+int fb_do_flashing(const char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
@@ -553,7 +600,7 @@ int fb_do_flashing(const char *cmd_buffer)
 	return 0;
 }
 
-int fb_do_oem(const char *cmd_buffer)
+int fb_do_oem(const char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
@@ -713,7 +760,7 @@ int rx_handler(const unsigned char *buffer, unsigned int buffer_size)
 	} else {
 		for (i = 0; i < (sizeof(cmd_list) / sizeof(struct cmd_fastboot)); i++) {
 			if(!memcmp(cmd_buffer, cmd_list[i].cmd_name, strlen(cmd_list[i].cmd_name)))
-				cmd_list[i].handler(cmd_buffer);
+				cmd_list[i].handler(cmd_buffer, buffer_size);
 		}
 	}
 

@@ -14,9 +14,11 @@
 #include <err.h>
 
 #include <usb-def.h>
+#include "pit.h"
 #include "dev/usb/gadget.h"
 #include "dev/usb/dwc3-config.h"
 #include "dev/usb/phy-samsung-usb-cal.h"
+#include "dev/usb/fastboot.h"
 #include "platform/exynos9610.h"
 
 void gadget_probe_pid_vid_version(unsigned short *vid, unsigned short *pid, unsigned short *bcd_version)
@@ -81,6 +83,137 @@ const char *fastboot_get_product_string(void)
 const char *fastboot_get_serialno_string(void)
 {
 	return make_serial_string();
+}
+
+#define FASTBOOT_VERSION_BOOTLOADER	"MAESTRO9610-LK-20190509-1"
+
+static struct cmd_fastboot_variable fastboot_var_list[CMD_FASTBOOT_MAX_VAR_NR];
+static int fastboot_var_nr = 0;
+
+int fastboot_get_var_num(void)
+{
+	return fastboot_var_nr;
+}
+
+struct cmd_fastboot_variable *fastboot_get_var_head(void)
+{
+	return fastboot_var_list;
+}
+
+static int add_fastboot_variable(const char *name, const char *string)
+{
+	int name_len;
+	int string_len;
+
+	if (name != NULL) {
+		name_len = strlen(name);
+	} else {
+		printf("Input string is null\n");
+		return -1;
+	}
+
+	if (string != NULL) {
+		string_len = strlen(string);
+	} else {
+		printf("Input string is null\n");
+		return -1;
+	}
+
+	if (name_len < CMD_FASTBOOT_MAX_VAR_LEN) {
+		strncpy((void *)&fastboot_var_list[fastboot_var_nr].name, name, name_len);
+	} else {
+		printf("Input string size is bigger than buffer size\n");
+		return -1;
+	}
+
+	if (name_len < CMD_FASTBOOT_MAX_VAR_LEN) {
+		strncpy((void *)&fastboot_var_list[fastboot_var_nr].string, string, string_len);
+	} else {
+		printf("Input string size is bigger than buffer size\n");
+		return -1;
+	}
+
+	fastboot_var_nr++;
+
+	return 0;
+}
+
+int init_fastboot_variables(void)
+{
+	char tmp[64] = {0};
+	struct pit_entry *ptn;
+
+	memset(fastboot_var_list, 0, sizeof(struct cmd_fastboot_variable) * CMD_FASTBOOT_MAX_VAR_NR);
+
+	add_fastboot_variable("version-baseband", "N/A");
+	add_fastboot_variable("version", FASTBOOT_VERSION);
+	add_fastboot_variable("version-bootloader", FASTBOOT_VERSION_BOOTLOADER);
+	add_fastboot_variable("product", "maestro9610");
+	add_fastboot_variable("serialno", (const char *)serial_id);
+	add_fastboot_variable("secure", "yes");
+	add_fastboot_variable("unlocked", "yes");
+	add_fastboot_variable("off-mode-charge", "0");
+	add_fastboot_variable("variant", "maestro9610");
+	add_fastboot_variable("battery-voltage", "2700mV");
+	add_fastboot_variable("battery-soc-ok", "yes");
+	add_fastboot_variable("partition-type:efs", "ext4");
+	ptn = pit_get_part_info("efs");
+	sprintf(tmp, "0x%llx", pit_get_length(ptn));
+	add_fastboot_variable("partition-size:efs", (const char *)tmp);
+	add_fastboot_variable("partition-type:efsbk", "ext4");
+	ptn = pit_get_part_info("efsbk");
+	sprintf(tmp, "0x%llx", pit_get_length(ptn));
+	add_fastboot_variable("partition-size:efsbk", (const char *)tmp);
+	add_fastboot_variable("partition-type:persist", "ext4");
+	ptn = pit_get_part_info("persist");
+	sprintf(tmp, "0x%llx", pit_get_length(ptn));
+	add_fastboot_variable("partition-size:persist", (const char *)tmp);
+	add_fastboot_variable("partition-type:metadata", "ext4");
+	ptn = pit_get_part_info("metadata");
+	sprintf(tmp, "0x%llx", pit_get_length(ptn));
+	add_fastboot_variable("partition-size:metadata", (const char *)tmp);
+	add_fastboot_variable("partition-type:system_a", "ext4");
+	ptn = pit_get_part_info("system_a");
+	sprintf(tmp, "0x%llx", pit_get_length(ptn));
+	add_fastboot_variable("partition-size:system_a", (const char *)tmp);
+	add_fastboot_variable("partition-type:system_b", "ext4");
+	ptn = pit_get_part_info("system_b");
+	sprintf(tmp, "0x%llx", pit_get_length(ptn));
+	add_fastboot_variable("partition-size:system_b", (const char *)tmp);
+	add_fastboot_variable("partition-type:vendor_a", "ext4");
+	ptn = pit_get_part_info("vendor_a");
+	sprintf(tmp, "0x%llx", pit_get_length(ptn));
+	add_fastboot_variable("partition-size:vendor_a", (const char *)tmp);
+	add_fastboot_variable("partition-type:vendor_b", "ext4");
+	ptn = pit_get_part_info("vendor_b");
+	sprintf(tmp, "0x%llx", pit_get_length(ptn));
+	add_fastboot_variable("partition-size:vendor_b", (const char *)tmp);
+	add_fastboot_variable("partition-type:userdata", "ext4");
+	ptn = pit_get_part_info("userdata");
+	sprintf(tmp, "0x%llx", pit_get_length(ptn));
+	add_fastboot_variable("partition-size:userdata", (const char *)tmp);
+	sprintf(tmp, "0x%x", CFG_FASTBOOT_TRANSFER_BUFFER_SIZE);
+	add_fastboot_variable("max-download-size", (const char *)tmp);
+	sprintf(tmp, "0x%x", 0x1000);
+	add_fastboot_variable("erase-block-size", (const char *)tmp);
+	add_fastboot_variable("logical-block-size", (const char *)tmp);
+	add_fastboot_variable("has-slot:efs", "no");
+	add_fastboot_variable("has-slot:efsbk", "no");
+	add_fastboot_variable("has-slot:persist", "no");
+	add_fastboot_variable("has-slot:metadata", "no");
+	add_fastboot_variable("has-slot:system", "yes");
+	add_fastboot_variable("has-slot:vendor", "yes");
+	add_fastboot_variable("has-slot:userdata", "no");
+	add_fastboot_variable("current-slot", "a");
+	add_fastboot_variable("slot-count", "2");
+	add_fastboot_variable("slot-successful", "a:yes");
+	add_fastboot_variable("slot-unbootable", "a:no");
+	add_fastboot_variable("slot-retry-count", "a:0");
+	add_fastboot_variable("slot-successful", "b:no");
+	add_fastboot_variable("slot-unbootable", "b:no");
+	add_fastboot_variable("slot-retry-count", "b:7");
+
+	return 0;
 }
 
 static unsigned int dwc3_isr_num = (186 + 32);
