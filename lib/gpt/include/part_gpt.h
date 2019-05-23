@@ -11,6 +11,7 @@
 #ifndef __GPT_H__
 #define __GPT_H__
 
+#include <part_dev.h>
 #include <pit.h>
 #include <lib/bio.h>
 
