@@ -11,7 +11,7 @@
 #include <config.h>
 #include <string.h>
 #include <reg.h>
-#include <pit.h>
+#include <part.h>
 #include <err.h>
 #include <arch/arch_ops.h>
 #include <dev/boot.h>
@@ -86,7 +86,7 @@ extern void arm_generic_timer_disable(void);
 int cmd_xct(int argc, const cmd_args *argv)
 {
 	unsigned int size, ret_sec_xct, cs;
-	struct pit_entry *ptn;
+	void *part;
 #if !defined(XCT_SECURE_CHECK_DISABLE)
 	unsigned int ret_secure_ldfw, cs_from_el3;
 #endif
@@ -105,12 +105,12 @@ int cmd_xct(int argc, const cmd_args *argv)
 	}
 	clear_wdt_recovery_settings();
 	/* Load LDFW for xct */
-	ptn = pit_get_part_info("xct_ldfw");
-	if (!ptn) {
+	part = part_get("xct_ldfw");
+	if (!part) {
 		printf("not found xct ldfw partition\n");
 		return ERR_NOT_FOUND;
 	}
-	pit_access(ptn, PIT_OP_LOAD, (u64) XCT_LDFW_ADDR, 0);
+	part_read(part, (void *)XCT_LDFW_ADDR);
 #if !defined(XCT_SECURE_CHECK_DISABLE)
 	/* Check Securiy signing */
 	ret_secure_ldfw = el3_verify_signature_using_image(XCT_LDFW_ADDR, XCT_LDFW_SIZE, TRUST_MEASUREMENT_KERNEL);
@@ -123,12 +123,12 @@ int cmd_xct(int argc, const cmd_args *argv)
 		ret_secure_ldfw = 0x0;
 #endif
 	/* Load xct bin */
-	ptn = pit_get_part_info("xct");
-	if (!ptn) {
+	part = part_get("xct");
+	if (!part) {
 		printf("not found xct partition\n");
 		return ERR_NOT_FOUND;
 	}
-	pit_access(ptn, PIT_OP_LOAD, (u64) XCT_BIN_LOAD_ADDR, 512);
+	part_read_partial(part, (void *)XCT_BIN_LOAD_ADDR, 0, 512);
 	ret_sec_xct = parse_xct_header(&size, &cs);
 	if (ret_sec_xct) {
 		printf("xct bin header fail\n");

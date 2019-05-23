@@ -11,7 +11,7 @@
 #include <debug.h>
 #include <reg.h>
 #include <app.h>
-#include <pit.h>
+#include <part.h>
 #include <stdlib.h>
 #include <lib/console.h>
 #include <lib/font_display.h>
@@ -57,6 +57,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	struct exynos_gpio_bank *bank = (struct exynos_gpio_bank *)EXYNOS9630_GPA1CON;
 	int vol_up_val;
 	int i;
+	//void *part;
 
 	if (*(unsigned int *)DRAM_BASE != 0xabcdef) {
 		printf("Running on DRAM by TRACE32: skip auto booting\n");
@@ -131,10 +132,10 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	if (is_first_boot()) {
 		unsigned int env_val = 0;
 
-		printf("Fastboot is not completed on a prior booting.\n");
-		printf("Entering fastboot.\n");
 		if (sysparam_read("fb_mode_set", &env_val, sizeof(env_val)) > 0) {
 			if (env_val == FB_MODE_FLAG) {
+				printf("Fastboot is not completed on a prior booting.\n");
+				printf("Entering fastboot.\n");
 				print_lcd_update(FONT_RED, FONT_BLACK,
 						"Fastboot is not completed on a prior booting.");
 				print_lcd_update(FONT_RED, FONT_BLACK,
@@ -210,14 +211,14 @@ reboot:
 	if ((vol_up_val == 0) && (vol_down_val == 0)) {
 		do_memtester(0);
 
-		ptn = pit_get_part_info("logbuf");
-		if (ptn == 0) {
+		part = part_get("logbuf");
+		if (!part) {
 			printf("Partition 'logbuf' does not exist.\n");
 			print_lcd_update(FONT_RED, FONT_BLACK, "Partition 'logbuf' does not exist.");
 		} else {
 			printf("Saving memory test logs to 'logbuf' partition.\n");
 			print_lcd_update(FONT_GREEN, FONT_BLACK, "Saving memory test logs to 'logbuf' partition.");
-			pit_access(ptn, PIT_OP_FLASH, (u64)CONFIG_RAMDUMP_LOGBUF, 0);
+			part_write(part, (void *)CONFIG_RAMDUMP_LOGBUF);
 		}
 	}
 */
