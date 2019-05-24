@@ -43,6 +43,17 @@ int gadget_get_product_string(void)
 	return get_str_id(product_str, strlen(product_str));
 }
 
+void reserve_serialno_string(void)
+{
+	char tmp[16];
+	int i;
+
+	memcpy(tmp, serial_id, sizeof(serial_id));
+
+	for (i = 0; i < 12; i++)
+		serial_id[i]  = tmp[11 - i];
+}
+
 static const char *make_serial_string(void)
 {
 	u8 i, j;
@@ -67,6 +78,9 @@ static const char *make_serial_string(void)
 			hex >>= 4;
 		}
 	}
+
+	reserve_serialno_string();
+
 	return serial_id;
 }
 
