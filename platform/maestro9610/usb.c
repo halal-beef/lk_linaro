@@ -54,6 +54,12 @@ void reserve_serialno_string(void)
 		serial_id[i]  = tmp[15 - i];
 }
 
+void get_serialno(int *chip_id)
+{
+	chip_id[0] = readl(EXYNOS9610_PRO_ID + CHIPID0_OFFSET);
+	chip_id[1] = readl(EXYNOS9610_PRO_ID + CHIPID1_OFFSET) & 0xFFFF;
+}
+
 static const char *make_serial_string(void)
 {
 	u8 i, j;

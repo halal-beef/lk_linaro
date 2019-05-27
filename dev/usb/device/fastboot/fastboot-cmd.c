@@ -28,6 +28,7 @@
 #include <platform/environment.h>
 #include <platform/if_pmic_s2mu004.h>
 #include <platform/dfd.h>
+#include <platform/debug-store-ramdump.h>
 #include <dev/usb/fastboot.h>
 #include <dev/boot.h>
 #include <dev/rpmb.h>
@@ -124,6 +125,37 @@ __attribute__((weak)) int init_fastboot_variables(void)
 	 * please implementate on the platform.
 	 */
 	return -1;
+}
+
+__attribute__((weak)) void get_serialno(int *chip_id)
+{
+	/* WARNING : NOT MODIFY THIS FUNCTION
+	 * If you need to get product string address
+	 * please implementate on the platform.
+	 */
+}
+
+static void simple_byte_hextostr(u8 hex, char *str)
+{
+	int i;
+
+	for (i = 0; i < 2; i++) {
+		if ((hex & 0xF) > 9)
+			*--str = 'a' + (hex & 0xF) - 10;
+		else
+			*--str = '0' + (hex & 0xF);
+
+		hex >>= 4;
+	}
+}
+
+static void hex2str(u8 *buf, char *str, int len)
+{
+	int i;
+
+	for (i = 0; i < len; i++) {
+		simple_byte_hextostr(buf[i], str + (i + 1) * 2);
+	}
 }
 
 int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
@@ -276,18 +308,62 @@ int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 			sprintf(response, "FAILinvalid slot");
 		if (slot >= 0)
 			sprintf(response + 4, "%d", ab_slot_retry_count(slot));
-		}
+	}
 	else if (!memcmp(cmd_buffer + 7, "has-slot", strlen("has-slot")))
 	{
 		LTRACEF("fast cmd:has-slot\n");
-		if (!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "boot") ||
-			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "dtb") ||
+		if (!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "ldfw") ||
+			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "keystorage") ||
+			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "boot") ||
 			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "dtbo") ||
 			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "system") ||
-			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "vendor"))
+			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "vbmeta") ||
+			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "oem") ||
+			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "vendor") ||
+			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "logo") ||
+			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "modem") ||
+			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "bootloader"))
 			sprintf(response + 4, "yes");
 		else
 			sprintf(response + 4, "no");
+	}
+	else if (!memcmp(cmd_buffer + 7, "unlocked", strlen("unlocked")))
+	{
+		if (secure_os_loaded == 1) {
+			uint32_t lock_state;
+			rpmb_get_lock_state(&lock_state);
+			if (!lock_state)
+				sprintf(response + 4, "yes");
+			else
+				sprintf(response + 4, "no");
+		} else {
+			sprintf(response + 4, "ignore");
+		}
+	}
+	else if (!memcmp(cmd_buffer + 7, "uid", strlen("uid")))
+	{
+		char uid_str[33] = {0};
+		uint32_t *p;
+		/* default is faked UID, for test purpose only */
+		uint8_t uid_buf[] = {0x41, 0xDC, 0x74, 0x4B,	\
+								0x00, 0x00, 0x00, 0x00,	\
+								0x00, 0x00, 0x00, 0x00,	\
+								0x00, 0x00, 0x00, 0x00};
+		int chip_id[2];
+
+		get_serialno(chip_id);
+		p = (uint32_t *)&uid_buf[0];
+		*p = ntohl(chip_id[1]);
+		p = (uint32_t *)&uid_buf[4];
+		*p = ntohl(chip_id[0]);
+
+		hex2str(uid_buf, uid_str, 16);
+
+		sprintf(response + 4, uid_str);
+	}
+	else if (!memcmp(cmd_buffer + 7, "str_ram", strlen("str_ram")))
+	{
+		debug_store_ramdump_getvar(cmd_buffer + 15, response + 4);
 	}
 	else if (!memcmp(cmd_buffer + 7, "all", strlen("all")))
 	{
