@@ -50,8 +50,8 @@ void reserve_serialno_string(void)
 
 	memcpy(tmp, serial_id, sizeof(serial_id));
 
-	for (i = 0; i < 12; i++)
-		serial_id[i]  = tmp[11 - i];
+	for (i = 0; i < 16; i++)
+		serial_id[i]  = tmp[15 - i];
 }
 
 static const char *make_serial_string(void)
@@ -86,7 +86,7 @@ static const char *make_serial_string(void)
 
 int gadget_get_serial_string(void)
 {
-	return get_str_id(make_serial_string(), 12);
+	return get_str_id(make_serial_string(), 16);
 }
 
 const char *fastboot_get_product_string(void)
