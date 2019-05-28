@@ -16,7 +16,6 @@
 #include <dev/ufs.h>
 #include <dev/ufs_provision.h>
 #include <platform/delay.h>
-#include <platform/mmu/barrier.h>
 
 #define be16_to_cpu(x) \
 	((((x) & 0xff00) >> 8) | \
@@ -90,7 +89,7 @@ static scsi_device_t ufs_dev_rpmb;
 
 
 static int ufs_send_upiu(ufs_upiu_cmd cmd, int enable);
-static int ufs_link_startup(struct ufs_host *ufs, int retry);
+static int ufs_link_startup(struct ufs_host *ufs);
 
 /*********************************************************************************
  * forward declerations
@@ -313,15 +312,12 @@ static void ufs_set_dir_flag_in_cmd_upiu(scm *pscm, u32 *data_direction,
 		switch (pscm->cdb[0]) {
 		case SCSI_OP_UNMAP:
 		case SCSI_OP_FORMAT_UNIT:
+		case SCSI_OP_START_STOP_UNIT:
 		case SCSI_OP_WRITE_10:
 		case SCSI_OP_WRITE_BUFFER:
 		case SCSI_OP_SECU_PROT_OUT:
 			*data_direction = UTP_HOST_TO_DEVICE;
 			*upiu_flags = UPIU_CMD_FLAGS_WRITE;
-			break;
-		case SCSI_OP_START_STOP_UNIT:
-			*data_direction = UTP_HOST_TO_DEVICE;
-			*upiu_flags = UPIU_CMD_FLAGS_NONE;
 			break;
 		default:
 			*data_direction = UTP_DEVICE_TO_HOST;
@@ -412,10 +408,6 @@ static void ufs_compose_upiu(struct ufs_host *ufs)
 
 		ufs->cmd_desc_addr->command_upiu.header.tsf[0] =
 		    cpu_to_be32(ufs->scsi_cmd->datalen);
-
-		if (ufs->scsi_cmd->cdb[0] == SCSI_OP_START_STOP_UNIT)
-			ufs->cmd_desc_addr->command_upiu.header.tsf[0] = 0;
-
 		memcpy(&ufs->cmd_desc_addr->command_upiu.header.tsf[1],
 				ufs->scsi_cmd->cdb, MAX_CDB_SIZE);
 		break;
@@ -1161,12 +1153,6 @@ static status_t ufs_parse_respnse(struct ufs_host *ufs)
 		       pscm->cdb[4], pscm->cdb[5], pscm->cdb[6], pscm->cdb[7],
 		       pscm->cdb[8], pscm->cdb[9]);
 		dprintf(INFO, "SCSI Response(%02x) : ", ufs->cmd_desc_addr->response_upiu.header.response);
-		dprintf(INFO, "SCSI sense : %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
-				pscm->sense_buf[0], pscm->sense_buf[1], pscm->sense_buf[2], pscm->sense_buf[3], pscm->sense_buf[4],
-				pscm->sense_buf[5], pscm->sense_buf[6], pscm->sense_buf[7], pscm->sense_buf[8], pscm->sense_buf[9],
-				pscm->sense_buf[10], pscm->sense_buf[11], pscm->sense_buf[12], pscm->sense_buf[13], pscm->sense_buf[14],
-				pscm->sense_buf[15], pscm->sense_buf[16], pscm->sense_buf[17]);
-
 		if (ufs->cmd_desc_addr->response_upiu.header.response) {
 			dprintf(INFO, "Target Failure\n");
 		} else {
@@ -1209,7 +1195,6 @@ static status_t scsi_exec(scm * pscm)
 		if (err)
 			return err;
 
-		wmb();
 		err = send_cmd(ufs);
 
 #ifdef	SCSI_UFS_DEBUG
@@ -1218,7 +1203,7 @@ static status_t scsi_exec(scm * pscm)
 
 		if (err) {
 			/* Re-init UFS & retry transection */
-			ufs_link_startup(ufs, retry);
+			ufs_link_startup(ufs);
 			dprintf(INFO, "%s: error %d, retrying %d ... \n", __func__, err, ++retry);
 		} else {
 			retry = 0;
@@ -1498,7 +1483,7 @@ static int ufs_send_upiu(ufs_upiu_cmd cmd, int enable)
 #ifdef	SCSI_UFS_DEBUG
 	print_ufs_upiu(UFS_DEBUG_UPIU_ALL2);
 #endif
-	wmb();
+
 	res = send_cmd(ufs);
 
 #ifdef	SCSI_UFS_DEBUG
@@ -1721,7 +1706,7 @@ static int ufs_device_power(struct ufs_host *ufs, int onoff)
 	return 0;
 }
 
-static int ufs_pre_setup(struct ufs_host *ufs, int retry)
+static int ufs_pre_setup(struct ufs_host *ufs)
 {
 	u32 reg;
 	int res = 0;
@@ -1746,10 +1731,6 @@ static int ufs_pre_setup(struct ufs_host *ufs, int retry)
 	if ((reg >> 20) & 0x1)
 		writel(reg, (ufs->vs_addr + VS_IS));
 
-	if (retry > 0) {
-		ufs_device_power(ufs, 0);
-		u_delay(500000);
-	}
 
 	ufs_device_power(ufs, 1);
 	u_delay(1000);
@@ -1866,14 +1847,14 @@ out:
 	return res;
 }
 
-static int ufs_link_startup(struct ufs_host *ufs, int retry)
+static int ufs_link_startup(struct ufs_host *ufs)
 {
 	struct ufs_uic_cmd uic_cmd = { UIC_CMD_DME_LINK_STARTUP, 0, 0, 0};
 	struct ufs_uic_cmd get_a_lane_cmd = { UIC_CMD_DME_GET, (0x1540 << 16), 0, 0 };
 	struct uic_pwr_mode *pmd = &ufs->pmd_cxt;
 	int ret = ERR_GENERIC;
 
-	if (ufs_pre_setup(ufs, retry))
+	if (ufs_pre_setup(ufs))
 		goto out;
 
 	ufs_pre_vendor_setup(ufs);
@@ -2105,7 +2086,7 @@ static int ufs_host_init(int host_index, struct ufs_host *ufs)
 		goto out;
 
 	do {
-		res = ufs_link_startup(ufs, rst_cnt);
+		res = ufs_link_startup(ufs);
 		if (!res)
 			break;
 		rst_cnt++;

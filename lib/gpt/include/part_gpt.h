@@ -139,7 +139,7 @@ struct gpt_header {
 	u32 part_num_entry;
 	u32 part_size_entry;
 	u32 part_table_crc;
-	u8 reserved1[420];
+	u8 reserved1[430];
 } __attribute__ ((__packed__));
 
 typedef union _gpt_table_attributes{
@@ -181,5 +181,4 @@ struct gpt_backup_header {
  */
 int gpt_create(struct pit_info *pit);
 extern int get_unique_guid(char *ptr_name, char *buf);
-extern int gpt_compare_chk(struct pit_info *pit);
 #endif
