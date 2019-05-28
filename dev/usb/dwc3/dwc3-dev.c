@@ -20,6 +20,7 @@
 #include <lk/init.h>
 #include <platform/delay.h>
 #include <platform/mmu/barrier.h>
+#include <lib/font_display.h>
 
 #include "dev/usb/gadget.h"
 #include "dwc3-reg.h"
@@ -657,6 +658,7 @@ u8 dwc3_dev_sw_reconn(DWC3_DEV_HANDLER dwc3_dev_h)
 	dwc3_dev_set_rs(dwc3_dev_h, 1);
 	/* Clear ULSTCHGREQ register */
 	dwc3_dev_SetExitLinkStatus(dwc3_dev_h, 0x0);
+
 	return true;
 }
 
@@ -839,6 +841,8 @@ void dwc3_dev_HandleLinkStatusChange(DWC3_DEV_HANDLER dwc3_dev_h, USB3_DEV_DEVT_
 		switch ((DWC3_DEV_LNKSTS)(uDevEvent->b.evt_info & 0xf)) {
 		case LNKSTS_U0:
 			U3DBG_ISR_STS("U0");
+			print_lcd_update(FONT_GREEN, FONT_BLACK,
+						"USB cable connected...");
 			break;
 		case LNKSTS_U1:
 			U3DBG_ISR_STS("U0");
@@ -848,6 +852,8 @@ void dwc3_dev_HandleLinkStatusChange(DWC3_DEV_HANDLER dwc3_dev_h, USB3_DEV_DEVT_
 			break;
 		case LNKSTS_U3:
 			U3DBG_ISR_STS("U3");
+			print_lcd_update(FONT_YELLOW, FONT_RED,
+						"USB cable disconnected...");
 			break;
 		case LNKSTS_SS_DIS:
 			U3DBG_ISR_STS("SS Disabled");
@@ -1320,6 +1326,7 @@ int dwc3_dev_init(void *dev_handle)
 
 	/* true Deivce */
 	dwc3_dev_set_rs(dwc3_dev_h, true);
+	print_lcd_update(FONT_GREEN, FONT_BLACK, "Entering fastboot mode.");
 
 	return 0;
 }
