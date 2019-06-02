@@ -179,7 +179,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		goto fastboot;
 	} else if (rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET)) {
 		printf("Entering fastboot: Abnormal RST_STAT: 0x%x\n", rst_stat);
-		dfd_run_dump_gpr();
+		dfd_run_post_processing();
 		goto fastboot;
 	} else if ((readl(CONFIG_RAMDUMP_SCRATCH) == CONFIG_RAMDUMP_MODE) && get_charger_mode() == 0) {
 		printf("Entering fastboot: Ramdump_Scratch & Charger\n");
@@ -220,10 +220,10 @@ reboot:
 */
 
 #ifdef RAMDUMP_MODE_OFF
-	dfd_set_dump_gpr(0);
+	dfd_set_dump_en_for_cacheop(0);
 	set_debug_level("low");
 #else
-	dfd_set_dump_gpr(CACHE_RESET_EN | DUMPGPR_EN);
+	dfd_set_dump_en_for_cacheop(1);
 	set_debug_level("mid");
 #endif
 	set_debug_level_by_env();
