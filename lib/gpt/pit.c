@@ -873,8 +873,6 @@ void pit_init(void)
 		printf("... [PIT] pit init passes\n");
 		pit_show_info();
 
-		pit_sysparam_scan();
-
 		return;
 	}
 
