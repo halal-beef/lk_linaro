@@ -20,6 +20,7 @@
 #include <lib/console.h>
 #include <lib/sysparam.h>
 #include <lib/font_display.h>
+#include <part_gpt.h>
 #include <pit.h>
 #include <platform/sfr.h>
 #include <platform/smc.h>
@@ -243,6 +244,14 @@ int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 		 */
 		if (ptn && ptn->filesys != FS_TYPE_NONE)
 			sprintf(response + 4, "0x%llx", pit_get_length(ptn));
+	}
+	else if (!memcmp(cmd_buffer + 7, "erase-block-size", strlen("erase-block-size")))
+	{
+		sprintf(response + 4, "0x%x", UFS_BSIZE);
+	}
+	else if (!memcmp(cmd_buffer + 7, "logical-block-size", strlen("logical-block-size")))
+	{
+		sprintf(response + 4, "0x%x", UFS_BSIZE);
 	}
 	else if (!memcmp(cmd_buffer + 7, "slot-count", strlen("slot-count")))
 	{
