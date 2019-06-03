@@ -23,7 +23,7 @@
 #include <malloc.h>
 #include <pit.h>
 #include <platform/ab_update.h>
-#include <platform/exynos9610.h>
+#include <platform/sfr.h>
 #include <dev/dpu/decon.h>
 #include <target/dpu_config.h>
 
