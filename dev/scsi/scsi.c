@@ -14,6 +14,9 @@
 #include <lib/font_display.h>
 #include <trace.h>
 
+#undef	SCSI_DEBUG
+//#define SCSI_DEBUG
+
 #define LOCAL_TRACE 0
 
 #define	SCSI_UNMAP_DESC_LEN	16
@@ -190,6 +193,11 @@ static status_t scsi_read_10(struct bdev *dev, void *buf, bnum_t block, uint cou
 	scsi_device_t *sdev = (scsi_device_t *)dev->private;
 	status_t ret = NO_ERROR;
 
+	if (count == 0) {
+		printf("%s: input count = 0\n", __func__);
+		return -1;
+	}
+
 	g_scm.sdev = sdev;
 	g_scm.buf = (u8 *)buf;
 	g_scm.datalen = (u32)count * dev->block_size;
@@ -208,6 +216,10 @@ static status_t scsi_read_10(struct bdev *dev, void *buf, bnum_t block, uint cou
 	ret = sdev->exec(&g_scm);
 	if (!ret)
 		ret = scsi_parse_status(g_scm.status);
+
+#ifdef SCSI_DEBUG
+	printf("scsi read: LU%u, 0x%08X, 0x%08X: %d\n", sdev->lun, block, count, ret);
+#endif
 
 	return ret;
 }
@@ -246,6 +258,11 @@ static status_t scsi_write_10(struct bdev *dev, const void *buf,
 	scsi_device_t *sdev = (scsi_device_t *)dev->private;
 	status_t ret = NO_ERROR;
 
+	if (count == 0) {
+		printf("%s: input count = 0\n", __func__);
+		return -1;
+	}
+
 	g_scm.sdev = sdev;
 	g_scm.buf = (u8 *)buf;
 	g_scm.datalen = (u32)count * dev->block_size;
@@ -266,6 +283,10 @@ static status_t scsi_write_10(struct bdev *dev, const void *buf,
 	ret = sdev->exec(&g_scm);
 	if (!ret)
 		ret = scsi_parse_status(g_scm.status);
+
+#ifdef SCSI_DEBUG
+	printf("scsi write: LU%u, 0x%08X, 0x%08X: %d\n", sdev->lun, block, count, ret);
+#endif
 
 	return ret;
 }
@@ -341,6 +362,11 @@ static status_t scsi_unmap(struct bdev *dev,
 	scsi_device_t *sdev = (scsi_device_t *)dev->private;
 	status_t ret = NO_ERROR;
 
+	if (count == 0) {
+		printf("%s: input count = 0\n", __func__);
+		return -1;
+	}
+
 	g_scm.sdev = sdev;
 	g_scm.buf = (u8 *)g_buf;
 	g_scm.datalen = SCSI_UNMAP_DATA_LEN + 2;
@@ -371,6 +397,10 @@ static status_t scsi_unmap(struct bdev *dev,
 	ret = sdev->exec(&g_scm);
 	if (!ret)
 		ret = scsi_parse_status(g_scm.status);
+
+#ifdef SCSI_DEBUG
+	printf("scsi erase: LU%u, 0x%08X, 0x%08X: %d\n", sdev->lun, block, count, ret);
+#endif
 
 	return ret;
 
@@ -655,17 +685,18 @@ status_t scsi_scan(scsi_device_t *sdev, u32 wlun, u32 dev_num, exec_t *func,
 
 			printf("[SCSI] LU%u\t%s\t%s\t%s\t%u\n", sdev->lun, sdev->vendor,
 					sdev->product, sdev->revision, block_count);
+			printf("\t\t> Block count = %u\n", block_count);
 
 #ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
 			capacity = ((block_size * block_count) / 1024 / 1024);
 
 			if (capacity > 1024) {
 				capacity /= 1024;
-				print_lcd(FONT_WHITE, FONT_BLACK, "[UFS] LU%u\t%s\t%s\t%s\t%s\t%3d GB",
-						sdev->lun, name, sdev->vendor, sdev->product, sdev->revision, capacity);
+				print_lcd(FONT_WHITE, FONT_BLACK, "[UFS] LU%u\t%s\t%s\t%s\t%s\t%3d GB(%u)",
+						sdev->lun, name, sdev->vendor, sdev->product, sdev->revision, capacity, block_count);
 			} else {
-				print_lcd(FONT_WHITE, FONT_BLACK, "[UFS] LU%u\t%s\t%s\t%s\t%s\t%3d MB",
-						sdev->lun, name, sdev->vendor, sdev->product, sdev->revision, capacity);
+				print_lcd(FONT_WHITE, FONT_BLACK, "[UFS] LU%u\t%s\t%s\t%s\t%s\t%3d MB(%u)",
+						sdev->lun, name, sdev->vendor, sdev->product, sdev->revision, capacity, block_count);
 			}
 #endif
 		} else {
