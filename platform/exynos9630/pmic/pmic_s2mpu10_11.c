@@ -15,14 +15,25 @@
 #include <platform/pmic_s2mpu10_11.h>
 #include <platform/if_pmic_s2mu107.h>
 #include <dev/lk_acpm_ipc.h>
+#include <platform/gpio.h>
+#include <platform/exynos9630.h>
 
 void pmic_enable_manual_reset (void)
 {
 }
 
+void pmic_int_mask(unsigned int chan, unsigned int addr, unsigned int interrupt)
+{
+	unsigned char reg;
+	i3c_write(chan, addr, interrupt, 0xFF);
+	i3c_read(chan, addr, interrupt, &reg);
+	printf("interrupt(0x%x) : 0x%x\n", interrupt, reg);
+}
+
 void pmic_init (void)
 {
 	unsigned char reg;
+	struct exynos_gpio_bank *bank = (struct exynos_gpio_bank *)EXYNOS9630_GPP2CON;
 
 	/* Enable LCD power */
 	reg = 0xF0;
@@ -34,6 +45,23 @@ void pmic_init (void)
 	/* Enable TSP power */
 	reg = 0xE8;
 	i3c_write(0, S2MPU10_PM_ADDR, S2MPU10_PM_LDO23_CTRL, reg);
+
+	/* ICEN enable for PB03 */
+	exynos_gpio_set_pull(bank, 4, GPIO_PULL_NONE);
+	exynos_gpio_cfg_pin(bank, 4, GPIO_OUTPUT);
+	exynos_gpio_set_value(bank, 4, 1);
+
+	/* Main/Slave PMIC interrupt blocking */
+	pmic_int_mask(0, S2MPU10_PM_ADDR, S2MPU10_PM_INT1M);
+	pmic_int_mask(0, S2MPU10_PM_ADDR, S2MPU10_PM_INT2M);
+	pmic_int_mask(0, S2MPU10_PM_ADDR, S2MPU10_PM_INT3M);
+	pmic_int_mask(0, S2MPU10_PM_ADDR, S2MPU10_PM_INT4M);
+	pmic_int_mask(0, S2MPU10_PM_ADDR, S2MPU10_PM_INT5M);
+	pmic_int_mask(0, S2MPU10_PM_ADDR, S2MPU10_PM_INT6M);
+
+	pmic_int_mask(1, S2MPU11_PM_ADDR, S2MPU11_PM_INT1M);
+	pmic_int_mask(1, S2MPU11_PM_ADDR, S2MPU11_PM_INT2M);
+	pmic_int_mask(1, S2MPU11_PM_ADDR, S2MPU11_PM_INT3M);
 }
 
 void display_pmic_rtc_time(void)
