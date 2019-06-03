@@ -22,13 +22,10 @@
 #include <platform/charger.h>
 #include <platform/fastboot.h>
 #include <platform/dfd.h>
-#include <platform/fg_s2mu004.h>
-#include <platform/tmu.h>
 #include <platform/xct.h>
 #include <dev/boot.h>
 #include <dev/usb/gadget.h>
 #include <platform/gpio.h>
-#include <platform/pmic_s2mpu09.h>
 #include <platform/gpio.h>
 #include <platform/debug-store-ramdump.h>
 #include <lib/font_display.h>
@@ -37,6 +34,16 @@
 #include "drex_v3_3.h"
 #include "mct.h"
 
+#define CONFIG_PIT_IMAMGE_BASE 0x80100000
+#define CONFIG_FWBL1_IMAMGE_BASE 0x80200000
+#define CONFIG_EPBL_IMAMGE_BASE 0x80300000
+#define CONFIG_BL2_IMAMGE_BASE 0x80400000
+#define CONFIG_LK_IMAMGE_BASE 0x80500000
+#define CONFIG_EL3_MON_IMAMGE_BASE 0x80700000
+#define CONFIG_BOOT_IMAMGE_BASE 0x80800000
+#define CONFIG_DTBO_IMAMGE_BASE 0x83000000
+#define CONFIG_RAMDISK_IMAMGE_BASE 0x83100000
+
 int cmd_boot(int argc, const cmd_args *argv);
 int ab_update_slot_info_bootloader(void);
 static void do_memtester(unsigned int loop);
@@ -44,39 +51,82 @@ extern unsigned int uart_log_mode;
 
 static void exynos_boot_task(const struct app_descriptor *app, void *args)
 {
-	unsigned int rst_stat = readl(EXYNOS9610_POWER_RST_STAT);
-	int cpu, chk_smpl;
-	struct exynos_gpio_bank *bank = (struct exynos_gpio_bank *)EXYNOS9610_GPA1CON;
-	int fb_mode_failed = 0;
-	unsigned int soc, mif, apm;
+	unsigned int rst_stat = readl(EXYNOS9630_POWER_RST_STAT);
+	/* struct pit_entry *ptn; */
+	int cpu;
+	struct exynos_gpio_bank *bank = (struct exynos_gpio_bank *)EXYNOS9630_GPA1CON;
 	int vol_up_val;
-	int vol_down_val;
-	struct pit_entry *ptn;
 
 	printf("RST_STAT: 0x%x\n", rst_stat);
 
-	soc = readl(EXYNOS9610_POWER_BASE + 0x0f00);
-	mif = readl(EXYNOS9610_POWER_BASE + 0x0f04);
-	apm = readl(EXYNOS9610_POWER_BASE + 0x0f40);
-
-	printf("PMUDBG_CENTRAL_SEQ_*: apsoc 0x%x mif 0x%x apm 0x%x\n", soc, mif, apm);
-	printf("PMUDBG_CL0_*: ");
-	for (cpu = LITTLE_CORE_START; cpu <= LITTLE_CORE_LAST; cpu++)
-		printf("cpu%d: 0x%x ", cpu, dfd_get_pmudbg_stat(cpu));
-	printf("\n");
-	printf("PMUDBG_CL1_*: ");
-	for (cpu = BIG_CORE_START; cpu <= BIG_CORE_LAST; cpu++)
-		printf("cpu%d: 0x%x ", cpu-BIG_CORE_START, dfd_get_pmudbg_stat(cpu));
-	printf("\n");
-
 	if (*(unsigned int *)DRAM_BASE != 0xabcdef) {
 		printf("Running on DRAM by TRACE32: skip auto booting\n");
+
+#if 0
+		ptn = pit_get_part_info("pit");
+		if (ptn == 0)
+			printf("Partition 'pit' does not exist.\n");
+		pit_update((void *)CONFIG_PIT_IMAMGE_BASE, 0);
+
+		ptn = pit_get_part_info("fwbl1");
+		if (ptn == 0)
+			printf("Partition 'fwbl1' does not exist.\n");
+		pit_access(ptn, PIT_OP_FLASH, (u64)CONFIG_FWBL1_IMAMGE_BASE, 0);
+
+		ptn = pit_get_part_info("epbl");
+		if (ptn == 0)
+			printf("Partition 'epbl' does not exist.\n");
+		pit_access(ptn, PIT_OP_FLASH, (u64)CONFIG_EPBL_IMAMGE_BASE, 0);
+
+		ptn = pit_get_part_info("bl2");
+		if (ptn == 0)
+			printf("Partition 'bl2' does not exist.\n");
+		pit_access(ptn, PIT_OP_FLASH, (u64)CONFIG_BL2_IMAMGE_BASE, 0);
+
+		ptn = pit_get_part_info("bootloader");
+		if (ptn == 0)
+			printf("Partition 'bootloader' does not exist.\n");
+		pit_access(ptn, PIT_OP_FLASH, (u64)CONFIG_LK_IMAMGE_BASE, 0);
+
+		ptn = pit_get_part_info("el3_mon");
+		if (ptn == 0)
+			printf("Partition 'el3_mon' does not exist.\n");
+		pit_access(ptn, PIT_OP_FLASH, (u64)CONFIG_EL3_MON_IMAMGE_BASE, 0);
+
+		ptn = pit_get_part_info("boot");
+		if (ptn == 0)
+			printf("Partition 'boot' does not exist.\n");
+		pit_access(ptn, PIT_OP_FLASH, (u64)CONFIG_BOOT_IMAMGE_BASE, 0);
+
+		ptn = pit_get_part_info("dtbo");
+		if (ptn == 0)
+			printf("Partition 'dtbo' does not exist.\n");
+		pit_access(ptn, PIT_OP_FLASH, (u64)CONFIG_DTBO_IMAMGE_BASE, 0);
+
+		ptn = pit_get_part_info("ramdisk");
+		if (ptn == 0)
+			printf("Partition 'ramdisk' does not exist.\n");
+		pit_access(ptn, PIT_OP_FLASH, (u64)CONFIG_RAMDISK_IMAMGE_BASE, 0);
+#endif
+
 // have to modify
 //		do_fastboot(0, 0);
 		start_usb_gadget();
 		return;
 	}
 
+	/* Volume up set Input & Pull up */
+	exynos_gpio_set_pull(bank, 0, GPIO_PULL_UP);
+	exynos_gpio_cfg_pin(bank, 0, GPIO_INPUT);
+	vol_up_val = exynos_gpio_get_value(bank, 0);
+	if (vol_up_val == 0) {
+		printf("Volume up key: %d\n", vol_up_val);
+		printf("Volume up key is pressed. Entering fastboot mode!\n");
+		start_usb_gadget();
+		return;
+	}
+
+/*
 	if (is_first_boot()) {
 		unsigned int env_val = 0;
 
@@ -92,21 +142,20 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 			}
 		}
 	}
+*/
 
+/*
 	dfd_display_reboot_reason();
 	dfd_display_core_stat();
-	/* Volume up set Input & Pull up */
-	exynos_gpio_set_pull(bank, 5, GPIO_PULL_UP);
-	exynos_gpio_cfg_pin(bank, 5, GPIO_INPUT);
-	/* Volume down set Input & Pull up */
-	exynos_gpio_set_pull(bank, 6, GPIO_PULL_UP);
-	exynos_gpio_cfg_pin(bank, 6, GPIO_INPUT);
+*/
 
+/*
 	clear_wdt_recovery_settings();
 	if (is_first_boot())
 		ab_update_slot_info_bootloader();
-
+*/
 	/* check SMPL & WTSR with S2MPU09 */
+/*
 	chk_smpl = chk_smpl_wtsr_s2mpu09();
 	if (chk_smpl)
 		print_lcd_update(FONT_RED, FONT_BLACK, "WTSR or SMPL DETECTED");
@@ -123,6 +172,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		writel(0, CONFIG_RAMDUMP_SCRATCH);
 	}
 #endif
+*/
 
 	if (!is_first_boot()) {
 		printf("Entering fastboot: not first_boot\n");
@@ -134,9 +184,11 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	} else if ((readl(CONFIG_RAMDUMP_SCRATCH) == CONFIG_RAMDUMP_MODE) && get_charger_mode() == 0) {
 		printf("Entering fastboot: Ramdump_Scratch & Charger\n");
 		goto fastboot;
+/*
 	} else if (fb_mode_failed == 1) {
 		printf("Entering fastboot: fastboot_reg | fb_mode\n");
 		goto fastboot;
+*/
 	} else
 		goto reboot;
 
@@ -147,6 +199,8 @@ reboot:
 		start_usb_gadget();
 		return;
 	}
+
+/*
 	vol_up_val = exynos_gpio_get_value(bank, 5);
 	vol_down_val = exynos_gpio_get_value(bank, 6);
 
@@ -163,6 +217,7 @@ reboot:
 			pit_access(ptn, PIT_OP_FLASH, (u64)CONFIG_RAMDUMP_LOGBUF, 0);
 		}
 	}
+*/
 
 #ifdef RAMDUMP_MODE_OFF
 	dfd_set_dump_gpr(0);
@@ -187,6 +242,7 @@ fastboot:
 	return;
 }
 
+#if 0
 static void print_status(int iter)
 {
 	int vbat;
@@ -211,10 +267,13 @@ static void print_status(int iter)
 
 static void do_memtester(unsigned int loop)
 {
-	int iter = 0, dram_freq;
+	int iter = 0;
+#ifdef CONFIG_DISPLAY_DRAWFONT
+	int dram_freq;
 
 	dram_freq = almighty_get_dram_freq();
 	print_lcd_update(FONT_WHITE, FONT_BLACK, "DRAM Test will start at %dMHz\n", dram_freq);
+#endif
 	cpu_common_init();
 	print_lcd_update(FONT_WHITE, FONT_BLACK, "Cache is enabled.\n");
 	clean_invalidate_dcache_all();
@@ -238,6 +297,7 @@ static void do_memtester(unsigned int loop)
 	clean_invalidate_dcache_all();
 	disable_mmu_dcache();
 }
+#endif
 
 APP_START(exynos_boot)
 	.entry = exynos_boot_task,
