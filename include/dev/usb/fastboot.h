@@ -26,7 +26,7 @@ struct cmd_fastboot_variable {
 };
 
 #define CFG_FASTBOOT_PAGESIZE		  (2048)
-#define CFG_FASTBOOT_TRANSFER_BUFFER	  (0X8A000000)
+#define CFG_FASTBOOT_TRANSFER_BUFFER	  (0x8B000000)
 #define CFG_FASTBOOT_TRANSFER_BUFFER_SIZE (0x30000000)
 
 /* From fastboot client.. */
@@ -43,7 +43,7 @@ struct cmd_fastboot_variable {
 #define CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE 2048
 #endif
 
-#define FASTBOOT_VERSION_BOOTLOADER	"MAESTRO9610-LK-20190509-1"
+#define FASTBOOT_VERSION_BOOTLOADER	"EXYNOS9630-LK-20190509-1"
 
 struct cmd_fastboot_interface
 {
