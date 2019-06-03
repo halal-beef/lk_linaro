@@ -12,7 +12,7 @@
 1	204800	0	modem	0	0
 5	61440	0	persist	0	0
 5	1228800	0	vendor	0	0
-1	81920	0	boot	0	0
+1	131072	0	boot	0	0
 1	81920	0	recovery	0	0
 1	81920	0	misc	0	0
 1	40960	0	mnv	0	0
@@ -22,11 +22,10 @@
 5	40960	0	efs	fixed	0
 0	24	1	fwbl1	0	0
 0	152	1	epbl	0	0
-0	656	1	bl2	0	0
+0	920	1	bl2	0	0
 0	32	1	dram_train	0	0
-0	8	1	ocp_train	0	0
 0	160	1	ect_test	0	0
-0	280	1	acpm_test	0	0
-0	2048	1	bootloader	0	0
+0	304	1	acpm_test	0	0
+0	4096	1	bootloader	0	0
 0	512	1	el3_mon	0	0
 0	2048	1	tzsw	0	0
