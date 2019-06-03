@@ -26,7 +26,6 @@
 #include <platform/lock.h>
 #include <platform/ab_update.h>
 #include <platform/environment.h>
-#include <platform/if_pmic_s2mu004.h>
 #include <platform/dfd.h>
 #include <platform/debug-store-ramdump.h>
 #include <dev/usb/fastboot.h>
@@ -215,7 +214,7 @@ int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 			fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 			return 0;
 		}
-		if (ptn->filesys == FS_TYPE_EXT4)
+		if (ptn->filesys == FS_TYPE_SPARSE_EXT4)
 			strcpy(response + 4, "ext4");
 		/*
 		 * In case of flashing pit, this should be
@@ -311,6 +310,7 @@ int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 	}
 	else if (!memcmp(cmd_buffer + 7, "has-slot", strlen("has-slot")))
 	{
+#if defined(CONFIG_AB_UPDATE)
 		LTRACEF("fast cmd:has-slot\n");
 		if (!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "ldfw") ||
 			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "keystorage") ||
@@ -325,6 +325,7 @@ int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "bootloader"))
 			sprintf(response + 4, "yes");
 		else
+#endif
 			sprintf(response + 4, "no");
 	}
 	else if (!memcmp(cmd_buffer + 7, "unlocked", strlen("unlocked")))
@@ -609,6 +610,7 @@ int fb_do_ramdump(const char *cmd_buffer, unsigned int rx_sz)
 	return 0;
 }
 
+#if defined(CONFIG_AB_UPDATE)
 int fb_do_set_active(const char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
@@ -633,6 +635,7 @@ int fb_do_set_active(const char *cmd_buffer, unsigned int rx_sz)
 
 	return 0;
 }
+#endif
 
 /* Lock/unlock device */
 int fb_do_flashing(const char *cmd_buffer, unsigned int rx_sz)
@@ -812,7 +815,9 @@ struct cmd_fastboot cmd_list[] = {
 	{"download:", fb_do_download},
 	{"ramdump:", fb_do_ramdump},
 	{"getvar:", fb_do_getvar},
+#if defined(CONFIG_AB_UPDATE)
 	{"set_active:", fb_do_set_active},
+#endif
 	{"flashing", fb_do_flashing},
 	{"oem", fb_do_oem},
 };
