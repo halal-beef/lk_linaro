@@ -19,6 +19,12 @@
 #define EXYNOS9630_LDFW_PARTITION_SIZE		(8192 * 512)
 #define EXYNOS_LDFW_MAGIC			(0x10adab1e)
 
+#define EXYNOS9630_SSP_NWD_ADDR			(EXYNOS9630_LDFW_NWD_ADDR)
+#define EXYNOS9630_SSP_PARTITION_SIZE		(1024 * 512)
+
+#define EXYNOS9630_SP_NWD_ADDR			(EXYNOS9630_LDFW_NWD_ADDR)
+#define EXYNOS9630_SP_PARTITION_SIZE		(1024 * 1024)           /* 1 MB */
+
 #define LDFW_DEBUG
 
 #define CHECK_SIGNATURE_FAIL			(0x2)
@@ -40,10 +46,18 @@
 enum {
 	LDFW_PART,
 	KEYSTORAGE_PART,
+	SSP_PART,
+	TZSW_PART,
 	MAX_CH_NUM,
 };
 
 int init_ldfws(void);
 int init_keystorage(void);
+int init_sp(void);
+int init_ssp(void);
+
+u32 get_ldfw_load_flag(void);
+u32 get_secure_os_load_flag(void);
+
 #endif	/* __ASSEMBLY__ */
 #endif	/* __LDFW_H_ */

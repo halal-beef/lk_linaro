@@ -181,48 +181,17 @@ static void read_dram_info(void)
 #endif
 }
 
-static void load_secure_payload(void)
+#define EL3_MON_VERSION_STR_SIZE (180)
+
+static void print_el3_monitor_version(void)
 {
-	unsigned long ret = 0;
-	unsigned int boot_dev = 0;
-	unsigned int dfd_en = readl(EXYNOS9630_POWER_RESET_SEQUENCER_CONFIGURATION);
-	unsigned int rst_stat = readl(EXYNOS9630_POWER_RST_STAT);
+	char el3_mon_ver[EL3_MON_VERSION_STR_SIZE] = { 0, };
 
-	if (*(unsigned int *)DRAM_BASE != 0xabcdef) {
-		printf("Running on DRAM by TRACE32: skip load_secure_payload()\n");
-	} else {
-		if (is_first_boot()) {
-			boot_dev = readl(EXYNOS9630_POWER_INFORM3);
-
-			/*
-			 * In case WARM Reset/Watchdog Reset and DumpGPR is enabled,
-			 * Secure payload doesn't have to be loaded.
-			 */
-			if (!((rst_stat & (WARM_RESET | LITTLE_WDT_RESET)) &&
-				dfd_en & EXYNOS9630_EDPCSR_DUMP_EN)) {
-				ret = load_sp_image(boot_dev);
-				if (ret)
-					/*
-					 * 0xFEED0002 : Signature check fail
-					 * 0xFEED0020 : Anti-rollback check fail
-					 */
-					printf("Fail to load Secure Payload!! [ret = 0x%lX]\n", ret);
-				else {
-					printf("Secure Payload is loaded successfully!\n");
-					secure_os_loaded = 1;
-				}
-			}
-
-			/*
-			 * If boot device is eMMC, emmc_endbootop() should be
-			 * implemented because secure payload is the last image
-			 * in boot partition.
-			 */
-			if (boot_dev == BOOT_EMMC)
-				emmc_endbootop();
-		} else {
-			/* second_boot = 1; */
-		}
+	if (*(unsigned int *)DRAM_BASE == 0xabcdef) {
+		/* This booting is from eMMC/UFS. not T32 */
+		get_el3_mon_version(el3_mon_ver, EL3_MON_VERSION_STR_SIZE);
+		printf("\nEL3 Monitor information: \n");
+		printf("%s\n\n", el3_mon_ver);
 	}
 }
 
@@ -363,8 +332,7 @@ void platform_init(void)
 
 #if defined(CONFIG_UART_LOG_MODE)
 	if (get_current_boot_device() != BOOT_USB &&
-		*(unsigned int *)DRAM_BASE == 0xabcdef &&
-		secure_os_loaded == 1) {
+		*(unsigned int *)DRAM_BASE == 0xabcdef) {
 		unsigned int env_val = 0;
 
 		if (sysparam_read("uart_log_enable", &env_val, sizeof(env_val)) > 0) {
@@ -409,21 +377,35 @@ void platform_init(void)
 		return;
 	*/
 
-	if (secure_os_loaded == 1) {
-		write_dram_training_data();
-
+	if (*(unsigned int *)DRAM_BASE == 0xabcdef) {
 		if (!init_keystorage())
 			printf("keystorage: init done successfully.\n");
 		else
 			printf("keystorage: init failed.\n");
 
-		if (!init_ldfws()) {
-			printf("ldfw: init done successfully.\n");
-		} else {
-			printf("ldfw: init failed.\n");
-		}
+		if (!init_ssp())
+			printf("ssp: init done successfully.\n");
+		else
+			printf("ssp: init failed.\n");
 
+		if (!init_ldfws())
+			printf("ldfw: init done successfully.\n");
+		else
+			printf("ldfw: init failed.\n");
+
+#if defined(CONFIG_USE_RPMB)
 		rpmb_key_programming();
+#if defined(CONFIG_USE_AVB20)
 		rpmb_load_boot_table();
+#endif
+#endif
+		ret = (u32)init_sp();
+		if (!ret)
+			printf("secure_payload: init done successfully.\n");
+		else
+			printf("secure_payload: init failed.\n");
+
+by_dumpgpr_out:
+		print_el3_monitor_version();
 	}
 }
