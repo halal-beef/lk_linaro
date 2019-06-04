@@ -195,14 +195,15 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 fastboot:
 	uart_log_mode = 1;
 	debug_store_ramdump();
-	do_fastboot(0, 0);
+	//do_fastboot(0, 0);
+	start_usb_gadget();
 	return;
 
 fastboot_dump_gpr:
 	uart_log_mode = 1;
-	dfd_run_dump_gpr();
 	debug_store_ramdump();
-	do_fastboot(0, 0);
+	//do_fastboot(0, 0);
+	start_usb_gadget();
 	return;
 
 reboot:
@@ -232,7 +233,9 @@ reboot:
 	}
 */
 	/* Turn on dumpEN for DumpGPR */
+#ifdef CONFIG_RAMDUMP_GPR
 	dfd_set_dump_gpr(CACHE_RESET_EN | DUMPGPR_EN);
+#endif
 	cmd_boot(0, 0);
 	return;
 }

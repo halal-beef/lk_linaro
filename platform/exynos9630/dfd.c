@@ -78,6 +78,7 @@ static void dfd_display_panic_reason(void)
 	print_lcd_update(FONT_YELLOW, FONT_RED, "%s", CONFIG_RAMDUMP_PANIC_REASON);
 }
 
+#ifdef CONFIG_RAMDUMP_GPR
 void dfd_display_reboot_reason(void)
 {
 	u32 ret;
@@ -115,6 +116,7 @@ void dfd_display_reboot_reason(void)
 		break;
 	}
 }
+#endif
 
 static int dfd_check_panic_stat(u32 cpu)
 {
@@ -127,6 +129,7 @@ static int dfd_check_panic_stat(u32 cpu)
 	return 0;
 }
 
+#ifdef CONFIG_RAMDUMP_GPR
 void dfd_display_core_stat(void)
 {
 	int val;
@@ -191,6 +194,7 @@ void dfd_display_core_stat(void)
 		}
 	}
 }
+#endif
 
 static void dfd_display_pc_value(u32 reg)
 {
@@ -220,6 +224,7 @@ static void dfd_display_pc_value(u32 reg)
 	}
 }
 
+#ifdef CONFIG_RAMDUMP_GPR
 void dfd_set_dump_en_for_cacheop(int en)
 {
 	if (en)
@@ -227,6 +232,7 @@ void dfd_set_dump_en_for_cacheop(int en)
 	else
 		pmu_clr_bit_atomic(RESET_SEQUENCER_OFFSET, DUMP_EN_BIT);
 }
+#endif
 
 /*
  * FLUSH_SKIP : skip cache flush
@@ -328,7 +334,7 @@ void dfd_secondary_cpu_cache_flush(u32 cpu)
 	writel((val | (1 << cpu)), CONFIG_RAMDUMP_DUMP_GPR_WAIT);
 off:
 	if (cpu != 0) {
-		cpu_boot(CPU_OFF_PSCI_ID, 0, 0);
+		//cpu_boot(CPU_OFF_PSCI_ID, 0, 0);
 		do {
 			wfi();
 		} while (1);
@@ -421,6 +427,7 @@ static void dfd_ipc_fill_buffer(struct dfd_ipc_cmd *cmd, u32 data1, u32 data2, u
 	cmd->buffer[3] = data3;
 }
 
+#ifdef CONFIG_RAMDUMP_GPR
 void dfd_run_post_processing(void)
 {
 	u32 cpu_logical_map[NR_CPUS] = {
@@ -544,7 +551,9 @@ finish:
 done:
 	printf("---------------------------------------------------------\n");
 }
+#endif
 
+#ifdef CONFIG_RAMDUMP_GPR
 void dfd_get_dbgc_version(void)
 {
 	u32 flag, reg;
@@ -582,6 +591,7 @@ retry:
 			debug_snapshot_get_item_size("log_dbgc"), 0);
 	dfd_ipc_send_data_polling(&cmd);
 }
+#endif
 
 unsigned int clear_llc_init_state(void)
 {
