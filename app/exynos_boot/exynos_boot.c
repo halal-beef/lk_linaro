@@ -192,6 +192,19 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	} else
 		goto reboot;
 
+fastboot:
+	uart_log_mode = 1;
+	debug_store_ramdump();
+	do_fastboot(0, 0);
+	return;
+
+fastboot_dump_gpr:
+	uart_log_mode = 1;
+	dfd_run_dump_gpr();
+	debug_store_ramdump();
+	do_fastboot(0, 0);
+	return;
+
 reboot:
 	if (is_xct_boot()) {
 		cpu = cmd_xct(0, 0);
@@ -218,27 +231,9 @@ reboot:
 		}
 	}
 */
-
-#ifdef RAMDUMP_MODE_OFF
-	dfd_set_dump_en_for_cacheop(0);
-	set_debug_level("low");
-#else
-	dfd_set_dump_en_for_cacheop(1);
-	set_debug_level("mid");
-#endif
-	set_debug_level_by_env();
-
+	/* Turn on dumpEN for DumpGPR */
+	dfd_set_dump_gpr(CACHE_RESET_EN | DUMPGPR_EN);
 	cmd_boot(0, 0);
-	return;
-
-fastboot:
-	uart_log_mode = 1;
-#ifdef RAMDUMP_MODE_OFF
-	cmd_boot(0, 0);
-#else
-	debug_store_ramdump();
-	start_usb_gadget();
-#endif
 	return;
 }
 
