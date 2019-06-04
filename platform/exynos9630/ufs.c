@@ -44,7 +44,7 @@ void ufs_set_unipro_clk(struct ufs_host *ufs)
 {
 	int timeout = 0;
 
-	writel(3, DIV_CLKCMU_UFS_EMBD_MUX);
+	writel(1, DIV_CLKCMU_UFS_EMBD_MUX);
 
 	do {
 		timeout += 1;
@@ -54,7 +54,7 @@ void ufs_set_unipro_clk(struct ufs_host *ufs)
 
 	timeout = 0;
 
-	writel(1, MUX_CLKCMU_UFS_EMBD_CON);
+	writel(2, MUX_CLKCMU_UFS_EMBD_CON);
 
 	do {
 		timeout += 1;
