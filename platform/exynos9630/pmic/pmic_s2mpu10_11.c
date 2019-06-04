@@ -13,6 +13,7 @@
 #include <platform/speedy.h>
 #include <platform/delay.h>
 #include <platform/pmic_s2mpu10_11.h>
+#include <platform/if_pmic_s2mu107.h>
 #include <dev/lk_acpm_ipc.h>
 
 void pmic_enable_manual_reset (void)

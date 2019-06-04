@@ -24,6 +24,7 @@
 #include <platform/smc.h>
 #include <platform/speedy.h>
 #include <platform/pmic_s2mpu10_11.h>
+#include <platform/if_pmic_s2mu107.h>
 #include <platform/dfd.h>
 #include <platform/ldfw.h>
 #include <platform/gpio.h>
@@ -297,6 +298,7 @@ void platform_init(void)
 	if (*(unsigned int *)DRAM_BASE == 0xabcdef) {
 		pmic_init();
 		read_pmic_info_s2mpu10();
+		s2mu107_sc_init();
 
 		/* UFS manually always-on */
 		reg = 0xEC;
