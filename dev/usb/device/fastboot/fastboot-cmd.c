@@ -23,6 +23,7 @@
 #include <part.h>
 #include <platform/sfr.h>
 #include <platform/smc.h>
+#include <platform/ldfw.h>
 #include <platform/lock.h>
 #include <platform/ab_update.h>
 #include <platform/environment.h>
@@ -340,7 +341,7 @@ int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 	}
 	else if (!memcmp(cmd_buffer + 7, "unlocked", strlen("unlocked")))
 	{
-		if (secure_os_loaded == 1) {
+		if (get_ldfw_load_flag()) {
 			uint32_t lock_state;
 			rpmb_get_lock_state(&lock_state);
 			if (!lock_state)
