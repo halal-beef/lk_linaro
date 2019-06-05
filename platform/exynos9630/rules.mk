@@ -25,6 +25,7 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/speedy/speedy.c \
 	$(LOCAL_DIR)/pmic/pmic_s2mpu10_11.c \
 	$(LOCAL_DIR)/pmic/if_pmic_s2mu107.c \
+	$(LOCAL_DIR)/pmic/fg_s2mu107.c \
 	$(LOCAL_DIR)/ab_update/ab_update.c \
 	$(LOCAL_DIR)/lock/lock.c \
 	$(LOCAL_DIR)/gpio_init.S \
