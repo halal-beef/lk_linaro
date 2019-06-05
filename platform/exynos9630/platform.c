@@ -25,6 +25,7 @@
 #include <platform/speedy.h>
 #include <platform/pmic_s2mpu10_11.h>
 #include <platform/if_pmic_s2mu107.h>
+#include <platform/fg_s2mu107.h>
 #include <platform/dfd.h>
 #include <platform/ldfw.h>
 #include <platform/gpio.h>
@@ -45,7 +46,6 @@
 
 void speedy_gpio_init(void);
 void xbootldo_gpio_init(void);
-void fg_init_s2mu004(void);
 
 unsigned int s5p_chip_id[4] = {0x0, 0x0, 0x0, 0x0};
 unsigned int charger_mode = 0;
@@ -296,6 +296,7 @@ void platform_init(void)
 		pmic_init();
 		read_pmic_info_s2mpu10();
 		s2mu107_sc_init();
+		fg_init_s2mu107();
 
 		/* UFS manually always-on */
 		reg = 0xEC;
