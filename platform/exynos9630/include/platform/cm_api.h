@@ -25,6 +25,8 @@
 
 /* SMC ID for CM APIs */
 #define SMC_AARCH64_PREFIX				(0xC2000000)
+#define SMC_CM_KEY_MANAGER				(0x1013)
+#define SMC_CM_RANDOM					(0x101C)
 #define SMC_CM_SECURE_BOOT				(0x101D)
 
 #define SHA256_DIGEST_LEN				(32)
@@ -98,5 +100,62 @@ uint64_t cm_secure_boot_get_root_of_trust(
 		SB_PARAM_ROOT_OF_TRUST_ST *root_of_trust);
 uint64_t cm_secure_boot_block_cmd(void);
 uint64_t cm_secure_boot_self_test(void);
+
+/*****************************************************************************/
+/* CM API functions for Random                                               */
+/*****************************************************************************/
+#define GET_RANDOM_WORD					(0)
+
+uint64_t cm_get_random(uint8_t *random, uint32_t random_len);
+uint64_t cm_random_self_test(void);
+
+/*****************************************************************************/
+/* CM API functions for Keymanager                                           */
+/*****************************************************************************/
+#define KM_KW_MAX_SALT_LEN				(60)
+#define KM_KW_MAX_IV_LEN				(12)
+#define KM_KW_MAX_AAD_LEN				(32)
+#define KM_KW_MAX_KEY_LEN				(32)
+#define KM_KW_MAX_INPUT_LEN				(4096)
+#define KM_KW_MAX_TAG_LEN				(16)
+
+/* define function number */
+enum {
+	CMD_REK_BASED_KDF = 0,
+	CMD_KEY_WRAP_WITH_KEK,
+};
+
+enum kw_mode {
+	WRAP,
+	UNWRAP,
+};
+
+enum kek_mode {
+	SWKEK,
+	HWKEK,
+};
+
+typedef struct cm_kw_ctx {
+	uint8_t salt[KM_KW_MAX_SALT_LEN];
+	uint32_t salt_len;
+	uint8_t iv[KM_KW_MAX_IV_LEN];
+	uint32_t iv_len;
+	uint8_t aad[KM_KW_MAX_AAD_LEN];
+	uint32_t aad_len;
+	uint8_t kek[KM_KW_MAX_KEY_LEN];
+	uint32_t kek_len;
+	uint8_t plaintext_key[KM_KW_MAX_INPUT_LEN];
+	uint32_t plaintext_key_len;
+	uint8_t encrypted_key[KM_KW_MAX_INPUT_LEN];
+	uint32_t encrypted_key_len;
+	uint8_t auth_tag[KM_KW_MAX_TAG_LEN];
+	uint32_t auth_tag_len;
+	uint32_t kw_mode;
+	uint32_t kek_mode;
+	uint32_t reserved[17];
+} CM_KW_CTX_T __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE)));
+
+uint64_t cm_km_wrap_key_with_kek(CM_KW_CTX_T *ctx);
+uint64_t cm_km_self_test(void);
 
 #endif /* _CM_API_H_ */
