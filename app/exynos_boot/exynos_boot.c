@@ -56,6 +56,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	int cpu;
 	struct exynos_gpio_bank *bank = (struct exynos_gpio_bank *)EXYNOS9630_GPA1CON;
 	int vol_up_val;
+	int i;
 
 	printf("RST_STAT: 0x%x\n", rst_stat);
 
@@ -118,9 +119,11 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	/* Volume up set Input & Pull up */
 	exynos_gpio_set_pull(bank, 0, GPIO_PULL_NONE);
 	exynos_gpio_cfg_pin(bank, 0, GPIO_INPUT);
-	vol_up_val = exynos_gpio_get_value(bank, 0);
-	if (vol_up_val == 0) {
+	for (i = 0; i < 10; i++) {
+		vol_up_val = exynos_gpio_get_value(bank, 0);
 		printf("Volume up key: %d\n", vol_up_val);
+	}
+	if (vol_up_val == 0) {
 		printf("Volume up key is pressed. Entering fastboot mode!\n");
 		start_usb_gadget();
 		return;
