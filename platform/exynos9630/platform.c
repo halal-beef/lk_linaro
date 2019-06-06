@@ -375,10 +375,8 @@ void platform_init(void)
 		return;
 	*/
 
-	/*
 	if (is_first_boot() && *(unsigned int *)DRAM_BASE == 0xabcdef)
 		debug_snapshot_fdt_init();
-	*/
 
 	if (secure_os_loaded == 1) {
 		write_dram_training_data();
