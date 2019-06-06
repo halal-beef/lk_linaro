@@ -35,6 +35,16 @@ void pmic_init (void)
 	unsigned char reg;
 	struct exynos_gpio_bank *bank = (struct exynos_gpio_bank *)EXYNOS9630_GPP2CON;
 
+	/* Disable manual reset */
+	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_CTRL1, &reg);
+	reg &= ~MRSTB_EN;
+	i3c_write(0, S2MPU10_PM_ADDR, S2MPU10_PM_CTRL1, reg);
+
+	/* Enable warm reset */
+	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_CTRL3, &reg);
+	reg |= WRSTEN;
+	i3c_write(0, S2MPU10_PM_ADDR, S2MPU10_PM_CTRL3, reg);
+
 	/* Enable LCD power */
 	reg = 0xF0;
 	i3c_write(0, S2MPU10_PM_ADDR, S2MPU10_PM_LDO21_CTRL, reg);
