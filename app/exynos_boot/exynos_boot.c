@@ -116,7 +116,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	}
 
 	/* Volume up set Input & Pull up */
-	exynos_gpio_set_pull(bank, 0, GPIO_PULL_UP);
+	exynos_gpio_set_pull(bank, 0, GPIO_PULL_NONE);
 	exynos_gpio_cfg_pin(bank, 0, GPIO_INPUT);
 	vol_up_val = exynos_gpio_get_value(bank, 0);
 	if (vol_up_val == 0) {
