@@ -498,10 +498,14 @@ int cmd_boot(int argc, const cmd_args *argv)
 	load_boot_images();
 
 #if defined(CONFIG_USE_AVB20)
+#if defined(CONFIG_AB_UPDATE)
 	if (ab_current_slot())
 		avb_ret = avb_main("_b", cmdline, verifiedbootstate);
 	else
 		avb_ret = avb_main("_a", cmdline, verifiedbootstate);
+#else
+	avb_ret = avb_main("", cmdline, verifiedbootstate);
+#endif
 	printf("AVB: boot/dtbo image verification result: %d\n", avb_ret);
 
 	rpmb_get_lock_state(&lock_state);
