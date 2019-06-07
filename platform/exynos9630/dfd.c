@@ -25,8 +25,6 @@
 #endif
 
 #define TIMEOUT	100000
-s64 sec_area_base;
-s64 sec_area_end;
 
 void wfi(void)
 {
@@ -242,7 +240,7 @@ void dfd_set_dump_en_for_cacheop(int en)
  */
 static void dfd_set_cache_flush_level(void)
 {
-	int cpu, little_on = -1, big_on = -1;
+	int cpu, cluster_on = -1;
 	u64 val, stat;
 	u64 *cpu_reg;
 
@@ -252,38 +250,29 @@ static void dfd_set_cache_flush_level(void)
 		if (!cpu_reg[POWER_STATE]) {
 			stat = FLUSH_SKIP;
 		} else {
-			if (cpu <= LITTLE_CORE_LAST) {
+			if (cpu <= LITTLE_CORE_LAST)
 				stat = FLUSH_LEVEL1;
-				little_on = cpu;
-			} else {
+			else
 				stat = FLUSH_LEVEL2;
-				big_on = cpu;
-			}
+			cluster_on = cpu;
 		}
 		writel(stat, CONFIG_RAMDUMP_GPR_POWER_STAT + offset);
 		printf("Core%d: Initial policy - Cache Flush Level %llu\n", cpu, stat);
 	}
 
 	/* conclude core which runs cache flush level 2 in little cluster */
-	if (little_on < 0) {
+	if (cluster_on <= 0) {
 		/* core0 runs cache flush level 2 */
 		val = FLUSH_LEVEL2;
-		little_on = 0;
+		cluster_on = 0;
 	} else {
 		val = FLUSH_LEVEL3;
 	}
 
-	stat = readl(CONFIG_RAMDUMP_GPR_POWER_STAT + (little_on * REG_OFFSET));
+	stat = readl(CONFIG_RAMDUMP_GPR_POWER_STAT + (cluster_on * REG_OFFSET));
 	stat |= val;
-	writel(stat, CONFIG_RAMDUMP_GPR_POWER_STAT + (little_on * REG_OFFSET));
-	printf("Core%d: Cache Flush Level changed => %llu\n", little_on, stat);
-
-	if (big_on >= 0) {
-		stat = readl(CONFIG_RAMDUMP_GPR_POWER_STAT + (big_on * REG_OFFSET));
-		stat |= FLUSH_LEVEL3;
-		writel(stat, CONFIG_RAMDUMP_GPR_POWER_STAT + (big_on * REG_OFFSET));
-		printf("Core%d: Cache Flush Level changed => %llu\n", big_on, stat);
-	}
+	writel(stat, CONFIG_RAMDUMP_GPR_POWER_STAT + (cluster_on * REG_OFFSET));
+	printf("Core%d: Cache Flush Level changed => %llu\n", cluster_on, stat);
 }
 
 static void dfd_flush_dcache_level(u32 level, u32 invalidate)
@@ -306,24 +295,22 @@ void dfd_secondary_cpu_cache_flush(u32 cpu)
 			break;
 	} while (1);
 
-	if (cpu >= BIG_CORE_START && cpu <= BIG_CORE_LAST)
-		goto off;
-
 	/* Get Cache Flush Level */
 	val = readl(CONFIG_RAMDUMP_GPR_POWER_STAT + (cpu * REG_OFFSET));
 	switch (val) {
 	case 0:
 		break;
 	case 1:
-		/* FLUSH_LEVEL1 : L1, L2 cache flush (local cache flush) */
+		/* FLUSH_LEVEL1 */
 		dfd_flush_dcache_level(val - 1, 0);
 		break;
 	case 2:
-		/* FLUSH_LEVEL2 : L3 cache flush (cluster cache flush) */
+		/* FLUSH_LEVEL2 */
+		dfd_flush_dcache_level(val - 2, 0);
 		dfd_flush_dcache_level(val - 1, 0);
 		break;
 	case 3:
-		/* FLUSH_LEVEL3 : L1, L2, L3 cache flush (all cache flush) */
+		/* FLUSH_LEVEL3 (all cache flush) */
 		dfd_flush_dcache_all();
 		break;
 	default:
@@ -334,34 +321,10 @@ void dfd_secondary_cpu_cache_flush(u32 cpu)
 	writel((val | (1 << cpu)), CONFIG_RAMDUMP_DUMP_GPR_WAIT);
 off:
 	if (cpu != 0) {
-		//cpu_boot(CPU_OFF_PSCI_ID, 0, 0);
+		cpu_boot(CPU_OFF_PSCI_ID, 0, 0);
 		do {
 			wfi();
 		} while (1);
-	}
-}
-
-static void get_sec_info(bool on)
-{
-	if (on) {
-		s64 sec_area_length = exynos_smc(SMC_CMD_GET_SOC_INFO,
-				SOC_INFO_TYPE_SEC_DRAM_SIZE, 0, 0);
-		sec_area_base = exynos_smc(SMC_CMD_GET_SOC_INFO,
-				SOC_INFO_TYPE_SEC_DRAM_BASE, 0, 0);
-
-		if (sec_area_base == ERROR_INVALID_TYPE) {
-			printf("get secure memory base addr error!!\n");
-			return;
-		}
-
-		if (sec_area_length == ERROR_INVALID_TYPE) {
-			printf("get secure memory size error!!\n");
-			return;
-		}
-		sec_area_end = sec_area_base + sec_area_length - 1;
-	} else {
-		sec_area_base = 0;
-		sec_area_end = 0;
 	}
 }
 
@@ -484,7 +447,7 @@ void dfd_run_post_processing(void)
 		goto finish;
 	}
 
-	llc_flush_disable();
+	//llc_flush_disable();
 
 #ifdef SCAN2DRAM_SOLUTION
 	cmd.cmd_raw.id = PP_IPC_CMD_ID_RUN_ARR_TAG;
@@ -521,16 +484,12 @@ void dfd_run_post_processing(void)
 	printf("Try to get Arraydump of power on cores - ");
 	printf("%s(0x%x)!\n", dfd_ipc_send_data_polling(&cmd) < 0 ? "Failed" : "Finish", cmd.buffer[1]);
 #endif
-	get_sec_info(true);
 	//when receiving ipc, cpu0 is running. Run cache flush
 	for (cpu = 0; cpu < NR_CPUS; cpu++) {
 		val = readl(CONFIG_RAMDUMP_WAKEUP_WAIT);
 		writel(val | (1 << cpu), CONFIG_RAMDUMP_WAKEUP_WAIT);
 		if (cpu == 0)
 			dfd_secondary_cpu_cache_flush(cpu);
-
-		if (cpu >= BIG_CORE_START && cpu <= BIG_CORE_LAST)
-			write_back_cache(cpu);
 
 		if (!dfd_wait_complete(cpu)) {
 			printf("Core%d: ERR wait timeout.\n", cpu);
@@ -541,7 +500,6 @@ void dfd_run_post_processing(void)
 		(readl(CONFIG_RAMDUMP_GPR_POWER_STAT + (cpu * REG_OFFSET))),
 		readl(CONFIG_RAMDUMP_DUMP_GPR_WAIT));
 	}
-	get_sec_info(false);
 finish:
 #ifdef SCAN2DRAM_SOLUTION
 	cmd.cmd_raw.id = PP_IPC_CMD_ID_FINISH;

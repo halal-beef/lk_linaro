@@ -66,6 +66,32 @@ static void read_chip_id(void)
 	s5p_chip_id[1] = readl(EXYNOS9630_PRO_ID + CHIPID1_OFFSET) & 0xFFFF;
 }
 
+static void display_rst_stat(u32 rst_stat)
+{
+	u32 temp = rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET | PIN_RESET | SWRESET);
+
+	switch(temp) {
+	case WARM_RESET:
+		printf("rst_stat:0x%x / WARMRESET\n", rst_stat);
+		break;
+	case LITTLE_WDT_RESET:
+		printf("rst_stat:0x%x / CL0_WDTRESET\n", rst_stat);
+		break;
+	case BIG_WDT_RESET:
+		printf("rst_stat:0x%x / CL2_WDTRESET\n", rst_stat);
+		break;
+	case PIN_RESET:
+		printf("rst_stat:0x%x / PINRESET\n", rst_stat);
+		break;
+	case SWRESET:
+		printf("rst_stat:0x%x / SWRESET\n", rst_stat);
+		break;
+	default:
+		printf("rst_stat:0x%x\n", rst_stat);
+		break;
+	}
+}
+
 static void read_dram_info(void)
 {
 	char type[16];
@@ -285,9 +311,11 @@ extern int init_fastboot_variables(void);
 
 void platform_init(void)
 {
+	unsigned int rst_stat = readl(EXYNOS9630_POWER_RST_STAT);
 	u32 ret = 0;
 	unsigned char reg;
 
+	display_rst_stat(rst_stat);
 #if defined(CONFIG_AB_UPDATE)
 	struct bl_sys_info *bl_sys = (struct bl_sys_info *)BL_SYS_INFO;
 
@@ -328,6 +356,12 @@ void platform_init(void)
 	}
 
 	pit_init();
+	if (is_first_boot() && *(unsigned int *)DRAM_BASE == 0xabcdef)
+		debug_snapshot_fdt_init();
+
+	if (rst_stat & (WARM_RESET | LITTLE_WDT_RESET))
+		dfd_run_post_processing();
+
 
 #if defined(CONFIG_UART_LOG_MODE)
 	if (get_current_boot_device() != BOOT_USB &&
@@ -359,6 +393,8 @@ void platform_init(void)
 	 */
 	print_lcd_update(FONT_BLUE, FONT_BLACK, "LK display is enabled!");
 #endif
+	dfd_display_reboot_reason();
+	dfd_display_core_stat();
 	/* read_dram_info(); */
 
 	/*
@@ -374,9 +410,6 @@ void platform_init(void)
 	if (is_xct_boot())
 		return;
 	*/
-
-	if (is_first_boot() && *(unsigned int *)DRAM_BASE == 0xabcdef)
-		debug_snapshot_fdt_init();
 
 	if (secure_os_loaded == 1) {
 		write_dram_training_data();
