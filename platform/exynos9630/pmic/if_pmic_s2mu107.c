@@ -320,6 +320,11 @@ void s2mu107_sc_init(void)
 	IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x81, reg);
 	printf("%s, 0x81(%x)\n", __func__, reg);
 
+	/* Buck NTR off */
+	IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x3A, 0x57);
+	IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x3A, &reg);
+	printf("%s, 0x3A(%x)\n", __func__, reg);
+
 	s2mu107_sc_set_mode(S2MU107_CHG_MODE_CHG);
 }
 
