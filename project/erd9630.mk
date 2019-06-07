@@ -8,3 +8,8 @@ WITH_LINKER_GC := 1
 MODULES += \
 	app/exynos_boot \
 	dev/acpm_ipc
+
+GLOBAL_DEFINES += \
+	INPUT_GPT_AS_PT=1 \
+	FIRST_GPT_VERIFY=0
+export INPUT_GPT_AS_PT=1
