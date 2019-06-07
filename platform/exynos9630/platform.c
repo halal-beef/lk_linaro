@@ -388,17 +388,18 @@ void platform_init(void)
 		else
 			printf("ssp: init failed.\n");
 
-		if (!init_ldfws())
+		if (!init_ldfws()) {
 			printf("ldfw: init done successfully.\n");
-		else
-			printf("ldfw: init failed.\n");
-
 #if defined(CONFIG_USE_RPMB)
-		rpmb_key_programming();
+			rpmb_key_programming();
 #if defined(CONFIG_USE_AVB20)
-		rpmb_load_boot_table();
+			rpmb_load_boot_table();
 #endif
 #endif
+		} else {
+			printf("ldfw: init failed.\n");
+		}
+
 		ret = (u32)init_sp();
 		if (!ret)
 			printf("secure_payload: init done successfully.\n");
