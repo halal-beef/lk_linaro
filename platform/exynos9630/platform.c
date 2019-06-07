@@ -378,15 +378,18 @@ void platform_init(void)
 	*/
 
 	if (*(unsigned int *)DRAM_BASE == 0xabcdef) {
+		unsigned int dfd_en = readl(EXYNOS9630_POWER_RESET_SEQUENCER_CONFIGURATION);
+
+		if ((rst_stat & (WARM_RESET | LITTLE_WDT_RESET)) &&
+			(dfd_en & EXYNOS9630_EDPCSR_DUMP_EN)) {
+			/* if it's a case of ramdump */
+			goto by_dumpgpr_out;
+		}
+
 		if (!init_keystorage())
 			printf("keystorage: init done successfully.\n");
 		else
 			printf("keystorage: init failed.\n");
-
-		if (!init_ssp())
-			printf("ssp: init done successfully.\n");
-		else
-			printf("ssp: init failed.\n");
 
 		if (!init_ldfws()) {
 			printf("ldfw: init done successfully.\n");
