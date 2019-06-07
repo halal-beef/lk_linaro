@@ -36,6 +36,7 @@
 #include <platform/chip_id.h>
 #include <platform/gpio.h>
 #include <pit.h>
+#include <dev/scsi.h>
 
 /* Memory node */
 #define SIZE_2GB (0x80000000)
@@ -579,6 +580,9 @@ int cmd_boot(int argc, const cmd_args *argv)
 
 	configure_dtb();
 	configure_ddi_id();
+
+	/* Power Off Notification to storage */
+	scsi_do_ssu();
 
 	val = readl(EXYNOS9610_POWER_SYSIP_DAT0);
 	if (val == REBOOT_MODE_RECOVERY || val == REBOOT_MODE_FACTORY) {
