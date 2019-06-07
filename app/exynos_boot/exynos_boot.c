@@ -58,8 +58,6 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	int vol_up_val;
 	int i;
 
-	printf("RST_STAT: 0x%x\n", rst_stat);
-
 	if (*(unsigned int *)DRAM_BASE != 0xabcdef) {
 		printf("Running on DRAM by TRACE32: skip auto booting\n");
 
@@ -146,12 +144,6 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		}
 	}
 */
-
-/*
-	dfd_display_reboot_reason();
-	dfd_display_core_stat();
-*/
-
 /*
 	clear_wdt_recovery_settings();
 	if (is_first_boot())
@@ -182,7 +174,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		goto fastboot;
 	} else if (rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET)) {
 		printf("Entering fastboot: Abnormal RST_STAT: 0x%x\n", rst_stat);
-		dfd_run_post_processing();
+		dfd_set_dump_en_for_cacheop(0);
 		goto fastboot;
 	} else if ((readl(CONFIG_RAMDUMP_SCRATCH) == CONFIG_RAMDUMP_MODE) && get_charger_mode() == 0) {
 		printf("Entering fastboot: Ramdump_Scratch & Charger\n");
@@ -197,18 +189,12 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 
 fastboot:
 	uart_log_mode = 1;
+#ifndef RAMDUMP_MODE_OFF
 	debug_store_ramdump();
 	//do_fastboot(0, 0);
 	start_usb_gadget();
 	return;
-
-fastboot_dump_gpr:
-	uart_log_mode = 1;
-	debug_store_ramdump();
-	//do_fastboot(0, 0);
-	start_usb_gadget();
-	return;
-
+#endif
 reboot:
 	if (is_xct_boot()) {
 		cpu = cmd_xct(0, 0);
@@ -236,9 +222,14 @@ reboot:
 	}
 */
 	/* Turn on dumpEN for DumpGPR */
-#ifdef CONFIG_RAMDUMP_GPR
-	dfd_set_dump_gpr(CACHE_RESET_EN | DUMPGPR_EN);
+#ifdef RAMDUMP_MODE_OFF
+	dfd_set_dump_en_for_cacheop(0);
+	set_debug_level("low");
+#else
+	dfd_set_dump_en_for_cacheop(1);
+	set_debug_level("mid");
 #endif
+	set_debug_level_by_env();
 	cmd_boot(0, 0);
 	return;
 }
