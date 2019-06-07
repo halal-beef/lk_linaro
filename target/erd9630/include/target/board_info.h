@@ -13,4 +13,6 @@
 
 #define CONFIG_BOARD_ID 0x0
 
+#define CONFIG_USE_RPMB
+
 #endif /*__BOARD_INFO_H__ */
