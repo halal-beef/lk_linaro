@@ -26,7 +26,11 @@
 static const uint64_t kRollbackIndexNotUsed = 0;
 static uint8_t avb_pubkey[SB_MAX_PUBKEY_LEN] __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
 
+#if defined(CONFIG_AVB_LCD_LOG)
 void avb_print_lcd(const char *str);
+#else
+void avb_print_lcd(const char *str) {};
+#endif
 
 uint32_t avb_set_root_of_trust(uint32_t device_state, uint32_t boot_state)
 {
