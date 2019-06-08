@@ -12,7 +12,6 @@
  */
 #include <reg.h>
 #include <string.h>
-#include <pit.h>
 #include <arch/ops.h>
 #include <lib/font_display.h>
 #include <platform/sizes.h>

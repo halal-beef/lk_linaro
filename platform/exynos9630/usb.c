@@ -14,12 +14,13 @@
 #include <err.h>
 
 #include <usb-def.h>
-#include "pit.h"
 #include "dev/usb/gadget.h"
 #include "dev/usb/dwc3-config.h"
 #include "dev/usb/phy-samsung-usb-cal.h"
 #include "dev/usb/fastboot.h"
 #include "platform/sfr.h"
+
+#include <part.h>
 
 void gadget_probe_pid_vid_version(unsigned short *vid, unsigned short *pid, unsigned short *bcd_version)
 {
@@ -161,7 +162,7 @@ static int add_fastboot_variable(const char *name, const char *string)
 int init_fastboot_variables(void)
 {
 	char tmp[64] = {0};
-	struct pit_entry *ptn;
+	void *part;
 
 	memset(fastboot_var_list, 0, sizeof(struct cmd_fastboot_variable) * CMD_FASTBOOT_MAX_VAR_NR);
 
@@ -177,40 +178,40 @@ int init_fastboot_variables(void)
 	add_fastboot_variable("battery-voltage", "2700mV");
 	add_fastboot_variable("battery-soc-ok", "yes");
 	add_fastboot_variable("partition-type:efs", "ext4");
-	ptn = pit_get_part_info("efs");
-	sprintf(tmp, "0x%llx", pit_get_length(ptn));
+	part = part_get("efs");
+	sprintf(tmp, "0x%llx", part_get_size_in_bytes(part));
 	add_fastboot_variable("partition-size:efs", (const char *)tmp);
 	add_fastboot_variable("partition-type:efsbk", "ext4");
-	ptn = pit_get_part_info("efsbk");
-	sprintf(tmp, "0x%llx", pit_get_length(ptn));
+	part = part_get("efsbk");
+	sprintf(tmp, "0x%llx", part_get_size_in_bytes(part));
 	add_fastboot_variable("partition-size:efsbk", (const char *)tmp);
 	add_fastboot_variable("partition-type:persist", "ext4");
-	ptn = pit_get_part_info("persist");
-	sprintf(tmp, "0x%llx", pit_get_length(ptn));
+	part = part_get("persist");
+	sprintf(tmp, "0x%llx", part_get_size_in_bytes(part));
 	add_fastboot_variable("partition-size:persist", (const char *)tmp);
 	add_fastboot_variable("partition-type:metadata", "ext4");
-	ptn = pit_get_part_info("metadata");
-	sprintf(tmp, "0x%llx", pit_get_length(ptn));
+	part = part_get("metadata");
+	sprintf(tmp, "0x%llx", part_get_size_in_bytes(part));
 	add_fastboot_variable("partition-size:metadata", (const char *)tmp);
 	add_fastboot_variable("partition-type:system_a", "ext4");
-	ptn = pit_get_part_info("system_a");
-	sprintf(tmp, "0x%llx", pit_get_length(ptn));
+	part = part_get("system_a");
+	sprintf(tmp, "0x%llx", part_get_size_in_bytes(part));
 	add_fastboot_variable("partition-size:system_a", (const char *)tmp);
 	add_fastboot_variable("partition-type:system_b", "ext4");
-	ptn = pit_get_part_info("system_b");
-	sprintf(tmp, "0x%llx", pit_get_length(ptn));
+	part = part_get("system_b");
+	sprintf(tmp, "0x%llx", part_get_size_in_bytes(part));
 	add_fastboot_variable("partition-size:system_b", (const char *)tmp);
 	add_fastboot_variable("partition-type:vendor_a", "ext4");
-	ptn = pit_get_part_info("vendor_a");
-	sprintf(tmp, "0x%llx", pit_get_length(ptn));
+	part = part_get("vendor_a");
+	sprintf(tmp, "0x%llx", part_get_size_in_bytes(part));
 	add_fastboot_variable("partition-size:vendor_a", (const char *)tmp);
 	add_fastboot_variable("partition-type:vendor_b", "ext4");
-	ptn = pit_get_part_info("vendor_b");
-	sprintf(tmp, "0x%llx", pit_get_length(ptn));
+	part = part_get("vendor_b");
+	sprintf(tmp, "0x%llx", part_get_size_in_bytes(part));
 	add_fastboot_variable("partition-size:vendor_b", (const char *)tmp);
 	add_fastboot_variable("partition-type:userdata", "ext4");
-	ptn = pit_get_part_info("userdata");
-	sprintf(tmp, "0x%llx", pit_get_length(ptn));
+	part = part_get("userdata");
+	sprintf(tmp, "0x%llx", part_get_size_in_bytes(part));
 	add_fastboot_variable("partition-size:userdata", (const char *)tmp);
 	sprintf(tmp, "0x%x", CFG_FASTBOOT_TRANSFER_BUFFER_SIZE);
 	add_fastboot_variable("max-download-size", (const char *)tmp);
@@ -330,7 +331,6 @@ void phy_usb_exynos_system_init(int num_phy_port, bool en)
 }
 
 /* Fastboot command related function */
-#include <pit.h>
 #include <dev/rpmb.h>
 #include <dev/scsi.h>
 void platform_prepare_reboot(void)

@@ -12,7 +12,7 @@
 #include <libfdt_env.h>
 #include <fdt.h>
 #include <libfdt.h>
-#include <part_gpt.h>
+#include <part.h>
 #include <dev/usb/gadget.h>
 #include <lib/console.h>
 #include <platform/fdt.h>

@@ -23,7 +23,7 @@ typedef struct ExynosSlotInfo {
 } ExynosSlotInfo;
 
 #if (__STDC_VERSION__ >= 201112L) || defined(__cplusplus)
-static_assert(sizeof(struct ExynosSlotInfo) == 16);
+//static_assert(sizeof(struct ExynosSlotInfo) == 16);
 #endif
 
 #define AB_SLOTINFO_PART_NAME "slotinfo"

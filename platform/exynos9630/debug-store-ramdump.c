@@ -10,7 +10,7 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <pit.h>
+#include <part.h>
 #include <lib/console.h>
 #include <lib/font_display.h>
 #include <platform/sizes.h>
@@ -58,7 +58,7 @@ static int debug_store_is_skip(void)
 
 int debug_store_ramdump(void)
 {
-	struct pit_entry *ptn;
+	void *part;
 	u64 dram_size;
 	u64 dram_write_size;
 	u64 dram_ptr;
@@ -85,8 +85,8 @@ int debug_store_ramdump(void)
 		goto store_out;
 	}
 
-	ptn = pit_get_part_info("ramdump");
-	if (!ptn) {
+	part = part_get("ramdump");
+	if (!part) {
 		printf("%s: no ramdump partition\n", __func__);
 		ret = -1;
 		goto store_out;
@@ -95,9 +95,9 @@ int debug_store_ramdump(void)
 	dram_size = *(u64 *)BL_SYS_INFO_DRAM_SIZE;
 	printf("%s: dram size is [0x%llx]\n", __func__, dram_size);
 
-	ret = pit_entry_read(ptn, &metadata, METADATA_OFFSET, METADATA_SIZE);
+	ret = part_read_partial(part, (void *)&metadata, (u64)METADATA_OFFSET, (u64)METADATA_SIZE);
 	if (ret) {
-		printf("%s: pit read fail(line:%u)\n", __func__, __LINE__);
+		printf("%s: part read fail(line:%u)\n", __func__, __LINE__);
 		goto store_out;
 	}
 
@@ -109,27 +109,27 @@ int debug_store_ramdump(void)
 	if (dram_size > DRAM_WRITE_SIZE_DEFAULT) {
 		dram_write_size = DRAM_WRITE_SIZE_DEFAULT;
 		dram_ptr = DRAM_BASE;
-		ret = pit_entry_write(ptn, (void *)dram_ptr, RAMDUMP_OFFSET, dram_write_size);
+		ret = part_write_partial(part, (void *)dram_ptr, RAMDUMP_OFFSET, dram_write_size);
 		if (ret) {
-			printf("%s: pit write fail(line:%u)\n", __func__, __LINE__);
+			printf("%s: part write fail(line:%u)\n", __func__, __LINE__);
 			goto store_out;
 		}
 #ifdef DRAM_BASE2
 		dram_write_size = dram_size - DRAM_WRITE_SIZE_DEFAULT;
 		dram_ptr = DRAM_BASE2;
-		ret = pit_entry_write(ptn, (void *)dram_ptr,
+		ret = part_write_partial(part, (void *)dram_ptr,
 				RAMDUMP_OFFSET + DRAM_WRITE_SIZE_DEFAULT, dram_write_size);
 		if (ret) {
-			printf("%s: pit write fail(line:%u)\n", __func__, __LINE__);
+			printf("%s: part write fail(line:%u)\n", __func__, __LINE__);
 			goto store_out;
 		}
 #endif
 	} else {
 		dram_write_size = dram_size;
 		dram_ptr = DRAM_BASE;
-		ret = pit_entry_write(ptn, (void *)dram_ptr, RAMDUMP_OFFSET, dram_write_size);
+		ret = part_write_partial(part, (void *)dram_ptr, RAMDUMP_OFFSET, dram_write_size);
 		if (ret) {
-			printf("%s: pit write fail(line:%u)\n", __func__, __LINE__);
+			printf("%s: part write fail(line:%u)\n", __func__, __LINE__);
 			goto store_out;
 		}
 	}
@@ -142,9 +142,9 @@ int debug_store_ramdump(void)
 	printf("%s: get_pmic_rtc_time = [%s]\n", __func__,
 					metadata.data.file_name);
 
-	ret = pit_entry_write(ptn, &metadata, METADATA_OFFSET, METADATA_SIZE);
+	ret = part_write_partial(part, &metadata, METADATA_OFFSET, METADATA_SIZE);
 	if (ret) {
-		printf("%s: pit write fail(line:%u)\n", __func__, __LINE__);
+		printf("%s: part write fail(line:%u)\n", __func__, __LINE__);
 		goto store_out;
 	}
 
@@ -172,7 +172,7 @@ store_out:
 
 int debug_store_ramdump_redirection(void *ptr)
 {
-	struct pit_entry *ptn;
+	void *part;
 	struct fastboot_ramdump_hdr *hdr = ptr;
 	u64 storage_base;
 	u64 dram_size;
@@ -183,8 +183,8 @@ int debug_store_ramdump_redirection(void *ptr)
 	if (!g_is_enabled)
 		goto redirection_out;
 
-	ptn = pit_get_part_info("ramdump");
-	if (!ptn) {
+	part= part_get("ramdump");
+	if (!part) {
 		printf("%s: no ramdump partition\n", __func__);
 		printf("%s: current ram data will be extracted\n", __func__);
 		goto redirection_out;
@@ -213,9 +213,9 @@ int debug_store_ramdump_redirection(void *ptr)
 	}
 
 	/* Check valid data in storage */
-	ret = pit_entry_read(ptn, &metadata, METADATA_OFFSET, METADATA_SIZE);
+	ret = part_read_partial(part, (void *)&metadata, (u64)METADATA_OFFSET, (u64)METADATA_SIZE);
 	if (ret) {
-		printf("%s: pit read fail(line:%u)\n", __func__, __LINE__);
+		printf("%s: part read fail(line:%u)\n", __func__, __LINE__);
 		ret = -1;
 		goto redirection_out;
 	}
@@ -232,9 +232,9 @@ int debug_store_ramdump_redirection(void *ptr)
 		storage_base = RAMDUMP_OFFSET + hdr->base - 0x80000000UL;
 
 	hdr->base = redirection_base;
-	ret = pit_entry_read(ptn, (void *)hdr->base, storage_base, hdr->size + 1);
+	ret = part_read_partial(part, (void *)hdr->base, (u64)storage_base, (u64)(hdr->size + 1));
 	if (ret)
-		 printf("%s: pit read fail(line:%u)\n", __func__, __LINE__);
+		 printf("%s: part read fail(line:%u)\n", __func__, __LINE__);
 
 redirection_out:
 	return ret;
@@ -249,16 +249,16 @@ int debug_store_ramdump_oem(const char *cmd)
 	} else if (!strcmp(cmd, "reset")) {
 		g_is_enabled = 0;
 	} else if (!strcmp(cmd, "clear")) {
-		struct pit_entry *ptn;
+		void *part;
 
-		ptn = pit_get_part_info("ramdump");
-		if (!ptn) {
+		part= part_get("ramdump");
+		if (!part) {
 			printf("%s: no ramdump partition\n", __func__);
 			ret = -1;
 			goto oem_out;
 		}
 
-		ret = pit_entry_read(ptn, &metadata, METADATA_OFFSET, METADATA_SIZE);
+		ret = part_read_partial(part, (void *)&metadata, METADATA_OFFSET, METADATA_SIZE);
 		if (ret) {
 			printf("%s: read metadata block fail\n", __func__);
 			goto oem_out;
@@ -267,8 +267,7 @@ int debug_store_ramdump_oem(const char *cmd)
 		if (metadata.data.magic == RAMDUMP_STORE_MAGIC) {
 			printf("%s: Data will be erased!\n", __func__);
 			metadata.data.magic = 0;
-			ret = pit_entry_write(ptn, &metadata,
-						METADATA_OFFSET, METADATA_SIZE);
+			ret = part_write_partial(part, (void *)&metadata, METADATA_OFFSET, METADATA_SIZE);
 			if (ret)
 				printf("%s: write metadata block fail\n", __func__);
 		} else {
@@ -286,7 +285,7 @@ oem_out:
 
 void debug_store_ramdump_getvar(const char *cmd, char *response)
 {
-	struct pit_entry *ptn;
+	void *part;
 	int ret;
 
 	if (!g_is_enabled) {
@@ -294,14 +293,14 @@ void debug_store_ramdump_getvar(const char *cmd, char *response)
 		goto getvar_out;
 	}
 
-	ptn = pit_get_part_info("ramdump");
-	if (!ptn) {
+	part = part_get("ramdump");
+	if (!part) {
 		printf("%s: no ramdump partition\n", __func__);
 		sprintf(response, "PIT DOES NOT EXIST");
 		goto getvar_out;
 	}
 
-	ret = pit_entry_read(ptn, &metadata, METADATA_OFFSET, METADATA_SIZE);
+	ret = part_read_partial(part, (void *)&metadata, METADATA_OFFSET, METADATA_SIZE);
 	if (ret) {
 		sprintf(response, "PIT READ FAIL");
 		goto getvar_out;

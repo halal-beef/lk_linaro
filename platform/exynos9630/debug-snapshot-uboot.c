@@ -11,8 +11,8 @@
 #include <reg.h>
 #include <stdlib.h>
 #include <libfdt.h>
-#include <pit.h>
-#include <part_gpt.h>
+#include <stdio.h>
+#include <part.h>
 #include <lib/console.h>
 #include <platform/exynos9630.h>
 #include <dev/boot.h>

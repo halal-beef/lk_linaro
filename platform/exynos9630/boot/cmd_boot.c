@@ -16,7 +16,6 @@
 #include <lib/bio.h>
 #include <lib/console.h>
 #include <lib/font_display.h>
-#include <part_gpt.h>
 #include <dev/boot.h>
 #include <dev/rpmb.h>
 #include <dev/usb/gadget.h>
@@ -35,7 +34,7 @@
 #include <platform/fdt.h>
 #include <platform/chip_id.h>
 #include <platform/gpio.h>
-#include <pit.h>
+#include <part.h>
 #include <dev/scsi.h>
 
 /* Memory node */
@@ -47,6 +46,12 @@
 #define REBOOT_MODE_RECOVERY	0xFF
 #define REBOOT_MODE_FACTORY	0xFD
 #define REBOOT_MODE_FASTBOOT	0xFC
+
+#define be32_to_cpu(x) \
+		((((x) & 0xff000000) >> 24) | \
+		 (((x) & 0x00ff0000) >>  8) | \
+		 (((x) & 0x0000ff00) <<  8) | \
+		 (((x) & 0x000000ff) << 24))
 
 void configure_ddi_id(void);
 void arm_generic_timer_disable(void);
@@ -359,26 +364,18 @@ static void configure_dtb(void)
 	if (noff >= 0) {
 		np = fdt_getprop(fdt_dtb, noff, "reg", &len);
 		if (len >= 0) {
+			void *part = part_get_ab("modem");
+			u32 addr_s;
+			u64 addr_r;
+
 			memset(str, 0, BUFFER_SIZE);
 			memcpy(str, np, len);
 
-			boot_dev = get_boot_device();
-			if (boot_dev == BOOT_UFS)
-				name = "scsi0";
-			else {
-				printf("Boot device: 0x%x. Unsupported boot device!\n", boot_dev);
-				return;
-			}
-
 			/* get modem partition info */
-			dev = bio_open(name);
-			if (ab_current_slot())
-				ptn = pit_get_part_info("modem_b");
-			else
-				ptn = pit_get_part_info("modem_a");
 			/* load modem header */
-			dev->new_read(dev, (void *)(u64)be32_to_cpu(((const u32 *)str)[1]), ptn->blkstart, 16);
-			bio_close(dev);
+			addr_s = be32_to_cpu(*(((const u32 *)str) + 1));
+			addr_r = (u64)addr_s;
+			part_read_partial(part, (void *)addr_r, 0, 8 * 1024);
 		}
 	}
 
@@ -416,23 +413,19 @@ int cmd_scatter_load_boot(int argc, const cmd_args *argv);
 
 int load_boot_images(void)
 {
-	struct pit_entry *ptn;
 	cmd_args argv[6];
 
 #if defined(CONFIG_AB_UPDATE)
-	if (ab_current_slot())
-		ptn = pit_get_part_info("boot_b");
-	else
-		ptn = pit_get_part_info("boot_a");
+	void *part = part_get_ab("boot");
 #else
-	ptn = pit_get_part_info("boot");
+	void *part = part_get("boot");
 #endif
-	if (ptn == 0) {
-		printf("Partition 'boot' does not exist\n");
+	if (!part) {
+		printf("Partition 'kernel' does not exist\n");
 		return -1;
-	} else {
-		pit_access(ptn, PIT_OP_LOAD, (u64)BOOT_BASE, 0);
 	}
+
+	part_read(part, (void *)BOOT_BASE);
 
 	argv[1].u = BOOT_BASE;
 	argv[2].u = KERNEL_BASE;
@@ -441,20 +434,20 @@ int load_boot_images(void)
 	argv[5].u = 0;
 	cmd_scatter_load_boot(5, argv);
 
-	ptn = pit_get_part_info("dtbo");
-	if (ptn == 0) {
+	part = part_get("dtbo");
+	if (part == 0) {
 		printf("Partition 'dtbo' does not exist\n");
 		return -1;
 	} else {
-		pit_access(ptn, PIT_OP_LOAD, (u64)DTBO_BASE, 0);
+		part_read(part, (void *)DTBO_BASE);
 	}
 
-	ptn = pit_get_part_info("ramdisk");
-	if (ptn == 0) {
+	part = part_get("ramdisk");
+	if (part == 0) {
 		printf("Partition 'ramdisk' does not exist\n");
 		return -1;
 	} else {
-		pit_access(ptn, PIT_OP_LOAD, (u64)RAMDISK_BASE, 0);
+		part_read(part, (void *)RAMDISK_BASE);
 	}
 
 	return 0;

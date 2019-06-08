@@ -9,7 +9,8 @@
  */
 
 #include <reg.h>
-#include <pit.h>
+#include <stdio.h>
+#include <part.h>
 #include <string.h>
 #include <sys/types.h>
 #include <dev/boot.h>
@@ -52,18 +53,12 @@ int load_parition(u64 addr, u64 ch)
 {
 	int OmPin = readl(EXYNOS9630_POWER_INFORM3);
 	int ret;
-	struct pit_entry *ptn;
+	void *part;
 
 	if (ch == LDFW_PART) {
-		if (ab_current_slot())
-			ptn = pit_get_part_info("ldfw_b");
-		else
-			ptn = pit_get_part_info("ldfw_a");
+		part = part_get_ab("ldfw");
 	} else if (ch == KEYSTORAGE_PART) {
-		if (ab_current_slot())
-			ptn = pit_get_part_info("keystorage_b");
-		else
-			ptn = pit_get_part_info("keystorage_a");
+		part = part_get_ab("keystorage");
 	} else {
 		printf("Invalid ch\n");
 		return -1;
@@ -92,8 +87,8 @@ int load_parition(u64 addr, u64 ch)
 		return -1;
 	}
 
-	if (ptn)
-		ret = !pit_access(ptn, PIT_OP_LOAD, addr, 0);
+	if (part)
+		ret = !part_read(part, (void *)addr);
 	else
 		ret = 0;
 

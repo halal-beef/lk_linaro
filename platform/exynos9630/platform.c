@@ -14,7 +14,7 @@
 #include <dev/ufs.h>
 #include <dev/boot.h>
 #include <dev/rpmb.h>
-#include <pit.h>
+#include <part.h>
 #include <lib/sysparam.h>
 #include <lib/console.h>
 #include <dev/interrupt/arm_gic.h>
@@ -346,16 +346,14 @@ void platform_init(void)
 
 	/* load_secure_payload(); */
 
-	if (get_boot_device() == BOOT_UFS) {
-		printf("get_boot_device() == BOOT_UFS\n");
-		ufs_alloc_memory();
+	printf("get_boot_device() == BOOT_UFS\n");
+	ufs_alloc_memory();
+	ufs_init(2);
+	ret = ufs_set_configuration_descriptor();
+	if (ret == 1)
 		ufs_init(2);
-		ret = ufs_set_configuration_descriptor();
-		if (ret == 1)
-			ufs_init(2);
-	}
 
-	pit_init();
+	part_init();
 	if (is_first_boot() && *(unsigned int *)DRAM_BASE == 0xabcdef)
 		debug_snapshot_fdt_init();
 
@@ -373,9 +371,9 @@ void platform_init(void)
 			if (env_val == UART_LOG_MODE_FLAG)
 				uart_log_mode = 1;
 			else
-				uart_log_mode = 0;
+				uart_log_mode = 1;
 		} else
-			uart_log_mode = 0;
+			uart_log_mode = 1;
 	}
 #endif
 

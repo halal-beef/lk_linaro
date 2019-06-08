@@ -10,7 +10,6 @@
 
 #include <debug.h>
 #include <stdlib.h>
-#include <part_gpt.h>
 #include <lib/sysparam.h>
 #include <platform/lock.h>
 

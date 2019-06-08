@@ -18,7 +18,7 @@
 #include <platform/bootimg.h>
 #include <dev/rpmb.h>
 #include <string.h>
-#include <pit.h>
+#include <part.h>
 
 #define EPBL_SIZE		(76 * 1024)
 
@@ -36,23 +36,19 @@ uint32_t avb_set_root_of_trust(uint32_t device_state, uint32_t boot_state)
 	uint32_t avb_pubkey_len = 0;
 	uint8_t *vbmeta_buf = NULL;
 	struct boot_img_hdr *b_hdr = (boot_img_hdr *)BOOT_BASE;
-	struct pit_entry *ptn;
 	struct AvbVBMetaImageHeader h;
+	void *part = part_get_ab("vbmeta");
 
-	if (ab_current_slot())
-		ptn = pit_get_part_info("vbmeta_b");
-	else
-		ptn = pit_get_part_info("vbmeta_a");
-	if (ptn == 0) {
+	if (!part) {
 		printf("Partition 'vbmeta' does not exist\n");
 		return -1;
 	} else {
-		vbmeta_buf = avb_malloc(pit_get_length(ptn));
+		vbmeta_buf = avb_malloc(part_get_size_in_bytes(part));
 		if (vbmeta_buf == NULL) {
 			printf("vbmeta allocation fail\n");
 			return -1;
 		}
-		pit_access(ptn, PIT_OP_LOAD, (u64)vbmeta_buf, 0);
+		part_read(part, (void *)vbmeta_buf);
 	}
 	avb_vbmeta_image_header_to_host_byte_order((const AvbVBMetaImageHeader*)vbmeta_buf, &h);
 	avb_pubkey_len = h.public_key_size;
@@ -104,11 +100,12 @@ uint32_t update_rp_count_otp(const char *suffix)
 	uint32_t ret = 0;
 	uint64_t *rollback_index;
 	char part_name[15] = "bootloader";
-	struct pit_entry *ptn;
+	void *part;
 
-	ptn = pit_get_part_info("fwbl1");
-	pit_access(ptn, PIT_OP_LOAD, (u64)AVB_PRELOAD_BASE, 0);
-	rollback_index = (uint64_t *)(AVB_PRELOAD_BASE + pit_get_length(ptn) -
+	part = part_get("fwbl1");
+	part_read(part, (void *)AVB_PRELOAD_BASE);
+
+	rollback_index = (uint64_t *)(AVB_PRELOAD_BASE + part_get_size_in_bytes(part) -
 			SB_SB_CONTEXT_LEN + SB_BL1_RP_COUNT_OFFSET);
 	printf("[SB]BL1 RP count: %lld\n", *rollback_index);
 	ret = cm_otp_update_antirbk_sec_ap(*rollback_index);
@@ -116,8 +113,10 @@ uint32_t update_rp_count_otp(const char *suffix)
 		goto out;
 
 	strcat(part_name, suffix);
-	ptn = pit_get_part_info(part_name);
-	pit_access(ptn, PIT_OP_LOAD, (u64)AVB_PRELOAD_BASE, 0);
+
+	part = part_get(part_name);
+	part_read(part, (void *)AVB_PRELOAD_BASE);
+
 	rollback_index = (uint64_t *)(AVB_PRELOAD_BASE + EPBL_SIZE -
 			SB_MAX_RSA_SIGN_LEN - SB_SIGN_FIELD_HEADER_SIZE);
 	printf("[SB]Bootloader RP count: %lld\n", *rollback_index);
