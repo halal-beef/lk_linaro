@@ -11,6 +11,8 @@
 #ifndef __EXYNOS9630_H__
 #define __EXYNOS9630_H__
 
+#include <target/board_info.h>
+
 /* SFR base address. */
 #define EXYNOS9630_PRO_ID								0x10000000
 #define EXYNOS9630_GPIO_PERI_BASE 							0x10040000
