@@ -22,7 +22,7 @@
 #include <platform/fdt.h>
 
 #define DSS_RESERVE_PATH	"/reserved-memory/debug_snapshot"
-#define CP_RESERVE_PATH		"/reserved-memory/modem_if"
+#define CP_RESERVE_PATH		"/reserved-memory/cp_rmem"
 
 extern int load_boot_images(void);
 

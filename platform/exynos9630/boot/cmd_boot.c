@@ -357,8 +357,8 @@ static void configure_dtb(void)
 			 (ret == AB_SLOT_B) ? "_b" : "_a");
 		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
 	}
-#if 0
-	noff = fdt_path_offset(fdt_dtb, "/reserved-memory/modem_if");
+
+	noff = fdt_path_offset(fdt_dtb, "/reserved-memory/cp_rmem");
 	if (noff >= 0) {
 		np = fdt_getprop(fdt_dtb, noff, "reg", &len);
 		if (len >= 0) {
@@ -369,14 +369,13 @@ static void configure_dtb(void)
 			memset(str, 0, BUFFER_SIZE);
 			memcpy(str, np, len);
 
-			/* get modem partition info */
 			/* load modem header */
 			addr_s = be32_to_cpu(*(((const u32 *)str) + 1));
 			addr_r = (u64)addr_s;
 			part_read_partial(part, (void *)addr_r, 0, 8 * 1024);
 		}
 	}
-#endif
+
 #if defined(CONFIG_USE_AVB20)
 	if (!(readl(EXYNOS9630_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY)) {
 		/* set AVB args */
