@@ -269,6 +269,10 @@ static void configure_dtb(void)
 	int len;
 	const char *np;
 	int noff;
+#if defined(CONFIG_USE_AVB20)
+	struct AvbOps *ops;
+	bool unlock;
+#endif
 
 	/*
 	 * In this here, it is enabled cache. So you don't use blk read/write function
@@ -378,7 +382,8 @@ static void configure_dtb(void)
 			part_read_partial(part, (void *)addr_r, 0, 8 * 1024);
 		}
 	}
-
+#endif
+#if defined(CONFIG_USE_AVB20)
 	if (!(readl(EXYNOS9630_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY)) {
 		/* set AVB args */
 		get_ops_addr(&ops);
@@ -388,7 +393,8 @@ static void configure_dtb(void)
 		snprintf(str, BUFFER_SIZE, "%s %s %s", np, cmdline, verifiedbootstate);
 		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
 	}
-
+#endif
+#if 0
 	if (readl(EXYNOS9630_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY) {
 		/* Set bootargs for recovery mode */
 		remove_string_from_bootargs("skip_initramfs ");
