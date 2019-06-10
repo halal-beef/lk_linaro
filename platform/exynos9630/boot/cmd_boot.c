@@ -497,12 +497,6 @@ int cmd_boot(int argc, const cmd_args *argv)
 
 	load_boot_images();
 
-	/*
-	 * Send SSU to UFS. Something wrong on SSU should not
-	 * affect kerel boot.
-	 */
-	scsi_do_ssu();
-
 #if defined(CONFIG_USE_AVB20)
 	if (ab_current_slot())
 		avb_ret = avb_main("_b", cmdline, verifiedbootstate);
@@ -541,6 +535,12 @@ int cmd_boot(int argc, const cmd_args *argv)
 		return 0;
 	}
 #endif
+
+	/*
+	 * Send SSU to UFS. Something wrong on SSU should not
+	 * affect kerel boot.
+	 */
+	scsi_do_ssu();
 
 	/* notify EL3 Monitor end of bootloader */
 	exynos_smc(SMC_CMD_END_OF_BOOTLOADER, 0, 0, 0);
