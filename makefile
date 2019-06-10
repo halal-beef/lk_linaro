@@ -34,7 +34,14 @@ ifeq ($(MAKECMDGOALS), smdk9630)
 	SB_KEY_TYPE := 1
 	SB_RB_COUNT := 0
 	SIGNATURE_BIN := yes
+else ifeq ($(MAKECMDGOALS), erd9630)
+	LK_PAD_SIZE := 2097152
+	SB_SIGN_TYPE := 4
+	SB_KEY_TYPE := 1
+	SB_RB_COUNT := 0
+	SIGNATURE_BIN := yes
 endif
+
 
 # check if LKROOT is already a part of LKINC list and add it only if it is not
 ifeq ($(filter $(LKROOT),$(LKINC)), )
