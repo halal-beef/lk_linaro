@@ -193,7 +193,6 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 	bool unlock;
 	uint32_t ret = 0;
 	uint32_t i = 0;
-	uint32_t tmp = 0;
 	uint32_t device_state;
 	uint32_t boot_state;
 	struct AvbOps *ops;
@@ -266,11 +265,15 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 			return ret;
 	}
 
+#if defined(CONFIG_USE_RPMB)
+	uint32_t tmp = 0;
+
 	/* block RPMB */
 	tmp = block_RPMB_hmac();
 	if (tmp) {
 		printf("[AVB 2.0 ERR] RPMB hmac ret: 0x%X\n", tmp);
 	}
+#endif
 
 	/* set cmdline */
 	if (ctx_ptr != NULL) {
