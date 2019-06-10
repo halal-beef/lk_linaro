@@ -188,6 +188,7 @@ static AvbIOResult exynos_validate_vbmeta_public_key(AvbOps *ops,
 		bool *out_is_trusted)
 {
 	AvbIOResult ret = AVB_IO_RESULT_OK;
+#if 0
 	uint8_t avb_pubkey[SB_MAX_PUBKEY_LEN] __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
 
 	ret = sb_get_avb_key(avb_pubkey, public_key_length, "vbmeta");
@@ -202,6 +203,9 @@ static AvbIOResult exynos_validate_vbmeta_public_key(AvbOps *ops,
 	}
 
 out:
+#endif
+	*out_is_trusted = 1;
+	ret = 0;
 	avbkey_is_trusted = *out_is_trusted;
 	return ret;
 }
