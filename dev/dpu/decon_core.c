@@ -136,7 +136,9 @@ void decon_show_buffer_update(struct decon_device *decon,
 void decon_show_buffer(struct decon_device *decon,
 		struct dsim_device *dsim, u32 color)
 {
+#if defined(CONFIG_DISPLAY_DRAWLOGO) || defined(CONFIG_DISPLAY_DRAWFONT)
 	struct decon_window_regs win_regs = {0};
+#endif	
 	struct decon_mode_info psr = {0};
 	struct decon_param p;
 
