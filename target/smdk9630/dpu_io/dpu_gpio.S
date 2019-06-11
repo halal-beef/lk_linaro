@@ -24,123 +24,82 @@
 
 	.global display_te_init
 display_te_init:
-	/* defined (CONFIG_MACH_MAESTRO9610) */
-	/* Set LCD_TE_HW (GPC2_3) to Pull-down enable, TE is active high */
-	ldr	x0, =EXYNOS9610_GPC2PUD
+	/* Set LCD_TE_HW (GPG0_1) to Pull-down enable, TE is active high */
+	ldr	x0, =EXYNOS9630_GPG0PUD
 	ldr	w1, [x0]
-	bic	w1, w1, #(0xF << 12)
-	orr	w1, w1, #(0x1 << 12)
+	bic	w1, w1, #(0xF << 4)
+	orr	w1, w1, #(0x1 << 4)
 	str	w1, [x0]
 
-	/* Set LCD_TE_HW (GPC2_3) to DISP_TES0 */
-	ldr	x0, =EXYNOS9610_GPC2CON
+	/* Set LCD_TE_HW (GPG0_1) to DISP_TES0 */
+	ldr	x0, =EXYNOS9630_GPG0CON
 	ldr	w1, [x0]
-	bic	w1, w1, #(0xF << 12)
-	orr	w1, w1, #(0x2 << 12)
+	bic	w1, w1, #(0xF << 4)
+	orr	w1, w1, #(0x2 << 4)
 	str	w1, [x0]
 
 	ret
 
 	.global display_panel_init
 display_panel_init:
-	/* defined (CONFIG_MACH_MAESTRO9610) */
-	/* Set MLCD_RSTB (GPG1_4) to Pull-up enable, Reset is active low */
-	ldr	x0, =EXYNOS9610_GPG1PUD
+	/* Set MLCD_RSTB (GPQ0_2) to Pull-up enable, Reset is active low */
+	ldr	x0, =EXYNOS9630_GPQ0PUD
 	ldr	w1, [x0]
-	bic	w1, w1, #(0xF << 16)
-	orr	w1, w1, #(0x3 << 16)
+	bic	w1, w1, #(0xF << 8)
+	orr	w1, w1, #(0x3 << 8)
 	str	w1, [x0]
 
-	/* Set MLCD_RSTB (GPG1_4) to Output */
-	ldr	x0, =EXYNOS9610_GPG1CON
+	/* Set MLCD_RSTB (GPQ0_2) to Output */
+	ldr	x0, =EXYNOS9630_GPQ0CON
 	ldr	w1, [x0]
-	bic	w1, w1, #(0xF << 16)
-	orr	w1, w1, #(0x1 << 16)
+	bic	w1, w1, #(0xF << 8)
+	orr	w1, w1, #(0x1 << 8)
 	str	w1, [x0]
 
-	/* Set MLCD_RSTB (GPG1_4) to DRV 4X */
-	ldr	x0, =EXYNOS9610_GPG1DRV
+	/* Set MLCD_RSTB (GPQ0_2) to DRV 4X */
+	ldr	x0, =EXYNOS9630_GPQ0DRV
 	ldr	w1, [x0]
-	bic	w1, w1, #(0xF << 16)
-	orr	w1, w1, #(0x3 << 16)
+	bic	w1, w1, #(0xF << 8)
+	orr	w1, w1, #(0x3 << 8)
 	str	w1, [x0]
 
 	ret
 
 	.global display_panel_reset
 display_panel_reset:
-	/* defined (CONFIG_MACH_MAESTRO9610) */
-	/* Set MLCD_RSTB (GPG1_4) to Pull-up enable, Reset is active low */
-	ldr	x0, =EXYNOS9610_GPG1PUD
+	/* Set MLCD_RSTB (GPQ0_2) to low */
+	ldr	x0, =EXYNOS9630_GPQ0DAT
 	ldr	w1, [x0]
-	bic	w1, w1, #(0xF << 16)
-	orr	w1, w1, #(0x3 << 16)
-	str	w1, [x0]
-
-	/* Set MLCD_RSTB (GPG1_4) to Output */
-	ldr	x0, =EXYNOS9610_GPG1CON
-	ldr	w1, [x0]
-	bic	w1, w1, #(0xF << 16)
-	orr	w1, w1, #(0x1 << 16)
-	str	w1, [x0]
-
-	/* Set MLCD_RSTB (GPG1_4) to Low */
-	ldr	x0, =EXYNOS9610_GPG1DAT
-	ldr	w1, [x0]
-	bic	w1, w1, #(0x1 << 4)
+	bic	w1, w1, #(0x1 << 2)
 	str	w1, [x0]
 
 	ret
 
 	.global display_panel_release
 display_panel_release:
-	/* defined (CONFIG_MACH_MAESTRO9610) */
-	/* Set MLCD_RSTB (GPG1_4) to Pull-up enable, Reset is active low */
-	ldr	x0, =EXYNOS9610_GPG1PUD
+	/* Set MLCD_RSTB (GPQ0_2) to high */
+	ldr	x0, =EXYNOS9630_GPQ0DAT
 	ldr	w1, [x0]
-	bic	w1, w1, #(0xF << 16)
-	orr	w1, w1, #(0x3 << 16)
-	str	w1, [x0]
-
-	/* Set MLCD_RSTB (GPG1_4) to Output */
-	ldr	x0, =EXYNOS9610_GPG1CON
-	ldr	w1, [x0]
-	bic	w1, w1, #(0xF << 16)
-	orr	w1, w1, #(0x1 << 16)
-	str	w1, [x0]
-
-	/* Set MLCD_RSTB (GPG1_4) to Low */
-	ldr	x0, =EXYNOS9610_GPG1DAT
-	ldr	w1, [x0]
-	bic	w1, w1, #(0x1 << 4)
-	orr	w1, w1, #(0x1 << 4)
+	bic	w1, w1, #(0x1 << 2)
+	orr	w1, w1, #(0x1 << 2)
 	str	w1, [x0]
 
 	ret
 
 	.global display_panel_power
 display_panel_power:
-	/* defined (CONFIG_MACH_MAESTRO9610) */
-	/* TODO : Enable GPG3_1, If this GPIO is enabled at ERD b'd, */
-	/* camera flash is enabled at LK */
-	/* Set LCD_BIAS_ENP (GPG3_1) to Output */
-
-	/* Set LCD_BIAS_ENN (GPG3_0) to Output */
-
-	/* Set LCD_LDO_1V8_EN (GPG3_4) to Output */
-	ldr             x0, =EXYNOS9610_GPG3CON
+	/* Set VDD_DISP_1P6_EN (GPP3_2) to Output */
+	ldr             x0, =EXYNOS9630_GPP3CON
 	ldr             w1, [x0]
-	bic             w1, w1, #(0xF << 16)
-	orr             w1, w1, #(0x1 << 16)
+	bic             w1, w1, #(0xF << 8)
+	orr             w1, w1, #(0x1 << 8)
 	str             w1, [x0]
 
-	ldr             x0, =EXYNOS9610_GPG3DAT
+	ldr             x0, =EXYNOS9630_GPP3DAT
 	ldr             w1, [x0]
-	bic             w1, w1, #(0x1 << 4)
-	orr             w1, w1, #(0x1 << 4)
+	bic             w1, w1, #(0x1 << 2)
+	orr             w1, w1, #(0x1 << 2)
 	str             w1, [x0]
-
-	/* Set LCD_BL_EN (GPG2_1) to Output */
 
 	ret
 
