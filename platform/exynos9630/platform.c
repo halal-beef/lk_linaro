@@ -348,7 +348,7 @@ void platform_init(void)
 	}
 #endif
 
-#if CONFIG_EXYNOS_BOOTLOADER_DISPLAY
+#ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
 	/* If the display_drv_init function is not called before,
 	 * you must use the print_lcd function.
 	 */
