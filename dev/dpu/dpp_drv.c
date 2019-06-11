@@ -61,7 +61,7 @@ static void dpp_get_params(struct dpp_device *dpp, struct dpp_params_info *p,  u
 
 	if (dpp->id == 0) {
 		/* dpp 0 is for logo */
-		p->rot = DPP_ROT_NORMAL;
+		p->rot = DPP_ROT_XFLIP;
 	} else if (dpp->id == 1) {
 		/* dpp 2 is for font */
 		p->rot = DPP_ROT_NORMAL;

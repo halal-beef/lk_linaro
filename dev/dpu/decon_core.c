@@ -138,7 +138,7 @@ void decon_show_buffer(struct decon_device *decon,
 {
 #if defined(CONFIG_DISPLAY_DRAWLOGO) || defined(CONFIG_DISPLAY_DRAWFONT)
 	struct decon_window_regs win_regs = {0};
-#endif	
+#endif
 	struct decon_mode_info psr = {0};
 	struct decon_param p;
 
@@ -150,7 +150,7 @@ void decon_show_buffer(struct decon_device *decon,
 	decon_reg_init(decon->id, decon->dt->out_idx, &p);
 
 #ifdef CONFIG_DISPLAY_DRAWLOGO
-	/* window 3 config */
+	/* window 2 config */
 	win_regs.wincon = wincon(0x8, 0xFF, 0xFF, 0xFF, DECON_BLENDING_NONE, decon->dt->dft_win);
 	/* common config */
 	win_regs.start_pos = win_start_pos(0, 0);
@@ -171,16 +171,16 @@ void decon_show_buffer(struct decon_device *decon,
 	win_regs.plane_alpha = 0;
 	win_regs.blend = DECON_BLENDING_NONE;
 	decon_reg_set_window_control(decon->id, decon->dt->dft_win, &win_regs, false);
-#endif	
+#endif
 
 #ifdef CONFIG_DISPLAY_DRAWFONT
-	/* window 2 config */
-	win_regs.wincon = wincon(0x8, 0xFF, 0xFF, 0xFF, DECON_BLENDING_COVERAGE, decon->dt->dft_win - 1);
+	/* window 3 config */
+	win_regs.wincon = wincon(0x8, 0xFF, 0xFF, 0xFF, DECON_BLENDING_COVERAGE, decon->dt->dft_win + 1);
 	/* common config */
 	win_regs.start_pos = win_start_pos(0, 0);
 	win_regs.end_pos = win_end_pos(0, 0, p.lcd_info->xres, p.lcd_info->yres);
 	decon_info("Display 2st window(%d) xres(%d) yres(%d) win_start_pos(%x) win_end_pos(%x)\n",
-			decon->dt->dft_win - 1, p.lcd_info->xres, p.lcd_info->yres, win_regs.start_pos,
+			decon->dt->dft_win + 1, p.lcd_info->xres, p.lcd_info->yres, win_regs.start_pos,
 			win_regs.end_pos);
 
 	win_regs.colormap = 0x0;
@@ -197,7 +197,7 @@ void decon_show_buffer(struct decon_device *decon,
 	win_regs.blend = DECON_BLENDING_COVERAGE;
 
 	/* TODO : add 2nd dft win to dt data */
-	decon_reg_set_window_control(decon->id, decon->dt->dft_win - 1, &win_regs, false);
+	decon_reg_set_window_control(decon->id, decon->dt->dft_win + 1, &win_regs, false);
 #endif
 	/* disable irq and clear */
 	decon_reg_set_int(decon->id, &psr, 0);
@@ -413,7 +413,7 @@ int display_drv_init(void)
 		decon_err("dpp%d probe was failed\n", LOGO_DPP);
 		return ret;
 	}
-#endif	
+#endif
 
 #ifdef CONFIG_DISPLAY_DRAWFONT
 	/* DPP1 G1 for font framebuffer */
