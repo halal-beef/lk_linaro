@@ -45,7 +45,7 @@ int show_boot_logo(void)
 	unsigned int img_height;
 	unsigned short bpp;
 
-	void *part = part_get_ab("logo");
+	void *part = part_get("logo");
 	u64 aligned_read_size = 0;
 
 	if (!part)
