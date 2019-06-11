@@ -52,8 +52,7 @@ MODULE_DEPS += \
 	lib/cksum \
 	dev/usb/dwc3 \
 	dev/usb/phy/exynos \
-	dev/usb/device/fastboot \
-	dev/usb/device/cdc-acm
+	dev/usb/device/fastboot 
 
 LINKER_SCRIPT += $(BUILDDIR)/system-onesegment.ld
 
