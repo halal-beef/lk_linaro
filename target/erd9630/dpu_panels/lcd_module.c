@@ -22,90 +22,68 @@
 
 #include <target/lcd_module.h>
 
-#define GAMMA_PARAM_SIZE 26
+#define GAMMA_PARAM_SIZE	26
 
-#define S6E3FA0_CMD_VBP		10
-#define S6E3FA0_CMD_VFP		3
-#define S6E3FA0_CMD_VSA		1
-#define S6E3FA0_CMD_HBP		2
-#define S6E3FA0_CMD_HFP		2
-#define S6E3FA0_CMD_HSA		2
+#define S6E3HA8_CMD_VBP		15
+#define S6E3HA8_CMD_VFP		8
+#define S6E3HA8_CMD_VSA		1
+#define S6E3HA8_CMD_HBP		2
+#define S6E3HA8_CMD_HFP		2
+#define S6E3HA8_CMD_HSA		2
 
-#define S6E3FA0_VDO_VBP		2
-#define S6E3FA0_VDO_VFP		20
-#define S6E3FA0_VDO_VSA		2
-#define S6E3FA0_VDO_HBP		20
-#define S6E3FA0_VDO_HFP		20
-#define S6E3FA0_VDO_HSA		20
-
-#define S6E3FA0_HORIZONTAL	1080
-#define S6E3FA0_VERTICAL	1920
+#define S6E3HA8_HORIZONTAL	1440
+#define S6E3HA8_VERTICAL	2960
 
 #define CONFIG_DECON_LCD_VIDEO_MODE
 
-struct decon_lcd common_lcd_info = {
-#if defined(CONFIG_DECON_LCD_VIDEO_MODE)
-	.mode = DECON_VIDEO_MODE,
-	.vfp = S6E3FA0_VDO_VFP,
-	.vbp = S6E3FA0_VDO_VBP,
-	.hfp = S6E3FA0_VDO_HFP,
-	.hbp = S6E3FA0_VDO_HBP,
-	.vsa = S6E3FA0_VDO_VSA,
-	.hsa = S6E3FA0_VDO_HSA,
-	.xres = S6E3FA0_HORIZONTAL,
-	.yres = S6E3FA0_VERTICAL,
-
-	/* Mhz */
-	.hs_clk = 1100,
-	.esc_clk = 20,
-	.dphy_pms = {4, 677, 2, 0}, /* pmsk */
-	.vt_compensation = 39,	/* for underrun detect at video mode */
-#else
+struct exynos_panel_info common_lcd_info = {
 	.mode = DECON_MIPI_COMMAND_MODE,
-	.vfp = S6E3FA0_CMD_VFP,
-	.vbp = S6E3FA0_CMD_VBP,
-	.hfp = S6E3FA0_CMD_HFP,
-	.hbp = S6E3FA0_CMD_HBP,
-	.vsa = S6E3FA0_CMD_VSA,
-	.hsa = S6E3FA0_CMD_HSA,
-	.xres = S6E3FA0_HORIZONTAL,
-	.yres = S6E3FA0_VERTICAL,
+	.vfp = S6E3HA8_CMD_VFP,
+	.vbp = S6E3HA8_CMD_VBP,
+	.hfp = S6E3HA8_CMD_HFP,
+	.hbp = S6E3HA8_CMD_HBP,
+	.vsa = S6E3HA8_CMD_VSA,
+	.hsa = S6E3HA8_CMD_HSA,
+	.xres = S6E3HA8_HORIZONTAL,
+	.yres = S6E3HA8_VERTICAL,
 
 	/* Mhz */
-	.hs_clk = 1100,
+	.hs_clk = 898,
 	.esc_clk = 20,
 
-	.dphy_pms.p = 3,
-	.dphy_pms.m = 127,
-	.dphy_pms.s = 0,
-	.cmd_underrun_lp_ref = 3022,
-#endif
+	.dphy_pms = {2, 138, 2, 0},
+	.cmd_underrun_cnt = {3022},
 	/* Maybe, width and height will be removed */
 	.width = 70,
 	.height = 121,
 
 	.fps = 60,
-	.mic_enabled = 0,
-	.mic_ver = 0,
+//	.mic_enabled = 0,
+//	.mic_ver = 0,
 
-	.dsc_enabled = 0,
-	.dsc_slice_num = 0,
-	.dsc_cnt = 0,
-	.dsc_slice_h = 40,
+	.dsc = {1, 1, 2, 40, 720, 240},
+//	.dsc_enabled = 1,
+//	.dsc_cnt = 1,
+//	.dsc_slice_num = 2,
+//	.dsc_slice_h = 40,
 	.data_lane = 4,
 };
 
-struct decon_lcd *common_get_lcd_info(void)
+struct exynos_panel_info *common_get_lcd_info(void)
 {
 	return &common_lcd_info;
 }
 
 extern struct dsim_lcd_driver s6e3fa0_mipi_lcd_driver;
 extern struct dsim_lcd_driver nt36672a_mipi_lcd_driver;
+extern struct dsim_lcd_driver s6e3ha8_mipi_lcd_driver;
+extern struct dsim_lcd_driver s6e3ha9_mipi_lcd_driver;
 
 struct dsim_lcd_driver *panel_list[NUM_OF_VERIFIED_PANEL] = {
 	&s6e3fa0_mipi_lcd_driver,
 	&nt36672a_mipi_lcd_driver,
+	&s6e3ha8_mipi_lcd_driver,
+	&s6e3ha9_mipi_lcd_driver,
 };
 
 /* fill panel id to panel_ids arrary from panel driver each */
@@ -114,7 +92,8 @@ int cm_fill_id(struct dsim_device *dsim)
 	int i;
 
 	for (i = 0; i < NUM_OF_VERIFIED_PANEL; i++) {
-		if (panel_list[i] == NULL) break;
+		if (panel_list[i] == NULL)
+			break;
 		dsim->cm_panel_ops->panel_ids[i] = panel_list[i]->get_id(dsim);
 	}
 
@@ -128,7 +107,7 @@ int cm_read_id(struct dsim_device *dsim)
 	int err = 0;
 	u32 id = 0, i;
 
-	u8 buf[4];
+	u8 buf[DSIM_DDI_ID_LEN] = {0, };
 
 	/* dsim sends the request for the lcd id and gets it buffer */
 	err = dsim_read_data(dsim, MIPI_DSI_DCS_READ,
@@ -137,12 +116,20 @@ int cm_read_id(struct dsim_device *dsim)
 		printf("Failed to read panel id!\n");
 		return -EINVAL;
 	} else {
-		for (i = 0; i < 4; i++) {
+		for (i = 0; i < DSIM_DDI_ID_LEN; i++) {
 			//id |= buf[i] << (24 - i * 8);	/* LSB is left */
 			id |= buf[i] << (i * 8);	/* LSB is right */
-			printf("id : 0x%08x\n", id);
+			printf("id : 0x%06x\n", id);
 		}
-		printf("Suceeded to read panel id : 0x%08x\n", id);
+
+		/*
+		 * [ HACK : 2019-06-08 ]
+		 * use same value with PANEL_ID of [s6e3ha8_mipi_lcd.c]
+		 * remove following constant id value if value is confirmed
+		 */
+		//id = 0x430491;
+
+		printf("Suceeded to read panel id : 0x%06x\n", id);
 		ddi_id = id;
 	}
 
@@ -153,13 +140,20 @@ int cm_read_id(struct dsim_device *dsim)
 struct dsim_lcd_driver *cm_get_panel_info(struct dsim_device *dsim)
 {
 	int i;
+	int pre_defined_id = 0;
+	int read_id = 0;
 
 	cm_read_id(dsim);
 
+	read_id = dsim->cm_panel_ops->id & 0xff00ff;
 	for (i = 0; i < NUM_OF_VERIFIED_PANEL; i++) {
-		if (dsim->cm_panel_ops->panel_ids[i] == 0) break;
-		else if (dsim->cm_panel_ops->panel_ids[i] == dsim->cm_panel_ops->id)
-			return panel_list[i];
+		if (dsim->cm_panel_ops->panel_ids[i] == 0)
+			break;
+		else {
+			pre_defined_id = dsim->cm_panel_ops->panel_ids[i] & 0xff00ff;
+			if (pre_defined_id == read_id)
+				return panel_list[i];
+		}
 	}
 
 	return NULL;
