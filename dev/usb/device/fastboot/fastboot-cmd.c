@@ -897,7 +897,7 @@ int fb_do_partinfo(const char *cmd_buffer, unsigned int rx_sz)
 	/* Return response BLKRANGE for 'partinfo:' command */
 	printf("BLKRANGE%08x%08x\n", start_in_secs, size_in_secs);
 	sprintf(response, "BLKRANGE%08x%08x", start_in_secs, size_in_secs);
-	fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+	fastboot_send_status(response, strlen(response), FASTBOOT_TX_SYNC);
 
 	/* Fastboot in LK doesn't see any result */
 	return 0;
