@@ -609,6 +609,7 @@ static u32 gpt_get_size_in_secs(PART_ENTRY *part_e, u64 offset_in_bytes, u64 _si
 	struct gpt_entry *gpt_e;
 	u64 size_in_bytes;
 	u64 size_in_bytes_b;
+	u64 size_in_bytes_temp;
 
 	/*
 	 * Check and calculate size in secs,
@@ -622,18 +623,24 @@ static u32 gpt_get_size_in_secs(PART_ENTRY *part_e, u64 offset_in_bytes, u64 _si
 			gpt_err("size %llu is not aligned with %u for '%s'\n",
 					_size_in_bytes, SECTOR_SIZE, part_e->name);
 			size_in_secs = 0;
+			size_in_bytes_temp = 0;
 		} else if ((_size_in_bytes < SECTOR_SIZE) ||
 				(_size_in_bytes > offset_in_bytes + size_in_bytes)) {
 			gpt_err("size %llu is too small or bigger than %llu for '%s'\n",
 					_size_in_bytes, offset_in_bytes + size_in_bytes, part_e->name);
 			size_in_secs = 0;
-		} else
+			size_in_bytes_temp = 0;
+		} else {
 			size_in_secs = (u32)(_size_in_bytes / SECTOR_SIZE);
-	} else
+			size_in_bytes_temp = _size_in_bytes;
+		}
+	} else {
 		size_in_secs = (u32)(size_in_bytes / SECTOR_SIZE);
+		size_in_bytes_temp = size_in_bytes;
+	}
 
 	/* Need to align with block size to prevent losing non-aligned data */
-	size_in_bytes = ROUNDUP(size_in_secs * SECTOR_SIZE, s_block_in_bytes);
+	size_in_bytes = ROUNDUP(size_in_bytes_temp, (u64)s_block_in_bytes);
 	size_in_secs = MIN(size_in_bytes, size_in_bytes_b) / SECTOR_SIZE;
 end:
 	return size_in_secs;
