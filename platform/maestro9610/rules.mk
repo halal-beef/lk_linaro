@@ -53,7 +53,6 @@ MODULE_DEPS += \
 	dev/usb/dwc3 \
 	dev/usb/phy/exynos \
 	dev/usb/device/fastboot \
-	dev/usb/device/cdc-acm
 
 LINKER_SCRIPT += $(BUILDDIR)/system-onesegment.ld
 
