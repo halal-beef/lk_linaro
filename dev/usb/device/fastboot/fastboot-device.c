@@ -63,6 +63,8 @@ enum {
 	FASTBOOT_PAYLOAD_START_MARK = 2,
 };
 
+extern unsigned int s_fb_on_diskdump;
+
 void fastboot_send_status(char *response, unsigned int len, int sync);
 
 static void ready_to_rx_cmd(void)
@@ -174,6 +176,9 @@ void fastboot_send_info(char *response, unsigned int len)
 	if (fastboot_h.tx_sts_done) {
 		event_wait(&fastboot_h.tx_done_event);
 		event_unsignal(&fastboot_h.tx_done_event);
+
+		if (s_fb_on_diskdump)
+			thread_yield();
 	}
 
 	fastboot_h.tx_sts_done = 1;
@@ -187,6 +192,28 @@ void fastboot_send_info(char *response, unsigned int len)
 	event_wait(&fastboot_h.tx_done_event);
 	event_unsignal(&fastboot_h.tx_done_event);
 
+	if (s_fb_on_diskdump)
+		thread_yield();
+
+	LTRACE_EXIT;
+}
+
+void fastboot_send_payload(void *buf, unsigned int len)
+{
+	LTRACE_ENTRY;
+
+	/* Mark for not trasiante state mahcine */
+	fastboot_h.just_info = 1;
+	//memcpy(fastboot_h.tx_response_buf, response, len);
+	gadget_ep_set_buf(fastboot_h.bulk_in_ep, buf, len, GADGET_BUF_LAST);
+	gadget_ep_start(fastboot_h.bulk_in_ep);
+
+	/* Check transfer done */
+	event_wait(&fastboot_h.tx_done_event);
+	event_unsignal(&fastboot_h.tx_done_event);
+
+	thread_yield();
+
 	LTRACE_EXIT;
 }
 
@@ -198,6 +225,9 @@ void fastboot_send_status(char *response, unsigned int len, int sync)
 	if (fastboot_h.tx_sts_done) {
 		event_wait(&fastboot_h.tx_done_event);
 		event_unsignal(&fastboot_h.tx_done_event);
+
+		if (s_fb_on_diskdump)
+			thread_yield();
 	}
 
 	fastboot_h.tx_sts_done = 1;
@@ -211,6 +241,9 @@ void fastboot_send_status(char *response, unsigned int len, int sync)
 	/* Check transfer done */
 	event_wait(&fastboot_h.tx_done_event);
 	event_unsignal(&fastboot_h.tx_done_event);
+
+	if (s_fb_on_diskdump)
+		thread_yield();
 
 	LTRACE_EXIT;
 }
