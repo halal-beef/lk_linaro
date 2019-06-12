@@ -37,10 +37,10 @@ void platform_halt(platform_halt_action suggested_action,
 	}
     dprintf(ALWAYS, "HALT: spinning forever... (reason = %d)\n", reason);
     arch_disable_ints();
-#if defined(WITH_DEV_USB_DEVICE_CDC_ACM)
+//#if defined(WITH_DEV_USB_DEVICE_CDC_ACM)
     start_usb_gadget();
     for (;;) {
 	    gadgeg_dev_polling_handle();
     }
-#endif
+//#endif
 }
