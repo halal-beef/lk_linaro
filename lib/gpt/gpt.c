@@ -883,9 +883,6 @@ void gpt_init(enum __boot_dev_id id)
 	if (res)
 		goto end;
 
-	/* Sysparam scan*/
-	gpt_sysparam_scan(&gpt_mgr);
-
 	/* Show GPT */
 	__gpt_show_info();
 
