@@ -412,6 +412,25 @@ int part_wipe_boot(void)
 			}
 			bio_close(dev);
 		}
+
+		/* Current assumption is that partition table exists in User */
+		str[len] = '0';
+		str[len + 1] = '\0';
+
+		dev = bio_open(str);
+		if (!dev) {
+			printf("%s: fail to open %s\n", __func__, str);
+			print_lcd(FONT_RED, FONT_BLACK,
+					"%s: fail to open %s\n", __func__, str);
+		} else {
+			res = dev->new_erase_native(dev, 0, 48 * PART_SECTOR_SIZE / dev->block_size);
+			if (res) {
+				printf("%s: fail to wipe %s\n", __func__, str);
+				print_lcd(FONT_RED, FONT_BLACK,
+						"%s: fail to wipe %s\n", __func__, str);
+			}
+			bio_close(dev);
+		}
 	}
 
 	return res;
