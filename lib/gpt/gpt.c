@@ -755,6 +755,50 @@ end:
 	return res;
 }
 
+static void __gpt_show_uuid(void)
+{
+	u8 *p;
+	struct gpt_header *gpt_h;
+	struct gpt_entry *gpt_e;
+	PART_ENTRY *part_e;
+	u32 i;
+	u8 lun, chunk_idx;
+	unsigned char *uuid_bin;
+	char buf[37];
+
+	if (!gpt_is_mgr_valid(&gpt_mgr)) {
+		gpt_err("GPT wasn't actived properly\n");
+		return;
+	}
+
+	printf("\n");
+	part_e = gpt_mgr.part_entry;
+	for (lun = 0; lun < DEF_NUM_OF_LU; lun++) {
+		chunk_idx = (lun == 0) ? lun : lun + CHUNK_BASE_INDEX;
+		p = (u8 *)gpt_mgr.pgpt[chunk_idx];
+
+		/* Check if there is any entry in here */
+		gpt_h = (struct gpt_header *)p;
+		if (!gpt_h->part_num_entry)
+			break;
+
+		printf("================ UUID Information ===================\n\n");
+
+		/* Print entries */
+		gpt_e = (struct gpt_entry *)(p + s_block_in_bytes);
+		for (i = 0 ; i < gpt_h->part_num_entry; i++) {
+			uuid_bin = (unsigned char *)gpt_e->part_guid.b;
+			uid_bin_to_str(uuid_bin, buf, UID_STR_GUID);
+			printf("%-15s\t%-45s\n",
+					part_e->name,
+					buf);
+			gpt_e++;
+			part_e++;
+		}
+		printf("\n\n");
+	}
+}
+
 static void __gpt_show_info(void)
 {
 	u8 *p;
@@ -974,6 +1018,7 @@ int gpt_update(u8 *buf)
 
 	/* Show result */
 	__gpt_show_info();
+	__gpt_show_uuid();
 end:
 	return res;
 }
