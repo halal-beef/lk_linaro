@@ -37,6 +37,7 @@
 #include "usb-def.h"
 
 extern void fastboot_send_info(char *response, unsigned int len);
+extern void fastboot_send_payload(void *buf, unsigned int len);
 extern void fastboot_send_status(char *response, unsigned int len, int sync);
 extern void fastboot_set_payload_data(int dir, void *buf, unsigned int len);
 extern void fasboot_set_rx_sz(unsigned int prot_req_sz);
@@ -47,6 +48,8 @@ extern void fasboot_set_rx_sz(unsigned int prot_req_sz);
 unsigned int download_size = 0;
 unsigned int downloaded_data_size;
 static unsigned int is_ramdump = 0;
+unsigned int s_fb_on_diskdump = 0;
+static char resp_data[FB_RESPONSE_BUFFER_SIZE];
 
 /* cmd_fastboot_interface	in fastboot.h	*/
 struct cmd_fastboot_interface interface =
@@ -844,6 +847,140 @@ int fb_do_oem(const char *cmd_buffer, unsigned int rx_sz)
 	return 0;
 }
 
+int fb_do_diskinfo(const char *cmd_buffer, unsigned int rx_sz)
+{
+	char buf[FB_RESPONSE_BUFFER_SIZE];
+	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
+
+	u32 start_in_secs;
+	u32 size_in_secs;
+	char *p = (char *)cmd_buffer;
+
+	/* offset to get range */
+	p += 9;
+	memcpy(resp_data, p, 8);
+	*(resp_data + 8) = '\0';
+	start_in_secs = (u32)strtol(resp_data, NULL, 16);
+
+	p += 8;
+	memcpy(resp_data, p, 8);
+	*(resp_data + 8) = '\0';
+	size_in_secs = (u32)strtol(resp_data, NULL, 16);
+
+	/* If it fails, start_in_secs and size_in_secs would be zero */
+	part_get_range_by_range(&start_in_secs, &size_in_secs);
+
+	/* Return response BLKRANGE for 'diskinfo:' command */
+	sprintf(response, "BLKRANGE%08x%08x", start_in_secs, size_in_secs);
+	printf("BLKRANGE%08x%08x", start_in_secs, size_in_secs);
+	fastboot_send_status(response, strlen(response), FASTBOOT_TX_SYNC);
+
+	/* Fastboot in LK doesn't see any result */
+	return 0;
+}
+
+int fb_do_partinfo(const char *cmd_buffer, unsigned int rx_sz)
+{
+	char buf[FB_RESPONSE_BUFFER_SIZE];
+	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
+	char *name = (char *)cmd_buffer;
+
+	u32 start_in_secs;
+	u32 size_in_secs;
+
+	/* offset to get partition name */
+	name += 9;
+
+	/* If it fails, start_in_secs and size_in_secs would be zero */
+	part_get_range_by_name(name, &start_in_secs, &size_in_secs);
+
+	/* Return response BLKRANGE for 'partinfo:' command */
+	printf("BLKRANGE%08x%08x\n", start_in_secs, size_in_secs);
+	sprintf(response, "BLKRANGE%08x%08x", start_in_secs, size_in_secs);
+	fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+
+	/* Fastboot in LK doesn't see any result */
+	return 0;
+}
+
+static u32 start_diskdump(void *buf, u32 start_in_secs, u32 size_in_bytes)
+{
+	u32 size_in_secs = size_in_bytes / PART_SECTOR_SIZE;
+
+	printf("\ndiskdump start: %p, 0x%x, 0x%x\n", buf, start_in_secs, size_in_bytes);
+
+	/* Read disk */
+	if (part_read_raw(buf, start_in_secs, &size_in_secs)) {
+		/* Target disk read */
+		printf("Failed to read disk !\n");
+		return 0xFFFFFFFF;
+	}
+
+	/* Transfer data to host */
+	fastboot_send_payload(buf, size_in_secs * PART_SECTOR_SIZE);
+
+	return size_in_secs;
+}
+
+int fb_do_diskdump(const char *cmd_buffer, unsigned int rx_sz)
+{
+	char buf[FB_RESPONSE_BUFFER_SIZE];
+	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
+
+	u32 start_in_secs;
+	u32 size_in_secs;
+	u32 done;
+	int res = -1;
+	char *p = (char *)cmd_buffer;
+
+	/* Print */
+	printf("\nGot diskdump command\n");
+	print_lcd_update(FONT_GREEN, FONT_BLACK, "Got diskdump command.");
+
+	/* Get arguments from command */
+	p += 9;
+	memcpy(resp_data, p, 8);
+	*(resp_data + 8) = '\0';
+	start_in_secs = (u32)strtol(resp_data, NULL, 16);
+
+	p += 8;
+	memcpy(resp_data, p, 8);
+	*(resp_data + 8) = '\0';
+	size_in_secs = (u32)strtol(resp_data, NULL, 16);
+
+	printf("Starting download of %u blocks from start_in_secs %u\n", size_in_secs, start_in_secs);
+
+	/* Check */
+	if (0 == size_in_secs)
+		sprintf(response, "FAILdata invalid size");
+	else if (size_in_secs * PART_SECTOR_SIZE > interface.transfer_buffer_size)
+		sprintf(response, "FAILdata too large: %u > %u",
+				size_in_secs * PART_SECTOR_SIZE, interface.transfer_buffer_size);
+	else {
+		sprintf(response, "OKAY");
+		res = 0;
+	}
+
+	s_fb_on_diskdump = 1;
+
+	/* Return response for 'diskdump:' command */
+	fastboot_send_info(response, strlen(response));
+
+	if (res == 0) {
+		done = start_diskdump((void *)CFG_FASTBOOT_TRANSFER_BUFFER, start_in_secs, size_in_secs * PART_SECTOR_SIZE);
+
+		/* Return BLKCOUNT to host */
+		printf("BLKCOUNT%08x\n", done);
+		sprintf(response, "BLKCOUNT%08x", done);
+		s_fb_on_diskdump = 0;
+		fastboot_send_status(response, strlen(response), FASTBOOT_TX_SYNC);
+	}
+	s_fb_on_diskdump = 0;
+
+	/* Fastboot in LK doesn't see any result */
+	return 0;
+}
+
 struct cmd_fastboot cmd_list[] = {
 	{"reboot", fb_do_reboot},
 	{"flash:", fb_do_flash},
@@ -854,6 +991,9 @@ struct cmd_fastboot cmd_list[] = {
 	{"set_active:", fb_do_set_active},
 	{"flashing", fb_do_flashing},
 	{"oem", fb_do_oem},
+	{"diskinfo:", fb_do_diskinfo},
+	{"partinfo:", fb_do_partinfo},
+	{"diskdump:", fb_do_diskdump},
 };
 
 int rx_handler(const unsigned char *buffer, unsigned int buffer_size)
@@ -865,9 +1005,8 @@ int rx_handler(const unsigned char *buffer, unsigned int buffer_size)
 
 	cmd_buffer = (char *)buffer;
 
-#ifdef PART_DEBUG
-	LTRACEF_LEVEL(INFO, "fb %s\n", cmd_buffer);	/* test: probing protocol */
-#endif
+	printf("fb: %s\n", cmd_buffer);	/* test: probing protocol */
+
 	if (is_ramdump) {
 		is_ramdump = 0;
 
