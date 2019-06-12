@@ -991,7 +991,7 @@ int gpt_update(u8 *buf)
 		goto end;
 	}
 
-	/* Write alternative GPT for LU #0 that is used for OS */
+	/* Write alternative GPT header for LU #0 */
 	size_in_bytes = (u64)(s_block_in_bytes);
 	start_in_blks = (u32)gpt_h->gpt_back_header;
 	res = gpt_save_gpt(s_gpt_dev, (void *)gpt_mgr.bdata, start_in_blks, size_in_bytes);
@@ -1000,10 +1000,11 @@ int gpt_update(u8 *buf)
 		goto end;
 	}
 
+	/* Write alternative GPT entries for LU #0 */
 	size_in_bytes = (u64)(gpt_h->part_num_entry * gpt_h->part_size_entry);
 	size_in_bytes = ROUNDUP(size_in_bytes, s_block_in_bytes);
 	start_in_blks -= size_in_bytes / s_block_in_bytes;
-	res = gpt_save_gpt(s_gpt_dev, (void *)gpt_mgr.bdata, start_in_blks, size_in_bytes);
+	res = gpt_save_gpt(s_gpt_dev, (void *)(gpt_mgr.bdata + s_block_in_bytes), start_in_blks, size_in_bytes);
 	if (res) {
 		res = -1;
 		goto end;
@@ -1146,14 +1147,15 @@ int gpt_read_raw(void *buf, u32 start_in_secs, u32 *_size_in_secs)
 void gpt_get_range_by_name(const char *name, u32 *start_in_secs, u32 *size_in_secs)
 {
 	PART_ENTRY *part_e = __gpt_get_entry(&gpt_mgr, name);
-	struct gpt_entry *gpt_e = part_e->gpt_entry;
+	struct gpt_entry *gpt_e;
 
-	if (gpt_e) {
-		*start_in_secs = gpt_e->part_start_lba * s_block_in_secs;
-		*size_in_secs = gpt_e->part_end_lba * s_block_in_secs;
-	} else {
+	if (!part_e || !part_e->gpt_entry) {
 		*start_in_secs = 0;
 		*size_in_secs = 0;
+	} else {
+		gpt_e = part_e->gpt_entry;
+		*start_in_secs = gpt_e->part_start_lba * s_block_in_secs;
+		*size_in_secs = gpt_e->part_end_lba * s_block_in_secs;
 	}
 }
 
