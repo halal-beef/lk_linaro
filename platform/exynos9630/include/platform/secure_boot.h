@@ -10,6 +10,7 @@
 #define SMC_CM_SECURE_BOOT		(0x101D)
 
 /* Error return */
+#define SB_ERROR_PREFIX                 (0xFDAA0000)
 #define AVB_ERROR_RP_UPDATE_FAIL	(0xFDAA4001)
 #define AVB_ERROR_INVALID_COLOR		(0xFDAA4002)
 #define AVB_ERROR_AVBKEY_LEN_ZERO	(0xFDAA4003)
