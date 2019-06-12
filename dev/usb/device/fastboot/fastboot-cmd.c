@@ -539,10 +539,10 @@ int fb_do_flash(const char *cmd_buffer, unsigned int rx_sz)
 #endif
 	dprintf(ALWAYS, "flash\n");
 
+	strcpy(response,"OKAY");
 	flash_using_part((char *)cmd_buffer + 6, response,
 			downloaded_data_size, (void *)interface.transfer_buffer);
 
-	strcpy(response,"OKAY");
 	fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 
 	LTRACE_EXIT;
