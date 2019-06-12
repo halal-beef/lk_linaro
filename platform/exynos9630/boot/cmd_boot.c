@@ -38,8 +38,9 @@
 #include <dev/scsi.h>
 
 /* Memory node */
-#define SIZE_2GB (0x80000000)
-#define MASK_1MB (0x100000 - 1)
+#define SIZE_2GB 	(0x80000000)
+#define SIZE_500MB	(0x20000000)
+#define MASK_1MB	(0x100000 - 1)
 
 #define BUFFER_SIZE 2048
 #define BOOTARGS_ITEM_SIZE	128
@@ -427,7 +428,14 @@ static void configure_dtb(void)
 	char str[BUFFER_SIZE];
 	int len, noff;
 	struct boot_img_hdr *b_hdr = (boot_img_hdr *)BOOT_BASE;
-
+	u32 soc_ver = 0;
+	u64 dram_size = *(u64 *)BL_SYS_INFO_DRAM_SIZE;
+	unsigned long sec_dram_base = 0;
+	unsigned int sec_dram_size = 0;
+	unsigned long sec_dram_end = 0;
+	unsigned long sec_pt_base = 0;
+	unsigned int sec_pt_size = 0;
+	unsigned long sec_pt_end = 0;
 #if defined(CONFIG_USE_AVB20)
 	struct AvbOps *ops;
 	bool unlock;
@@ -438,10 +446,85 @@ static void configure_dtb(void)
 	 * If you modify dtb, you must use under set_bootargs function.
 	 * And if you modify bootargs, you will modify in set_bootargs function.
 	 */
-
 	merge_dto_to_main_dtb();
+	resize_dt(SZ_4K);
 
-#if 0
+
+	/* Get Secure DRAM information */
+	soc_ver = exynos_smc(SMC_CMD_GET_SOC_INFO, SOC_INFO_TYPE_VERSION, 0, 0);
+	if (soc_ver == SOC_INFO_VERSION(SOC_INFO_MAJOR_VERSION, SOC_INFO_MINOR_VERSION)) {
+		sec_dram_base = exynos_smc(SMC_CMD_GET_SOC_INFO,
+		                           SOC_INFO_TYPE_SEC_DRAM_BASE,
+		                           0,
+		                           0);
+		if (sec_dram_base == (unsigned long)ERROR_INVALID_TYPE) {
+			printf("get secure memory base addr error!!\n");
+			while (1)
+				;
+		}
+
+		sec_dram_size = (unsigned int)exynos_smc(SMC_CMD_GET_SOC_INFO,
+		                                         SOC_INFO_TYPE_SEC_DRAM_SIZE,
+		                                         0,
+		                                         0);
+		if (sec_dram_size == (unsigned int)ERROR_INVALID_TYPE) {
+			printf("get secure memory size error!!\n");
+			while (1)
+				;
+		}
+	} else {
+		printf("[ERROR] el3_mon is old version. (0x%x)\n", soc_ver);
+		while (1)
+			;
+	}
+
+	sec_dram_end = sec_dram_base + sec_dram_size;
+
+	printf("SEC_DRAM_BASE[%#lx]\n", sec_dram_base);
+	printf("SEC_DRAM_SIZE[%#x]\n", sec_dram_size);
+
+	/* Get secure page table for DRM information */
+	sec_pt_base = exynos_smc(SMC_DRM_GET_SOC_INFO,
+	                         SOC_INFO_SEC_PGTBL_BASE,
+	                         0,
+	                         0);
+	if (sec_pt_base == ERROR_DRM_INVALID_TYPE) {
+		printf("[SEC_PGTBL_BASE] Invalid type\n");
+		sec_pt_base = 0;
+	} else if (sec_pt_base == ERROR_DRM_FW_INVALID_PARAM) {
+		printf("[SEC_PGTBL_BASE] Do not support SMC for SMC_DRM_GET_SOC_INFO\n");
+		sec_pt_base = 0;
+	} else if (sec_pt_base == (unsigned long)ERROR_NO_DRM_FW_INITIALIZED) {
+		printf("[SEC_PGTBL_BASE] DRM LDFW is not initialized\n");
+		sec_pt_base = 0;
+	} else if (sec_pt_base & MASK_1MB) {
+		printf("[SEC_PGTBL_BASE] Not aligned with 1MB\n");
+		sec_pt_base = 0;
+	}
+
+	sec_pt_size = (unsigned int)exynos_smc(SMC_DRM_GET_SOC_INFO,
+	                                       SOC_INFO_SEC_PGTBL_SIZE,
+	                                       0,
+	                                       0);
+	if (sec_pt_size == ERROR_DRM_INVALID_TYPE) {
+		printf("[SEC_PGTBL_SIZE] Invalid type\n");
+		sec_pt_size = 0;
+	} else if (sec_pt_size == ERROR_DRM_FW_INVALID_PARAM) {
+		printf("[SEC_PGTBL_SIZE] Do not support SMC for SMC_DRM_GET_SOC_INFO\n");
+		sec_pt_size = 0;
+	} else if (sec_pt_size == (unsigned int)ERROR_NO_DRM_FW_INITIALIZED) {
+		printf("[SEC_PGTBL_SIZE] DRM LDFW is not initialized\n");
+		sec_pt_size = 0;
+	} else if (sec_pt_base & MASK_1MB) {
+		printf("[SEC_PGTBL_SIZE] Not aligned with 1MB\n");
+		sec_pt_size = 0;
+	}
+
+	sec_pt_end = sec_pt_base + sec_pt_size;
+
+	printf("SEC_PGTBL_BASE[%#lx]\n", sec_pt_base);
+	printf("SEC_PGTBL_SIZE[%#x]\n", sec_pt_size);
+
 	/* Secure memories are carved-out in case of EVT1 */
 	/*
 	 * 1st DRAM node
@@ -453,25 +536,41 @@ static void configure_dtb(void)
 	 */
 	if (sec_pt_base && sec_pt_size) {
 		add_dt_memory_node(sec_dram_end,
-					sec_pt_base - sec_dram_end);
-		add_dt_memory_node(sec_pt_end,
-					(DRAM_BASE + SIZE_2GB)
-					- sec_pt_end);
+		                   sec_pt_base - sec_dram_end);
+
+		if (dram_size >= SIZE_2GB) {
+			add_dt_memory_node(sec_pt_end,
+			                   (DRAM_BASE + SIZE_2GB)
+			                   - sec_pt_end);
+		} else {
+			add_dt_memory_node(sec_pt_end,
+			                   (DRAM_BASE + dram_size)
+			                   - sec_pt_end);
+		}
 	} else {
-		add_dt_memory_node(sec_dram_end,
-					(DRAM_BASE + SIZE_2GB)
-					- sec_dram_end);
+		if (dram_size >= SIZE_2GB) {
+			add_dt_memory_node(sec_dram_end,
+			                   (DRAM_BASE + SIZE_2GB)
+			                   - sec_dram_end);
+		} else {
+			add_dt_memory_node(sec_dram_end,
+			                   (DRAM_BASE + dram_size)
+			                   - sec_dram_end);
+		}
 	}
 
 	/*
 	 * 3rd DRAM node
 	 */
-	add_dt_memory_node(DRAM_BASE2, SIZE_2GB);
-	if (dram_size == 0x180000000)
-		add_dt_memory_node(0x900000000, SIZE_2GB);
+	if (dram_size <= SIZE_2GB)
+		goto mem_node_out;
 
-	resize_dt(SZ_4K);
-#endif
+	for (u64 i = 0; i < dram_size - SIZE_2GB; i += SIZE_500MB) {
+		/* add 500MB mem node */
+		add_dt_memory_node(DRAM_BASE2 + i, SIZE_500MB);
+	}
+
+mem_node_out:
 	sprintf(str, "<0x%x>", ECT_BASE);
 	set_fdt_val("/ect", "parameter_address", str);
 
