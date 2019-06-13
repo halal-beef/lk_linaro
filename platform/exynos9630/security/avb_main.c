@@ -41,11 +41,7 @@ uint32_t avb_set_root_of_trust(uint32_t device_state, uint32_t boot_state)
 	uint8_t *vbmeta_buf = NULL;
 	struct boot_img_hdr *b_hdr = (boot_img_hdr *)BOOT_BASE;
 	struct AvbVBMetaImageHeader h;
-#if defined(CONFIG_AB_UPDATE)
 	void *part = part_get_ab("vbmeta");
-#else
-	void *part = part_get("vbmeta");
-#endif
 
 	if (!part) {
 		printf("Partition 'vbmeta' does not exist\n");
@@ -97,6 +93,10 @@ out:
 uint32_t is_slot_marked_successful(void)
 {
 	uint32_t ret;
+
+	/* No AB Support: return true case */
+	if (!ab_update_support())
+		return 1;
 
 	ret = ab_slot_successful(ab_current_slot());
 

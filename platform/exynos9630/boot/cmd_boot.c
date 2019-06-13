@@ -475,10 +475,9 @@ int cmd_boot(int argc, const cmd_args *argv)
 #if defined(CONFIG_USE_AVB20)
 	int avb_ret = 0;
 	uint32_t lock_state;
+	char ab_suffix[8] = {'\0'};
 #endif
-#if defined(CONFIG_AB_UPDATE)
 	int ab_ret = 0;
-#endif
 
 #if defined(CONFIG_FACTORY_MODE)
 	val = exynos_gpio_get_value(bank, gpio);
@@ -490,29 +489,28 @@ int cmd_boot(int argc, const cmd_args *argv)
 	}
 #endif
 
-#if defined(CONFIG_AB_UPDATE)
 	ab_ret = ab_update_slot_info();
-	if (ab_ret < 0) {
+	if ((ab_ret < 0) && (ab_ret != AB_ERROR_NOT_SUPPORT)) {
 		printf("AB update error! Error code: %d\n", ab_ret);
 		start_usb_gadget();
 		do {
 			asm volatile("wfi");
 		} while(1);
 	}
-#endif
 
 	load_boot_images();
 
 #if defined(CONFIG_USE_AVB20)
-#if defined(CONFIG_AB_UPDATE)
-	if (ab_current_slot())
-		avb_ret = avb_main("_b", cmdline, verifiedbootstate);
+	ab_ret = ab_current_slot();
+	if (ab_ret == AB_ERROR_NOT_SUPPORT)
+		sprintf(ab_suffix, "");
+	else if (ab_ret == AB_SLOT_B)
+		sprintf(ab_suffix, "_b");
 	else
-		avb_ret = avb_main("_a", cmdline, verifiedbootstate);
-#else
-	avb_ret = avb_main("", cmdline, verifiedbootstate);
-#endif
-	printf("AVB: boot/dtbo image verification result: %d\n", avb_ret);
+		sprintf(ab_suffix, "_a");
+
+	avb_ret = avb_main(ab_suffix, cmdline, verifiedbootstate);
+	printf("AVB: suffix[%s], boot/dtbo image verification result: %d\n", ab_suffix, avb_ret);
 
 	rpmb_get_lock_state(&lock_state);
 	printf("lock state: %d\n", lock_state);

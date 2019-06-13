@@ -180,6 +180,15 @@
 /* GPIO */
 #define CONFIG_GPIO_4BIT_PUD
 
+/*
+ * AB Update Support only
+ * Below GLOBAL VALUE can be defined in
+ * project/{PROJECT}.mk
+ */
+#ifdef SUPPORT_AB_UPDATE
+#define CONFIG_AB_UPDATE
+#endif
+
 /* display GPIO for TE : GPG0[1] */
 #define EXYNOS9630_GPG0CON				(EXYNOS9630_GPIO_PERIC_BASE + 0x0080)
 #define EXYNOS9630_GPG0DAT				(EXYNOS9630_GPIO_PERIC_BASE + 0x0084)
