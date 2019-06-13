@@ -26,6 +26,7 @@
 #include <platform/pmic_s2mpu10_11.h>
 #include <platform/if_pmic_s2mu107.h>
 #include <platform/fg_s2mu107.h>
+#include <platform/tmu.h>
 #include <platform/dfd.h>
 #include <platform/ldfw.h>
 #include <platform/gpio.h>
@@ -33,6 +34,7 @@
 #include <platform/dram_training.h>
 #include <platform/mmu/mmu_func.h>
 #include <platform/fastboot.h>
+#include <platform/exynos9630.h>
 
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
@@ -364,6 +366,8 @@ void platform_init(void)
 	dfd_display_core_stat();
 	/* read_dram_info(); */
 
+	display_tmu_info();
+	display_trip_info();
 	/*
 	tmu_initialize();
 	read_temperature(TZ_G3D, &temp, PRINT);
