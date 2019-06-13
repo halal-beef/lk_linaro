@@ -411,33 +411,69 @@ static void configure_dtb(void)
 
 int cmd_scatter_load_boot(int argc, const cmd_args *argv);
 
+/*
+ * load images from boot.img / recovery.img / dtbo.img partition
+ *   kernel & dtb load from boot or recovery,
+ *   depending on normal or Recovery booting.
+ *   Below 2 case can be different by AB or Non AB Partition support.
+ *
+ * Non AB Case
+ *   Normal booting : load boot from boot.img & dtbo from dtbo.img
+ *   Recovery booting : load boot from recovery.img & dtbo from recovery.img
+ *
+ * AB Case
+ *   Normal booting : load boot from boot_x.img & dtbo from dtbo_x.img
+ *   Recovery booting : load boot from boot_x.img & dtbo from boot_x.img
+ */
 int load_boot_images(void)
 {
 	cmd_args argv[6];
+	void *part;
+	char boot_part_name[16] = "";
+	unsigned int ab_support = 0;
+	unsigned int boot_val = 0;
 
-	void *part = part_get_ab("boot");
-	if (!part) {
-		printf("Partition 'kernel' does not exist\n");
-		return -1;
-	}
-
-	part_read(part, (void *)BOOT_BASE);
+	ab_support = ab_update_support();
+	boot_val = readl(EXYNOS9630_POWER_SYSIP_DAT0);
+	printf("%s: AB[%d], boot_val[0x%02X]\n", __func__, ab_support, boot_val);
+	if (ab_support)
+		print_lcd_update(FONT_WHITE, FONT_BLACK, "AB Update support");
 
 	argv[1].u = BOOT_BASE;
 	argv[2].u = KERNEL_BASE;
 	argv[3].u = 0;
 	argv[4].u = DT_BASE;
-	argv[5].u = 0;
-	cmd_scatter_load_boot(5, argv);
 
-	part = part_get_ab("dtbo");
-	if (part == 0) {
-		printf("Partition 'dtbo' does not exist\n");
-		return -1;
+	if (boot_val == REBOOT_MODE_RECOVERY) {
+		argv[5].u = DTBO_BASE;
+		if (!ab_support)
+			sprintf(boot_part_name, "recovery");
+		else
+			sprintf(boot_part_name, "boot");
 	} else {
+		argv[5].u = 0x0;
+		part = part_get_ab("dtbo");
+		if (part == 0) {
+			printf("Partition 'dtbo' does not exist\n");
+			return -1;
+		}
 		part_read(part, (void *)DTBO_BASE);
+		printf("DTBO loaded from dtbo partition\n");
+		sprintf(boot_part_name, "boot");
 	}
 
+	printf("%s: loading from '%s' partition\n", __func__, boot_part_name);
+	part = part_get_ab(boot_part_name);
+	if (part == 0) {
+		printf("Partition '%s' does not exist\n", boot_part_name);
+		return -1;
+	}
+
+	part_read(part, (void *)BOOT_BASE);
+
+	cmd_scatter_load_boot(5, argv);
+
+	/* TODO: Ramdisk loading is needed?? */
 	part = part_get("ramdisk");
 	if (part == 0) {
 		printf("Partition 'ramdisk' does not exist\n");
