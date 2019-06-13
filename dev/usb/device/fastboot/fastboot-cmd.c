@@ -163,6 +163,7 @@ int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
 	const char *tmp;
+	int ret;
 
 	LTRACEF("fast received cmd:%s\n", cmd_buffer);
 
@@ -258,15 +259,21 @@ int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 	else if (!memcmp(cmd_buffer + 7, "slot-count", strlen("slot-count")))
 	{
 		LTRACEF("fast cmd:get slot-count\n");
-		sprintf(response + 4, "2");
+		if (!ab_update_support())
+			sprintf(response, "FAILnot support");
+		else
+			sprintf(response + 4, "2");
 	}
 	else if (!memcmp(cmd_buffer + 7, "current-slot", strlen("current-slot")))
 	{
 		LTRACEF("fast cmd:current-slot\n");
-		if (ab_current_slot())
-			sprintf(response + 4, "_b");
+		if (!ab_update_support())
+			sprintf(response, "FAILnot support");
 		else
-			sprintf(response + 4, "_a");
+			if (ab_current_slot())
+				sprintf(response + 4, "_b");
+			else
+				sprintf(response + 4, "_a");
 	}
 	else if (!memcmp(cmd_buffer + 7, "slot-successful", strlen("slot-successful")))
 	{
@@ -280,7 +287,9 @@ int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 		else
 			sprintf(response, "FAILinvalid slot");
 		LTRACEF("slot: %d\n", slot);
-		if (slot >= 0) {
+		if (!ab_update_support()) {
+			sprintf(response, "FAILnot support");
+		} else if (slot >= 0) {
 			if (ab_slot_successful(slot))
 				sprintf(response + 4, "yes");
 			else
@@ -298,7 +307,9 @@ int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 			slot = 1;
 		else
 			sprintf(response, "FAILinvalid slot");
-		if (slot >= 0) {
+		if (!ab_update_support()) {
+			sprintf(response, "FAILnot support");
+		} else if (slot >= 0) {
 			if (ab_slot_unbootable(slot))
 				sprintf(response + 4, "yes");
 			else
@@ -316,14 +327,17 @@ int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 			slot = 1;
 		else
 			sprintf(response, "FAILinvalid slot");
-		if (slot >= 0)
+		if (!ab_update_support())
+			sprintf(response, "FAILnot support");
+		else if (slot >= 0)
 			sprintf(response + 4, "%d", ab_slot_retry_count(slot));
 	}
 	else if (!memcmp(cmd_buffer + 7, "has-slot", strlen("has-slot")))
 	{
-#if defined(CONFIG_AB_UPDATE)
 		LTRACEF("fast cmd:has-slot\n");
-		if (!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "ldfw") ||
+		if (!ab_update_support())
+			sprintf(response, "FAILnot support");
+		else if (!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "ldfw") ||
 			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "keystorage") ||
 			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "boot") ||
 			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "dtbo") ||
@@ -336,7 +350,6 @@ int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "bootloader"))
 			sprintf(response + 4, "yes");
 		else
-#endif
 			sprintf(response + 4, "no");
 	}
 	else if (!memcmp(cmd_buffer + 7, "unlocked", strlen("unlocked")))
@@ -403,7 +416,9 @@ int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 	else
 	{
 		LTRACEF("fast cmd:vendor\n");
-		debug_snapshot_getvar_item(cmd_buffer + 7, response + 4);
+		ret = debug_snapshot_getvar_item(cmd_buffer + 7, response + 4);
+		if (ret != 0)
+			sprintf(response, "FAIL");
 	}
 
 	fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
@@ -626,7 +641,6 @@ int fb_do_ramdump(const char *cmd_buffer, unsigned int rx_sz)
 	return 0;
 }
 
-#if defined(CONFIG_AB_UPDATE)
 int fb_do_set_active(const char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
@@ -634,24 +648,29 @@ int fb_do_set_active(const char *cmd_buffer, unsigned int rx_sz)
 
 	LTRACEF_LEVEL(INFO, "set_active\n");
 
-	sprintf(response,"OKAY");
-	if (!strcmp(cmd_buffer + 11, "a")) {
-		printf("Set slot 'a' active.\n");
-		print_lcd_update(FONT_GREEN, FONT_BLACK, "Set slot 'a' active.");
-		ab_set_active(0);
-	} else if (!strcmp(cmd_buffer + 11, "b")) {
-		printf("Set slot 'b' active.\n");
-		print_lcd_update(FONT_GREEN, FONT_BLACK, "Set slot 'b' active.");
-		ab_set_active(1);
+	if (!ab_update_support()) {
+		printf("set_active is not support\n");
+		print_lcd_update(FONT_RED, FONT_BLACK, "set active is not support");
+		sprintf(response, "FAILnot support");
 	} else {
-		sprintf(response, "FAILinvalid slot");
+		sprintf(response,"OKAY");
+		if (!strcmp(cmd_buffer + 11, "a")) {
+			printf("Set slot 'a' active.\n");
+			print_lcd_update(FONT_GREEN, FONT_BLACK, "Set slot 'a' active.");
+			ab_set_active(0);
+		} else if (!strcmp(cmd_buffer + 11, "b")) {
+			printf("Set slot 'b' active.\n");
+			print_lcd_update(FONT_GREEN, FONT_BLACK, "Set slot 'b' active.");
+			ab_set_active(1);
+		} else {
+			sprintf(response, "FAILinvalid slot");
+		}
 	}
 
 	fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 
 	return 0;
 }
-#endif
 
 /* Lock/unlock device */
 int fb_do_flashing(const char *cmd_buffer, unsigned int rx_sz)
@@ -832,9 +851,7 @@ struct cmd_fastboot cmd_list[] = {
 	{"download:", fb_do_download},
 	{"ramdump:", fb_do_ramdump},
 	{"getvar:", fb_do_getvar},
-#if defined(CONFIG_AB_UPDATE)
 	{"set_active:", fb_do_set_active},
-#endif
 	{"flashing", fb_do_flashing},
 	{"oem", fb_do_oem},
 };
