@@ -20,6 +20,7 @@
 #include <platform/bootloader_message.h>
 #include <platform/bl_sys_info.h>
 
+#if defined(CONFIG_AB_UPDATE)
 int ab_update_slot_info(void)
 {
 	void *buf;
@@ -340,3 +341,54 @@ int ab_slot_retry_count(int slot)
 
 	return ret;
 }
+int ab_update_support(void)
+{
+	return 1;
+}
+#else
+int ab_update_slot_info(void)
+{
+	printf("%s: NO AB update support\n", __func__);
+	return AB_ERROR_NOT_SUPPORT;
+}
+
+int ab_update_slot_info_bootloader(void)
+{
+	printf("%s: NO AB update support\n", __func__);
+	return AB_ERROR_NOT_SUPPORT;
+}
+
+int ab_set_active(int slot)
+{
+	printf("%s: NO AB update support\n", __func__);
+	return AB_ERROR_NOT_SUPPORT;
+}
+
+int ab_current_slot(void)
+{
+	printf("%s: NO AB update support\n", __func__);
+	return AB_ERROR_NOT_SUPPORT;
+}
+
+int ab_slot_successful(int slot)
+{
+	printf("%s: NO AB update support\n", __func__);
+	return AB_ERROR_NOT_SUPPORT;
+}
+
+int ab_slot_unbootable(int slot)
+{
+	printf("%s: NO AB update support\n", __func__);
+	return AB_ERROR_NOT_SUPPORT;
+}
+
+int ab_slot_retry_count(int slot)
+{
+	printf("%s: NO AB update support\n", __func__);
+	return AB_ERROR_NOT_SUPPORT;
+}
+int ab_update_support(void)
+{
+	return 0;
+}
+#endif
