@@ -43,10 +43,6 @@
 
 #define BUFFER_SIZE 2048
 
-#define REBOOT_MODE_RECOVERY	0xFF
-#define REBOOT_MODE_FACTORY	0xFD
-#define REBOOT_MODE_FASTBOOT	0xFC
-
 #define be32_to_cpu(x) \
 		((((x) & 0xff000000) >> 24) | \
 		 (((x) & 0x00ff0000) >>  8) | \
