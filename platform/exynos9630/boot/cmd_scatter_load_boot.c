@@ -37,7 +37,8 @@ int cmd_scatter_load_boot(int argc, const cmd_args *argv)
 	printf("kernel size: 0x%08x\n", b_hdr->kernel_size);
 	printf("ramdisk size: 0x%08x\n", b_hdr->ramdisk_size);
 	printf("DTB size: 0x%08x\n", b_hdr->second_size);
-	printf("recovery DTBO size: 0x%08x\n", b_hdr->recovery_dtbo_size);
+	if (recovery_dtbo_addr)
+		printf("recovery DTBO size: 0x%08x\n", b_hdr->recovery_dtbo_size);
 
 	kernel_offset = b_hdr->page_size;
 	ramdisk_offset = kernel_offset + ((b_hdr->kernel_size + b_hdr->page_size - 1) / b_hdr->page_size) * b_hdr->page_size;
