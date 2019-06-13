@@ -525,12 +525,6 @@ int cmd_boot(int argc, const cmd_args *argv)
 	val = readl(EXYNOS9630_POWER_SYSIP_DAT0);
 	if (val == REBOOT_MODE_RECOVERY || val == REBOOT_MODE_FACTORY) {
 		writel(0, EXYNOS9630_POWER_SYSIP_DAT0);
-	} else if (val == REBOOT_MODE_FASTBOOT) {
-		writel(0, EXYNOS9630_POWER_SYSIP_DAT0);
-		printf("Entering fastboot.\n");
-		print_lcd_update(FONT_RED, FONT_BLACK, "Entering fastboot.");
-		start_usb_gadget();
-		return 0;
 	}
 #endif
 
