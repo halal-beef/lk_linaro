@@ -55,15 +55,22 @@ void *part_get_ab(const char *name)
 	char postfix[3];
 	int i;
 	int len = strlen(name);
+	int cur_slot;
 
 	for (i = 0; i < len ; i++)
 		part_name[i] = name[i];
+
 	part_name[len] = '\0';
-	if (ab_current_slot())
+
+	/* only for A / B support case, add _a or _b */
+	cur_slot = ab_current_slot();
+	if (cur_slot == AB_SLOT_B) {
 		sprintf(postfix, "_%1c", 'b');
-	else
+		strcat(part_name, postfix);
+	} else if (cur_slot == AB_SLOT_A) {
 		sprintf(postfix, "_%1c", 'a');
-	strcat(part_name, postfix);
+		strcat(part_name, postfix);
+	}
 	printf("%s: Partition '%s' with %d > %s\n", __func__, name, len, part_name);
 #if INPUT_GPT_AS_PT
 	part = (void *)gpt_get_entry(part_name);
