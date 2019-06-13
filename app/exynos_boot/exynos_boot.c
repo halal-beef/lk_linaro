@@ -172,11 +172,16 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 
 	if (!is_first_boot()) {
 		printf("Entering fastboot: not first_boot\n");
-		goto fastboot;
+		goto download;
 	} else if (rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET)) {
 		printf("Entering fastboot: Abnormal RST_STAT: 0x%x\n", rst_stat);
 		dfd_set_dump_en_for_cacheop(0);
 		goto fastboot;
+	} else if (readl(EXYNOS9630_POWER_SYSIP_DAT0) == REBOOT_MODE_FASTBOOT) {
+		printf("Entering fastboot: reboot bootloader command\n");
+		writel(0, CONFIG_RAMDUMP_SCRATCH);
+		writel(0, EXYNOS9630_POWER_SYSIP_DAT0);
+		goto download;
 	} else if ((readl(CONFIG_RAMDUMP_SCRATCH) == CONFIG_RAMDUMP_MODE) && get_charger_mode() == 0) {
 		printf("Entering fastboot: Ramdump_Scratch & Charger\n");
 		goto fastboot;
@@ -185,8 +190,21 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		printf("Entering fastboot: fastboot_reg | fb_mode\n");
 		goto fastboot;
 */
-	} else
+	} else if (is_xct_boot()) {
+		cpu = cmd_xct(0, 0);
+		printf("Entering fastboot: xct boot fail code - %d\n", cpu);
+		goto download;
+	} else {
 		goto reboot;
+	}
+
+download:
+	uart_log_mode = 1;
+#ifndef RAMDUMP_MODE_OFF
+	debug_store_ramdump();
+#endif
+	start_usb_gadget();
+	return;
 
 fastboot:
 	uart_log_mode = 1;
@@ -196,14 +214,8 @@ fastboot:
 	start_usb_gadget();
 	return;
 #endif
-reboot:
-	if (is_xct_boot()) {
-		cpu = cmd_xct(0, 0);
-		printf("Entering fastboot: xct boot fail code - %d\n", cpu);
-		start_usb_gadget();
-		return;
-	}
 
+reboot:
 /*
 	vol_up_val = exynos_gpio_get_value(bank, 5);
 	vol_down_val = exynos_gpio_get_value(bank, 6);
