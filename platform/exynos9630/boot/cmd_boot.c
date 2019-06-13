@@ -269,6 +269,7 @@ static void configure_dtb(void)
 	int len;
 	const char *np;
 	int noff;
+	int ret;
 #if defined(CONFIG_USE_AVB20)
 	struct AvbOps *ops;
 	bool unlock;
@@ -351,18 +352,15 @@ static void configure_dtb(void)
 		printf("Enter charger mode...");
 	}
 #endif
-
-#if defined(CONFIG_AB_UPDATE)
-	/* Add booting slot */
-	noff = fdt_path_offset(fdt_dtb, "/chosen");
-	np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
-	if (ab_current_slot())
-		snprintf(str, BUFFER_SIZE, "%s %s", np, "androidboot.slot_suffix=_b");
-	else
-		snprintf(str, BUFFER_SIZE, "%s %s", np, "androidboot.slot_suffix=_a");
-	fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
-#endif
-
+	/* Add booting slot for AB support case */
+	ret = ab_current_slot();
+	if (ret != AB_ERROR_NOT_SUPPORT) {
+		noff = fdt_path_offset(fdt_dtb, "/chosen");
+		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
+		snprintf(str, BUFFER_SIZE, "%s androidboot.slot_suffix=%s", np,
+			 (ret == AB_SLOT_B) ? "_b" : "_a");
+		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
+	}
 #if 0
 	noff = fdt_path_offset(fdt_dtb, "/reserved-memory/modem_if");
 	if (noff >= 0) {
@@ -421,11 +419,7 @@ int load_boot_images(void)
 {
 	cmd_args argv[6];
 
-#if defined(CONFIG_AB_UPDATE)
 	void *part = part_get_ab("boot");
-#else
-	void *part = part_get("boot");
-#endif
 	if (!part) {
 		printf("Partition 'kernel' does not exist\n");
 		return -1;
@@ -440,7 +434,7 @@ int load_boot_images(void)
 	argv[5].u = 0;
 	cmd_scatter_load_boot(5, argv);
 
-	part = part_get("dtbo");
+	part = part_get_ab("dtbo");
 	if (part == 0) {
 		printf("Partition 'dtbo' does not exist\n");
 		return -1;
