@@ -57,7 +57,7 @@ struct dbg_snapshot_bl static_dss_bl = {
 	.item[5] = {"log_kevents",	{0, 0}, 0},
 };
 
-struct dbg_snapshot_bl *dss_bl_p;
+struct dbg_snapshot_bl *dss_bl_p = &static_dss_bl;
 
 static int debug_snapshot_get_items(void)
 {
@@ -205,7 +205,7 @@ int debug_snapshot_getvar_item(const char *name, char *response)
 			item->rmem.paddr + item->rmem.size - 1);
 	}
 
-	snprintf(log_name, 16, "log_%s", name);
+	snprintf(log_name, 15, "log_%s", name);
 	item = debug_snapshot_get_item(log_name);
 	if (!item)
 		return -1;
