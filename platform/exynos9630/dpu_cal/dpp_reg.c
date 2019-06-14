@@ -788,8 +788,8 @@ void dpp_reg_init(u32 id, const unsigned long attr)
 		idma_reg_set_sram_clk_gate_en(id, 0);
 		idma_reg_set_dynamic_gating_en_all(id, 0);
 		idma_reg_set_pixel_alpha(id, 0xFF);
-		idma_reg_set_in_ic_max(id, 0x40);
-		idma_reg_set_assigned_mo(id, 0x40);
+		idma_reg_set_in_ic_max(id, 0x20);
+		idma_reg_set_assigned_mo(id, 0x20);
 	}
 
 	if (test_bit(DPP_ATTR_DPP, &attr)) {
