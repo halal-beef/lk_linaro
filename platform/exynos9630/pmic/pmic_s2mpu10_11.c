@@ -85,15 +85,34 @@ int get_pmic_rtc_time(char *buf)
 
 void read_pmic_info_s2mpu10 (void)
 {
+	unsigned char read_int1, read_int2;
 	unsigned char read_ldo21_ctrl, read_ldo22_ctrl, read_ldo23_ctrl;
+	unsigned char read_pwronsrc, read_wtsr_smpl;
 
+	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_INT1, &read_int1);
+	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_INT2, &read_int2);
+	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_PWRONSRC, &read_pwronsrc);
 	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_LDO21_CTRL, &read_ldo21_ctrl);
 	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_LDO22_CTRL, &read_ldo22_ctrl);
 	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_LDO23_CTRL, &read_ldo23_ctrl);
 
+	/* read PMIC RTC */
+	i3c_read(0, S2MPU10_RTC_ADDR, S2MPU10_RTC_WTSR_SMPL, &read_wtsr_smpl);
+
+	printf("S2MPU10_PM_INT1: 0x%x\n", read_int1);
+	printf("S2MPU10_PM_INT2: 0x%x\n", read_int2);
+	printf("S2MPU10_PM_PWRONSRC: 0x%x\n", read_pwronsrc);
 	printf("S2MPU10_PM_LDO21M_CTRL: 0x%x\n", read_ldo21_ctrl);
 	printf("S2MPU10_PM_LDO22M_CTRL: 0x%x\n", read_ldo22_ctrl);
 	printf("S2MPU10_PM_LDO23M_CTRL: 0x%x\n", read_ldo23_ctrl);
+	printf("S2MPU10_RTC_WTSR_SMPL : 0x%x\n", read_wtsr_smpl);
+
+	if ((read_pwronsrc & (1 << 7)) && (read_int2 & (1 << 5)) && !(read_int1 & (1 << 7)))
+		/* WTSR detect condition - WTSR_ON && WTSR_INT && ! MRB_INT */
+		printf("WTSR detected\n");
+	else if ((read_pwronsrc & (1 << 6)) && (read_int2 & (1 << 3)) && (read_wtsr_smpl & (1 << 7)))
+		/* SMPL detect condition - SMPL_ON && SMPL_INT && SMPL_EN */
+		printf("SMPL detected\n");
 }
 
 int chk_smpl_wtsr_s2mpu10(void)
