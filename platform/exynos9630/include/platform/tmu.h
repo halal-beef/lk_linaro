@@ -16,14 +16,6 @@ void display_trip_info(void);
 
 #define	EXYNOS_TMU_HWTRIP_TEMP			(115)
 
-#define	TZ_G3D					(0)
-#define	TZ_LIT					(1)
-#define	TZ_BIG					(2)
-#define	TZ_ISP					(1)
-
-#define	NO_PRINT				(0)
-#define	PRINT					(1)
-
 /* Exynos 9630 */
 #define	EXYNOS9630_TMU_TRIMINFO_0_OFFSET	0x0000
 #define	EXYNOS9630_TMU_TRIMINFO_1_OFFSET	0x0004
@@ -52,6 +44,6 @@ void display_trip_info(void);
 #define	EXYNOS9630_TMU_VBEI_TRIM_SHIFT		8
 #define	EXYNOS9630_TMU_VBEI_TRIM_MASK		0xf
 
-#define EXYNOS9630_TMU_TOP_PROBE		(10)
+#define EXYNOS9630_TMU_TOP_PROBE		(9)
 
 #endif /*__TMU_H__*/
