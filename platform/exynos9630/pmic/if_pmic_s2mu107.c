@@ -328,3 +328,50 @@ void s2mu107_sc_init(void)
 	s2mu107_sc_set_mode(S2MU107_CHG_MODE_CHG);
 }
 
+void muic_sw_open (void)
+{
+	unsigned char reg;
+
+	IIC_S2MU107_ESetport();
+	IIC_S2MU107_ERead(S2MU107_MUIC_R_ADDR, S2MU107_MUIC_CTRL1, &reg);
+	reg &= ~(0x1 << 2);
+	IIC_S2MU107_EWrite(S2MU107_MUIC_W_ADDR, S2MU107_MUIC_CTRL1, reg);
+	IIC_S2MU107_ERead(S2MU107_MUIC_R_ADDR, S2MU107_MANUAL_SW_CTRL, &reg);
+	reg &= ~(0x7 << 2);
+	reg &= ~(0x7 << 5);
+	reg |= 0x0 << 2;
+	reg |= 0x0 << 5;
+	IIC_S2MU107_EWrite(S2MU107_MUIC_W_ADDR, S2MU107_MANUAL_SW_CTRL, reg);
+}
+
+void muic_sw_usb (void)
+{
+	unsigned char reg;
+
+	IIC_S2MU107_ESetport();
+	IIC_S2MU107_ERead(S2MU107_MUIC_R_ADDR, S2MU107_MUIC_CTRL1, &reg);
+	reg &= ~(0x1 << 2);
+	IIC_S2MU107_EWrite(S2MU107_MUIC_W_ADDR, S2MU107_MUIC_CTRL1, reg);
+	IIC_S2MU107_ERead(S2MU107_MUIC_R_ADDR, S2MU107_MANUAL_SW_CTRL, &reg);
+	reg &= ~(0x7 << 2);
+	reg &= ~(0x7 << 5);
+	reg |= 0x1 << 2;
+	reg |= 0x1 << 5;
+	IIC_S2MU107_EWrite(S2MU107_MUIC_W_ADDR, S2MU107_MANUAL_SW_CTRL, reg);
+}
+
+void muic_sw_uart (void)
+{
+	unsigned char reg;
+
+	IIC_S2MU107_ESetport();
+	IIC_S2MU107_ERead(S2MU107_MUIC_R_ADDR, S2MU107_MUIC_CTRL1, &reg);
+	reg &= ~(0x1 << 2);
+	IIC_S2MU107_EWrite(S2MU107_MUIC_W_ADDR, S2MU107_MUIC_CTRL1, reg);
+	IIC_S2MU107_ERead(S2MU107_MUIC_R_ADDR, S2MU107_MANUAL_SW_CTRL, &reg);
+	reg &= ~(0x7 << 2);
+	reg &= ~(0x7 << 5);
+	reg |= 0x2 << 2;
+	reg |= 0x2 << 5;
+	IIC_S2MU107_EWrite(S2MU107_MUIC_W_ADDR, S2MU107_MANUAL_SW_CTRL, reg);
+}
