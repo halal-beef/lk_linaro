@@ -1195,6 +1195,7 @@ void *dwc3_dev_init_once(void)
 	return dwc3_dev_h;
 }
 
+void muic_sw_usb(void);
 int dwc3_dev_init(void *dev_handle)
 {
 	u32 uRegData = 0;
@@ -1327,6 +1328,8 @@ int dwc3_dev_init(void *dev_handle)
 	/* true Deivce */
 	dwc3_dev_set_rs(dwc3_dev_h, true);
 	print_lcd_update(FONT_GREEN, FONT_BLACK, "Entering fastboot mode.");
+
+	muic_sw_usb();
 
 	return 0;
 }

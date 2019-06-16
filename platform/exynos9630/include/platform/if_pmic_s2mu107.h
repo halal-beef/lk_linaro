@@ -57,6 +57,13 @@
 #define S2MU107_CHG_MODE_BUCK	1
 #define S2MU107_CHG_MODE_CHG	3
 
+/* S2MU107 Muic Slave Address */
+#define S2MU107_MUIC_W_ADDR 		(0x7C)
+#define S2MU107_MUIC_R_ADDR 		(0x7D)
+
+#define S2MU107_MUIC_CTRL1		(0x6C)
+#define S2MU107_MANUAL_SW_CTRL		(0x6F)
+
 enum charger_mode {
 	CHG_MODE_OFF,
 	CHG_MODE_BUCK,
