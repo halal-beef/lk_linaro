@@ -99,6 +99,8 @@
 #define BIG_WDT_RESET								(1 << 25)
 #define PIN_RESET								(1 << 16)
 
+#define CONFIG_PRINT_TIMESTAMP
+
 /* DEBUG CORE MAILBOX register */
 #define EXYNOS9630_DBG_MBOX_BASE			(0x10EC0000)
 #define EXYNOS9630_DBG_MBOX_SR				(EXYNOS9630_DBG_MBOX_BASE + 0x80)
