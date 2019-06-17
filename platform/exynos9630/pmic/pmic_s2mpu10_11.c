@@ -74,12 +74,34 @@ void pmic_init (void)
 	pmic_int_mask(1, S2MPU11_PM_ADDR, S2MPU11_PM_INT3M);
 }
 
-void display_pmic_rtc_time(void)
-{
-}
-
 int get_pmic_rtc_time(char *buf)
 {
+	int i;
+	u8 tmp;
+	u8 time[NR_PMIC_RTC_CNT_REGS];
+
+	i3c_read(0, S2MPU10_RTC_ADDR, S2MPU10_RTC_UPDATE, &tmp);
+	tmp |= 0x1;
+	i3c_write(0, S2MPU10_RTC_ADDR, S2MPU10_RTC_UPDATE, tmp);
+	u_delay(40);
+
+	for (i = 0; i < NR_PMIC_RTC_CNT_REGS; i++)
+		i3c_read(0, S2MPU10_RTC_ADDR, (S2MPU10_RTC_SEC + i), &time[i]);
+
+	printf("RTC TIME: %d-%02d-%02d %02d:%02d:%02d(0x%02x)%s\n",
+			time[PMIC_RTC_YEAR] + 2000, time[PMIC_RTC_MONTH],
+			time[PMIC_RTC_DATE], time[PMIC_RTC_HOUR] & 0x1f, time[PMIC_RTC_MIN],
+			time[PMIC_RTC_SEC], time[PMIC_RTC_WEEK],
+			time[PMIC_RTC_HOUR] & (1 << 6) ? "PM" : "AM");
+
+	if (buf == NULL)
+		return 0;
+
+	sprintf(buf, "%04d%02d%02d%02d%02d%02d%s",
+			time[PMIC_RTC_YEAR] + 2000, time[PMIC_RTC_MONTH],
+			time[PMIC_RTC_DATE], time[PMIC_RTC_HOUR] & 0x1f, time[PMIC_RTC_MIN],
+			time[PMIC_RTC_SEC], time[PMIC_RTC_HOUR] & (1 << 6) ? "PM" : "AM");
+
 	return 0;
 }
 
@@ -113,6 +135,8 @@ void read_pmic_info_s2mpu10 (void)
 	else if ((read_pwronsrc & (1 << 6)) && (read_int2 & (1 << 3)) && (read_wtsr_smpl & (1 << 7)))
 		/* SMPL detect condition - SMPL_ON && SMPL_INT && SMPL_EN */
 		printf("SMPL detected\n");
+
+	get_pmic_rtc_time(NULL);
 }
 
 int chk_smpl_wtsr_s2mpu10(void)
