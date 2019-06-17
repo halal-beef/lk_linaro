@@ -13,8 +13,7 @@
 #include <dev/boot.h>
 #include <platform/sfr.h>
 #include <platform/decompress_ext4.h>
-
-#define SECTOR_BITS		9	/* 512B */
+#include <part.h>
 
 /*
  * Exynos MMC host need buffer address space aligned to eight  bytes for DMA.
@@ -114,6 +113,7 @@ int write_compressed_ext4(char* img_base, unsigned int sector_base) {
 	u32 pattern;
 	u32 *p_i_buf;
 	unsigned int boot_dev = get_boot_device();
+	u64 chunk_in_bytes;
 
 	file_header = (ext4_file_header*)img_base;
 	total_chunks = file_header->total_chunks;
@@ -124,14 +124,15 @@ int write_compressed_ext4(char* img_base, unsigned int sector_base) {
 
 	while(total_chunks) {
 		chunk_header = (ext4_chunk_header*)img_base;
-		sector_size = (chunk_header->chunk_size * file_header->block_size) >> SECTOR_BITS;
+		chunk_in_bytes = (u64)chunk_header->chunk_size * file_header->block_size;
+		sector_size = chunk_in_bytes / (u64)PART_SECTOR_SIZE;
 
 		printf("*** raw_chunk (lba: %u, sct: %u) ***\n",
 				sector_base, sector_size);	// todo:
 		switch(chunk_header->type)
 		{
 		case EXT4_CHUNK_TYPE_RAW:
-			ext4_printf("*** raw_chunk (lba: %u, sct: %u) ***\n",
+			printf("*** CHUNK TYPE RAW (lba: %u, sct: %u) ***\n",
 					sector_base, sector_size);
 
 			/*
@@ -141,8 +142,8 @@ int write_compressed_ext4(char* img_base, unsigned int sector_base) {
 			data = (char *)(img_base + EXT4_CHUNK_HEADER_SIZE);
 			if ((boot_dev != BOOT_UFS) &&
 					((((unsigned long)data % ALIGN_FOR_EXYNOS)) != 0)) {
-				memcpy((void *)i_buf_for_sparse, (void *)data,
-						sector_size * (1 << SECTOR_BITS));
+				chunk_in_bytes = (u64) sector_size * PART_SECTOR_SIZE;
+				memcpy((void *)i_buf_for_sparse, (void *)data, chunk_in_bytes);
 				data = (char *)i_buf_for_sparse;
 			}
 
@@ -154,11 +155,12 @@ int write_compressed_ext4(char* img_base, unsigned int sector_base) {
 			/* Fill pattern */
 			pattern = *(u32 *)((char *)(&chunk_header->total_size) +
 					sizeof(u32));
-			printf("*** fill_chunk (lba: %u, sct: %u, pat: 0x%08x) %lu***\n",
-					sector_base, sector_size, pattern, sector_size * (1 << SECTOR_BITS) / sizeof(u32));
 
 			p_i_buf = (u32 *)i_buf_for_sparse;
-			for (i = 0; i < sector_size * (1 << SECTOR_BITS) / sizeof(u32); i++)
+			chunk_in_bytes = (u64)sector_size * PART_SECTOR_SIZE;
+			printf("*** CHUNK TYPE FILL (lba: %u, sct: %u, pat: 0x%08x) %llu***\n",
+					sector_base, sector_size, pattern, chunk_in_bytes / (u64)sizeof(u32));
+			for (i = 0; i < chunk_in_bytes / (u64)sizeof(u32); i++)
 				p_i_buf[i] = pattern;
 
 			/* Iterate block write as much as we allocate */
@@ -167,12 +169,13 @@ int write_compressed_ext4(char* img_base, unsigned int sector_base) {
 			break;
 
 		case EXT4_CHUNK_TYPE_NONE:
-			ext4_printf("none chunk \n");
+			printf("*** CHUNK TYPE NONE (lba: %u, sct: %u) ***\n",
+					sector_base, sector_size);
 			sector_base += sector_size;
 			break;
 
 		default:
-			ext4_printf("*** none chunk (lba: %u, sct: %u) ***\n",
+			printf("*** CHUNK TYPE INVALID (lba: %u, sct: %u) ***\n",
 					sector_base, sector_size);
 			sector_base += sector_size;
 			break;
