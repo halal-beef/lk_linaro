@@ -128,7 +128,7 @@ void display_tmu_info(void)
 	} else
 		tmu_temp = temp_code - fuse_25 + 25;
 
-	printf("%d\n", tmu_temp);
+	printf("[TMU]: %d\n", tmu_temp);
 
 	/* enable PMU HW TRIP */
 	ps_hold_control = readl(EXYNOS9630_POWER_BASE + 0x030c);
