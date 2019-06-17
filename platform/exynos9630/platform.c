@@ -202,9 +202,8 @@ static int check_charger_connect(void)
 	unsigned char read_pwronsrc = 0;
 	unsigned int rst_stat = readl(EXYNOS9630_POWER_RST_STAT);
 
-	if (rst_stat == PIN_RESET) {
-		speedy_init();
-		speedy_read(S2MPU10_PM_ADDR, S2MPU10_PM_PWRONSRC, &read_pwronsrc);
+	if ((rst_stat & PIN_RESET) == PIN_RESET) {
+		i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_PWRONSRC, &read_pwronsrc);
 
 		/* Check USB or TA connected and PWRONSRC(USB)  */
 		if(read_pwronsrc & ACOK)
@@ -314,7 +313,7 @@ void platform_init(void)
 		printf("LDO 18 set! value : %08xx\n" ,reg);
 	}
 
-	/* check_charger_connect(); */
+	check_charger_connect();
 
 	/* load_secure_payload(); */
 
