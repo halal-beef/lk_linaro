@@ -275,7 +275,7 @@ static void set_usb_serialno(void)
 static void configure_dtb(void)
 {
 	char str[BUFFER_SIZE];
-
+	char buf[16];
 	int len;
 	const char *np;
 	int noff;
@@ -346,7 +346,10 @@ static void configure_dtb(void)
 	sprintf(str, "<0x%x>", ECT_SIZE);
 	set_fdt_val("/ect", "parameter_size", str);
 
-#if 0
+	/*
+	 * Charger mode decision
+	 * Pin reset && ACOK && !Factory mode
+	 */
 	memset(buf, 0, sizeof(buf));
 	update_boot_reason(buf);
 	noff = fdt_path_offset(fdt_dtb, "/chosen");
@@ -361,7 +364,7 @@ static void configure_dtb(void)
 		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
 		printf("Enter charger mode...");
 	}
-#endif
+
 	/* Add booting slot for AB support case */
 	ret = ab_current_slot();
 	if (ret != AB_ERROR_NOT_SUPPORT) {
