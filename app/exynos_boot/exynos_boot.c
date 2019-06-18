@@ -29,6 +29,7 @@
 #include <platform/gpio.h>
 #include <platform/gpio.h>
 #include <platform/debug-store-ramdump.h>
+#include <platform/smc.h>
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
 #include "almighty.h"
@@ -180,6 +181,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		goto download;
 	} else if (rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET)) {
 		printf("Entering fastboot: Abnormal RST_STAT: 0x%x\n", rst_stat);
+		sdm_encrypt_secdram();
 		dfd_set_dump_en_for_cacheop(0);
 		goto fastboot;
 	} else if (readl(EXYNOS9630_POWER_SYSIP_DAT0) == REBOOT_MODE_FASTBOOT) {
@@ -189,6 +191,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		goto download;
 	} else if ((readl(CONFIG_RAMDUMP_SCRATCH) == CONFIG_RAMDUMP_MODE) && get_charger_mode() == 0) {
 		printf("Entering fastboot: Ramdump_Scratch & Charger\n");
+		sdm_encrypt_secdram();
 		goto fastboot;
 /*
 	} else if (fb_mode_failed == 1) {
