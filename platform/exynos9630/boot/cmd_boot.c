@@ -42,6 +42,7 @@
 #define MASK_1MB (0x100000 - 1)
 
 #define BUFFER_SIZE 2048
+#define BOOTARGS_ITEM_SIZE	128
 
 #define be32_to_cpu(x) \
 		((((x) & 0xff000000) >> 24) | \
@@ -78,8 +79,8 @@ static void update_boot_reason(char *buf)
 }
 
 struct bootargs_prop {
-	char prop[128];
-	char val[128];
+	char prop[BOOTARGS_ITEM_SIZE];
+	char val[BOOTARGS_ITEM_SIZE];
 };
 static struct bootargs_prop prop[64] = { { {0, }, {0, } }, };
 static int prop_cnt = 0;
@@ -142,6 +143,7 @@ static int bootargs_init(void)
 
 	return 0;
 }
+
 static char *get_bootargs_val(const char *name)
 {
        int i = 0;
@@ -175,12 +177,17 @@ static void bootargs_update(void)
 	memset(bootargs, 0, sizeof(bootargs));
 
 	for (i = 0; i <= prop_cnt; i++) {
+		if (0 == strlen(prop[i].prop) && 0 == strlen(prop[i].val)) {
+			/* No prop and val pair. ignore it */
+			continue;
+		}
+
 		if (0 == strlen(prop[i].val)) {
 			sprintf(bootargs + cur, "%s", prop[i].prop);
 			cur += strlen(prop[i].prop);
 			snprintf(bootargs + cur, 2, " ");
 			cur += 1;
-		} else {
+		} else if (0 != strlen(prop[i].prop)) {
 			sprintf(bootargs + cur, "%s=%s", prop[i].prop, prop[i].val);
 			cur += strlen(prop[i].prop) + strlen(prop[i].val) + 1;
 			snprintf(bootargs + cur, 2, " ");
@@ -195,6 +202,61 @@ static void bootargs_update(void)
 	set_fdt_val("/chosen", "bootargs", bootargs);
 }
 
+static int add_val(const char *key, const char *val)
+{
+	if (key == NULL) {
+		printf("Wrong input property is NULL\n");
+		return -1;
+	}
+
+	prop_cnt++;
+	strcpy(prop[prop_cnt].prop, key);
+
+	if (val == NULL)
+		prop[prop_cnt].val[0] = '\0';
+	else
+		strcpy(prop[prop_cnt].val, val);
+
+	return 0;
+}
+
+static int remove_val(const char *key, const char *val)
+{
+	int i;
+	int find = -1;
+
+	for (i=0; i<=prop_cnt; i++) {
+		if (strcmp(key, prop[i].prop) == 0) {
+			if ((val == NULL) && (strlen(prop[i].val) == 0)) {
+				memset(prop[i].prop, 0, BOOTARGS_ITEM_SIZE);
+				memset(prop[i].val, 0, BOOTARGS_ITEM_SIZE);
+				find = 0;
+			} else if ((val != NULL) &&
+				   (strcmp(val, prop[i].val) == 0)) {
+				memset(prop[i].prop, 0, BOOTARGS_ITEM_SIZE);
+				memset(prop[i].val, 0, BOOTARGS_ITEM_SIZE);
+				find = 0;
+			}
+		}
+	}
+
+	return find;
+}
+
+static void print_val(void)
+{
+	int i;
+
+	printf("Total number of ITEMs : %d\n", prop_cnt);
+	for (i=0 ; i<=prop_cnt ; i++) {
+		printf("  [%02d]: key(%s), val(%s)\n", i, prop[i].prop, prop[i].val);
+	}
+}
+
+/*
+ * Remove_string_from_bootargs
+ * This function is will be depricated
+ */
 static void remove_string_from_bootargs(const char *str)
 {
 	char bootargs[BUFFER_SIZE];
@@ -229,13 +291,100 @@ static void remove_string_from_bootargs(const char *str)
 	fdt_setprop(fdt_dtb, noff, "bootargs", bootargs, strlen(bootargs) + 1);
 }
 
+static int bootargs_process(void)
+{
+	char buf[16];
+	int ret = 0;
+
+	/* Below console value can be used for bootargs change */
+	/* update_val("console", "ttySAC0,115200n8"); */
+	update_val("androidboot.dtbo_idx", dtbo_idx);
+
+	/* reason */
+	memset(buf, 0, sizeof(buf));
+	update_boot_reason(buf);
+	if (add_val("androidboot.bootreason", buf)) {
+		printf("Add bootreason failed\n");
+		return -1;
+	}
+
+	/* mode: Factory mode */
+	if (readl(EXYNOS9630_POWER_SYSIP_DAT0) == REBOOT_MODE_FACTORY) {
+		if (add_val("androidboot.mode", "sfactory")) {
+			printf("bootmode set sfactory failed\n");
+			return -1;
+		}
+		printf("Enter samsung factory mode...");
+		print_lcd_update(FONT_GREEN, FONT_BLACK, "Enter samsung factory mode...");
+	}
+
+	/* mode: Charger mode - decision : Pin reset && ACOK && !Factory mode */
+	if (get_charger_mode() && readl(EXYNOS9630_POWER_SYSIP_DAT0) != REBOOT_MODE_FACTORY) {
+		if (add_val("androidboot.mode", "charger")) {
+			printf("bootmode set charger failed\n");
+			return -1;
+		}
+		printf("Enter charger mode...");
+		print_lcd_update(FONT_GREEN, FONT_BLACK, "Enter charger mode...");
+	}
+
+	/* slot_suffix: AB booting slot */
+	ret = ab_current_slot();
+	if (ret != AB_ERROR_NOT_SUPPORT) {
+		memset(buf, 0, sizeof(buf));
+		snprintf(buf, 15, "%s", (ret == AB_SLOT_B) ? "_b" : "_a");
+		if (add_val("androidboot.slot_suffix", buf)) {
+			printf("slot_suffix set failed\n");
+			return -1;
+		}
+		printf("AB Slot suffix set %s", buf);
+		print_lcd_update(FONT_GREEN, FONT_BLACK, "AB Slot suffix set %s", buf);
+	}
+
+#if defined(CONFIG_USE_AVB20)
+	/* Android Verified Boot */
+	if (readl(EXYNOS9630_POWER_SYSIP_DAT0) != REBOOT_MODE_RECOVERY) {
+		/* set AVB args */
+		if (add_val(cmdline, verifiedbootstate)) {
+			printf("AVB cmdline set failed %s : %s", cmdline, verifiedbootstate);
+			return -1;
+		}
+	}
+#endif
+
+	/* Recovery */
+	if (readl(EXYNOS9630_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY) {
+		/* remove some bootargs to Set recovery boot mode */
+		if(remove_val("skip_initramfs", NULL))
+			printf("bootargs cannot delete, checkit: skip_initramfs\n");
+		if(remove_val("ro", NULL))
+			printf("bootargs cannot delete, checkit: ro\n");
+		if(remove_val("init", "/init"))
+			printf("bootargs cannot delete, checkit: init\n");
+		if(remove_val("root", "/dev/sda12"))
+			printf("bootargs cannot delete, checkit: root\n");
+
+		/* set root to ramdisk */
+		if (add_val("root", "/dev/ram0")) {
+			printf("reocvery ramdisk set failed\n");
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
 static void set_bootargs(void)
 {
 	bootargs_init();
 
-	/* update_val("console", "ttySAC0,115200"); */
-	update_val("androidboot.dtbo_idx", dtbo_idx);
+	/* add bootargs for bootmode reason, etc */
+	if (bootargs_process()) {
+		printf("ERR: bootargs process failed!");
+	}
 
+	/* bootargs can be checked with print func */
+	/* print_val(); */
 	bootargs_update();
 }
 
@@ -274,12 +423,11 @@ static void set_usb_serialno(void)
 
 static void configure_dtb(void)
 {
-	char str[BUFFER_SIZE];
-	char buf[16];
-	int len;
 	const char *np;
-	int noff;
-	int ret;
+	char str[BUFFER_SIZE];
+	int len, noff;
+	struct boot_img_hdr *b_hdr = (boot_img_hdr *)BOOT_BASE;
+
 #if defined(CONFIG_USE_AVB20)
 	struct AvbOps *ops;
 	bool unlock;
@@ -323,56 +471,24 @@ static void configure_dtb(void)
 		add_dt_memory_node(0x900000000, SIZE_2GB);
 
 	resize_dt(SZ_4K);
-
-	if (readl(EXYNOS9630_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY) {
-		sprintf(str, "<0x%x>", RAMDISK_BASE);
-		set_fdt_val("/chosen", "linux,initrd-start", str);
-
-		sprintf(str, "<0x%x>", RAMDISK_BASE + b_hdr->ramdisk_size);
-		set_fdt_val("/chosen", "linux,initrd-end", str);
-	} else if (readl(EXYNOS9630_POWER_SYSIP_DAT0) == REBOOT_MODE_FACTORY) {
-		noff = fdt_path_offset (fdt_dtb, "/chosen");
-		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
-		snprintf(str, BUFFER_SIZE, "%s %s", np, "androidboot.mode=sfactory");
-		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
-		printf("Enter samsung factory mode...");
-		print_lcd_update(FONT_GREEN, FONT_BLACK, "Enter samsung factory mode...");
-	}
 #endif
-
 	sprintf(str, "<0x%x>", ECT_BASE);
 	set_fdt_val("/ect", "parameter_address", str);
 
 	sprintf(str, "<0x%x>", ECT_SIZE);
 	set_fdt_val("/ect", "parameter_size", str);
 
-	/*
-	 * Charger mode decision
-	 * Pin reset && ACOK && !Factory mode
-	 */
-	memset(buf, 0, sizeof(buf));
-	update_boot_reason(buf);
-	noff = fdt_path_offset(fdt_dtb, "/chosen");
-	np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
-	snprintf(str, BUFFER_SIZE, "%s androidboot.bootreason=%s", np, buf);
-	fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
+	/* Recovery boot mode - add initrd-start end value */
+	if (readl(EXYNOS9630_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY) {
+		memset(str, 0, BUFFER_SIZE);
+		sprintf(str, "<0x%x>", RAMDISK_BASE);
+		set_fdt_val("/chosen", "linux,initrd-start", str);
+		printf("initrd-start: %s\n", str);
 
-	if (get_charger_mode() && readl(EXYNOS9630_POWER_SYSIP_DAT0) != REBOOT_MODE_FACTORY) {
-		noff = fdt_path_offset (fdt_dtb, "/chosen");
-		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
-		snprintf(str, BUFFER_SIZE, "%s %s", np, "androidboot.mode=charger");
-		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
-		printf("Enter charger mode...");
-	}
-
-	/* Add booting slot for AB support case */
-	ret = ab_current_slot();
-	if (ret != AB_ERROR_NOT_SUPPORT) {
-		noff = fdt_path_offset(fdt_dtb, "/chosen");
-		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
-		snprintf(str, BUFFER_SIZE, "%s androidboot.slot_suffix=%s", np,
-			 (ret == AB_SLOT_B) ? "_b" : "_a");
-		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
+		memset(str, 0, BUFFER_SIZE);
+		sprintf(str, "<0x%x>", RAMDISK_BASE + b_hdr->ramdisk_size);
+		set_fdt_val("/chosen", "linux,initrd-end", str);
+		printf("initrd-end: %s\n", str);
 	}
 
 	noff = fdt_path_offset(fdt_dtb, "/reserved-memory/cp_rmem");
@@ -392,30 +508,6 @@ static void configure_dtb(void)
 			part_read_partial(part, (void *)addr_r, 0, 8 * 1024);
 		}
 	}
-
-#if defined(CONFIG_USE_AVB20)
-	if (!(readl(EXYNOS9630_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY)) {
-		/* set AVB args */
-		get_ops_addr(&ops);
-		ops->read_is_device_unlocked(ops, &unlock);
-		noff = fdt_path_offset (fdt_dtb, "/chosen");
-		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
-		snprintf(str, BUFFER_SIZE, "%s %s %s", np, cmdline, verifiedbootstate);
-		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
-	}
-#endif
-#if 0
-	if (readl(EXYNOS9630_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY) {
-		/* Set bootargs for recovery mode */
-		remove_string_from_bootargs("skip_initramfs ");
-		remove_string_from_bootargs("ro init=/init ");
-
-		noff = fdt_path_offset (fdt_dtb, "/chosen");
-		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
-		snprintf(str, BUFFER_SIZE, "%s %s", np, "root=/dev/ram0");
-		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
-	}
-#endif
 
 	noff = fdt_path_offset (fdt_dtb, "/chosen");
 	np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
@@ -457,7 +549,7 @@ int load_boot_images(void)
 
 	argv[1].u = BOOT_BASE;
 	argv[2].u = KERNEL_BASE;
-	argv[3].u = 0;
+	argv[3].u = RAMDISK_BASE;
 	argv[4].u = DT_BASE;
 
 	if (boot_val == REBOOT_MODE_RECOVERY) {
@@ -488,15 +580,6 @@ int load_boot_images(void)
 	part_read(part, (void *)BOOT_BASE);
 
 	cmd_scatter_load_boot(5, argv);
-
-	/* TODO: Ramdisk loading is needed?? */
-	part = part_get("ramdisk");
-	if (part == 0) {
-		printf("Partition 'ramdisk' does not exist\n");
-		return -1;
-	} else {
-		part_read(part, (void *)RAMDISK_BASE);
-	}
 
 	return 0;
 }
@@ -534,6 +617,8 @@ int cmd_boot(int argc, const cmd_args *argv)
 	ab_ret = ab_update_slot_info();
 	if ((ab_ret < 0) && (ab_ret != AB_ERROR_NOT_SUPPORT)) {
 		printf("AB update error! Error code: %d\n", ab_ret);
+		print_lcd_update(FONT_RED, FONT_WHITE,
+			"AB Update fail(%d), Entering fastboot...", ab_ret);
 		start_usb_gadget();
 		do {
 			asm volatile("wfi");
