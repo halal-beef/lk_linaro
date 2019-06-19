@@ -63,7 +63,7 @@ struct dbg_snapshot_bl static_dss_bl = {
 	.item[13] = {"log_fatal",	{0, 0}, 0},
 };
 
-struct dbg_snapshot_bl *dss_bl_p;
+struct dbg_snapshot_bl *dss_bl_p = &static_dss_bl;
 
 void debug_snapshot_boot_cnt(void)
 {
