@@ -152,6 +152,7 @@ include lib/gpt/rules.mk
 include lib/font/rules.mk
 include lib/logo/rules.mk
 include lib/libavb/rules.mk
+include lib/lock/rules.mk
 include dev/rpmb/rules.mk
 include dev/boot/rules.mk
 include dev/dpu/rules.mk
