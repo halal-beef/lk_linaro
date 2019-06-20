@@ -24,7 +24,7 @@
 #include <platform/sfr.h>
 #include <platform/smc.h>
 #include <platform/ldfw.h>
-#include <platform/lock.h>
+#include <lib/lock.h>
 #include <platform/ab_update.h>
 #include <platform/environment.h>
 #include <platform/dfd.h>
@@ -528,12 +528,14 @@ int fb_do_flash(const char *cmd_buffer, unsigned int rx_sz)
 
 	LTRACE_ENTRY;
 
-#if defined(CONFIG_USE_RPMB)
+#if defined(CONFIG_USE_RPMB) && defined(CONFIG_CHECK_LOCK_STATE)
 	if(is_first_boot()) {
-		uint32_t lock_state;
-		rpmb_get_lock_state(&lock_state);
-		LTRACEF_LEVEL(INFO, "Lock state: %d\n", lock_state);
-		if(lock_state) {
+		int lock_state;
+
+		lock_state = get_lock_state();
+		if (lock_state >= 0)
+			LTRACEF_LEVEL(INFO, "Lock state: %d\n", lock_state);
+		if (lock_state == 1) {
 			sprintf(response, "FAILDevice is locked");
 			fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 			return 1;
@@ -685,13 +687,13 @@ int fb_do_flashing(const char *cmd_buffer, unsigned int rx_sz)
 	if (!strcmp(cmd_buffer + 9, "lock")) {
 		printf("Lock this device.\n");
 		print_lcd_update(FONT_GREEN, FONT_BLACK, "Lock this device.");
-		if(rpmb_set_lock_state(1))
+		if(set_lock_state(1))
 			sprintf(response, "FAILRPBM error: failed to change lock state on RPMB");
 	} else if (!strcmp(cmd_buffer + 9, "unlock")) {
 		if (get_unlock_ability()) {
 			printf("Unlock this device.\n");
 			print_lcd_update(FONT_GREEN, FONT_BLACK, "Unlock this device.");
-			if(rpmb_set_lock_state(0))
+			if(set_lock_state(0))
 				sprintf(response, "FAILRPBM error: failed to change lock state on RPMB");
 		} else {
 			sprintf(response, "FAILunlock_ability is 0");
