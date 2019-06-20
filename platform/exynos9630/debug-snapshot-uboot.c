@@ -22,7 +22,6 @@
 #include <platform/fdt.h>
 
 #define DSS_RESERVE_PATH	"/reserved-memory/debug_snapshot"
-#define CP_RESERVE_PATH		"/reserved-memory/cp_rmem"
 
 extern int load_boot_images(void);
 
@@ -44,8 +43,6 @@ struct dbg_snapshot_bl {
 	unsigned int reserved;
 	struct dss_item item[16];
 };
-
-struct reserve_mem cp_rmem;
 
 struct dbg_snapshot_bl static_dss_bl = {
 	.item[0] = {"header",		{0, 0}, 0},
@@ -114,11 +111,6 @@ static int debug_snapshot_get_items(void)
 			} else {
 				static_dss_bl.item[i].enabled = 0;
 			}
-		}
-
-		if (!get_fdt_val(CP_RESERVE_PATH, "reg", (char *)ret)) {
-			cp_rmem.paddr |= be32_to_cpu(ret[1]);
-			cp_rmem.size = be32_to_cpu(ret[2]);
 		}
 
 		dss_bl_p = &static_dss_bl;
@@ -198,26 +190,6 @@ int debug_snapshot_getvar_item(const char *name, char *response)
 
 		dram_size /= SZ_1M;
 		sprintf(response, "%lluMB", dram_size);
-		return 0;
-	}
-
-	if (!strcmp(name, "cpmem")) {
-		if ((readl(CONFIG_RAMDUMP_DSS_ITEM_INFO) == 0x01234567) &&
-		    (readl(CONFIG_RAMDUMP_DSS_ITEM_INFO + 0x4) == 0x89ABCDEF)) {
-			item = debug_snapshot_get_item("cpmem");
-			if (!item)
-				return -1;
-
-			sprintf(response, "%X, %X, %X", item->rmem.paddr,
-			        item->rmem.size - 1,
-			        item->rmem.paddr + item->rmem.size - 1);
-		} else {
-			if (cp_rmem.paddr == 0 || cp_rmem.size == 0)
-				return -1;
-
-			sprintf(response, "%X, %X, %X", cp_rmem.paddr, cp_rmem.size,
-			        cp_rmem.paddr + cp_rmem.size - 1);
-		}
 		return 0;
 	}
 
