@@ -15,7 +15,7 @@
 #include <part.h>
 #include <lib/bio.h>
 #include <dev/boot.h>
-#include <platform/lock.h>
+#include <lib/lock.h>
 #include <platform/secure_boot.h>
 #include <platform/smc.h>
 #include <platform/cm_api.h>
