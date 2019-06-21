@@ -87,6 +87,26 @@ enum {
 	PMIC_DETECT_WTSR_IGNORE,
 };
 
+/* Manual Reset Debounce Time */
+typedef enum {
+	PMIC_MRDT_3 = 0,
+	PMIC_MRDT_4,
+	PMIC_MRDT_5,
+	PMIC_MRDT_6,
+	PMIC_MRDT_7,
+	PMIC_MRDT_8,
+	PMIC_MRDT_9,
+	PMIC_MRDT_10,
+	PMIC_MRDT_13,
+	PMIC_MRDT_14,
+	PMIC_MRDT_15,
+	PMIC_MRDT_16,
+	PMIC_MRDT_17,
+	PMIC_MRDT_18,
+	PMIC_MRDT_19,
+	PMIC_MRDT_20,
+} pmic_mrdt;
+
 /*
  * PWRONSRC
  */
@@ -116,7 +136,7 @@ enum {
 #define S2MPU10_OUTPUT_ON_NORMAL	(0x3 << 6)
 
 void pmic_init(void);
-void pmic_enable_manual_reset(void);
+void pmic_enable_manual_reset(pmic_mrdt);
 void read_pmic_info_s2mpu10(void);
 int chk_smpl_wtsr_s2mpu10(void);
 int get_pmic_rtc_time(char *buf);

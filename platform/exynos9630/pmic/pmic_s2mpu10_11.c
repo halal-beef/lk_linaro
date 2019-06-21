@@ -18,8 +18,22 @@
 #include <platform/gpio.h>
 #include <platform/exynos9630.h>
 
-void pmic_enable_manual_reset (void)
+void pmic_enable_manual_reset(pmic_mrdt deb_time)
 {
+	unsigned char reg;
+
+	/* Disable Warm Reset */
+	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_CTRL3, &reg);
+	reg &= ~WRSTEN;
+	reg |= MRSEL;
+	i3c_write(0, S2MPU10_PM_ADDR, S2MPU10_PM_CTRL3, reg);
+
+	/* Enable Manual Reset */
+	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_CTRL1, &reg);
+	reg |= MRSTB_EN;
+	reg &= 0xF0;
+	reg |= (0x0F & deb_time);
+	i3c_write(0, S2MPU10_PM_ADDR, S2MPU10_PM_CTRL1, reg);
 }
 
 void pmic_int_mask(unsigned int chan, unsigned int addr, unsigned int interrupt)
