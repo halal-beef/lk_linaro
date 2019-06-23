@@ -83,6 +83,12 @@ struct persist_data persistentData[PERSIST_DATA_CNT];
 static u8 nonce[NONCE_SIZE];
 struct rpmb_packet packet;
 
+#if defined(CONFIG_RPMB_TA)
+uint32_t provision_state;
+#else
+uint32_t provision_state = RPMB_AUTHEN_KEY_PROVISIONED;
+#endif
+
 static void dump_packet(u8 * data, u32 len)
 {
 	u8 s[17];
@@ -1180,6 +1186,61 @@ void rpmb_key_programming(void)
 #endif
 
 }
+void rpmb_key_TA(void)
+{
+	int ret;
+
+#ifdef USE_MMC0
+	ret = emmc_rpmb_open(mmc);
+	if (ret == 0) dprintf(INFO, "RPMB partition OPEN Success.!!\n");
+	else printf("RPMB partition OPEN Failed.!!\n");
+#endif
+
+	// key program and set provision state
+	// if (ret == Authentication key not yet programmed (07h)) key programming and if it is ok set_rpmb_provision(1) if not,  set_rpmb_provision(0)
+	// if (ret == OK) set_rpmb_provision(1) already programmed
+	// if (ret == other error)	set_rpmb_provision(1) already programmed
+
+	ret = read_write_counter();
+	if (ret == RPMB_AUTHEN_KEY_ERROR) {
+		set_RPMB_provision(0);
+		provision_state = RPMB_AUTHEN_KEY_NOT_PROVISIONED;
+		printf("RPMB: key is not programmed yet\n");
+	}
+	else if (ret != RV_SUCCESS) {
+		set_RPMB_provision(1);
+		provision_state = RPMB_AUTHEN_KEY_PROVISIONED;
+		dprintf(INFO, "RPMB: Read write counter fail but key may already programmed\n");
+	}
+	else { //(ret == RV_SUCCESS)
+		set_RPMB_provision(1);
+		provision_state = RPMB_AUTHEN_KEY_PROVISIONED;
+		dprintf(INFO, "RPMB: key already programmed\n");
+	}
+
+	if(provision_state == RPMB_AUTHEN_KEY_PROVISIONED) {
+		ret = block_RPMB_key();
+		if (ret != RV_SUCCESS)
+			printf("RPMB: key blocking: fail: 0x%X\n", ret);
+		else
+			dprintf(INFO, "RPMB: key blocking: success\n");
+	}
+
+#ifdef USE_MMC0
+	ret = emmc_rpmb_close(mmc);;
+	if (ret == RV_SUCCESS) dprintf(INFO, "RPMB partition CLOSE Success.!!\n");
+	else printf("RPMB partition CLOSE Failed.!!\n");
+#endif
+
+#ifndef CONFIG_USE_AVB20
+	ret = block_RPMB_hmac();
+	if (ret != RV_SUCCESS)
+		printf("RPMB: hmac blocking: fail: 0x%X\n", ret);
+	else
+		dprintf(INFO, "RPMB: hmac blocking: success\n");
+#endif
+
+}
 
 static int rpmb_read_block(int addr, int blkcnt, u8 *buf)
 {
@@ -1519,6 +1580,9 @@ int rpmb_load_boot_table(void)
 {
 	int ret;
 
+	if(provision_state == RPMB_AUTHEN_KEY_NOT_PROVISIONED)
+		return RV_RPMB_AUTHEN_KEY_NOT_PROVISIONED;
+
 	ret = rpmb_ri_check_magic();
 
 	if (ret != RV_SUCCESS) {
@@ -1547,6 +1611,9 @@ int rpmb_load_boot_table(void)
 
 int rpmb_get_rollback_index(size_t loc, uint64_t *rollback_index)
 {
+	if(provision_state == RPMB_AUTHEN_KEY_NOT_PROVISIONED)
+		return RV_RPMB_AUTHEN_KEY_NOT_PROVISIONED;
+
 	if (!rollback_index)
 		return RV_RPMB_PARAM_NULL_POINTER;
 
@@ -1568,6 +1635,9 @@ int rpmb_set_rollback_index(size_t loc, uint64_t rollback_index)
 	uint32_t block;
 	int ret;
 	u8 *buf;
+
+	if(provision_state == RPMB_AUTHEN_KEY_NOT_PROVISIONED)
+		return RV_RPMB_AUTHEN_KEY_NOT_PROVISIONED;
 
 	if (loc >= BOOT_RI_TABLE_SIZE)
 		return RV_RPMB_INVALID_ROLLBACK_INDEX;
@@ -1623,6 +1693,9 @@ int rpmb_read_persistent_value(const char *name,
 {
 	int index;
 
+	if(provision_state == RPMB_AUTHEN_KEY_NOT_PROVISIONED)
+		return RV_RPMB_AUTHEN_KEY_NOT_PROVISIONED;
+
 	if (!name)
 		return RV_RPMB_PARAM_NULL_POINTER;
 
@@ -1663,6 +1736,9 @@ int rpmb_write_persistent_value(const char *name,
 	int ret;
 	u32 block;
 	u8 *buf;
+
+	if(provision_state == RPMB_AUTHEN_KEY_NOT_PROVISIONED)
+		return RV_RPMB_AUTHEN_KEY_NOT_PROVISIONED;
 
 	if (!table_init_state)
 		return RV_RPMB_RI_TABLE_NOT_INITIALIZED;
@@ -1710,6 +1786,9 @@ int rpmb_write_persistent_value(const char *name,
 
 int rpmb_get_lock_state(uint32_t *state)
 {
+	if(provision_state == RPMB_AUTHEN_KEY_NOT_PROVISIONED)
+		return RV_RPMB_AUTHEN_KEY_NOT_PROVISIONED;
+
 	// Check If rollback index table is initilaized
 	if (!table_init_state)
 		return RV_RPMB_RI_TABLE_NOT_INITIALIZED;
@@ -1725,6 +1804,9 @@ int rpmb_set_lock_state(uint32_t state)
 	u8 buf[RPMB_BLOCK_SIZE];
 	struct boot_header *header;
 	struct header_block *hblock;
+
+	if(provision_state == RPMB_AUTHEN_KEY_NOT_PROVISIONED)
+		return RV_RPMB_AUTHEN_KEY_NOT_PROVISIONED;
 
 	if (state != 0)
 		state = 1;
