@@ -19,6 +19,8 @@
 #include <platform/otp_v20.h>
 #include <platform/mmu/mmu_func.h>
 
+extern uint32_t provision_state;
+
 /* For debugging */
 //#define RPMB_DBG      1
 
@@ -35,7 +37,7 @@
 /* define maximum retry count */
 #define MAX_SMC_RETRY_CNT			0x5000
 
-/* error codes from CryptoManager F/W */
+/* error codes */
 #define RV_SUCCESS				0
 #define RV_SYNC_AES_BUSY			0x20000
 #define RV_RPMB_ERROR_CODE_BASE			0x40200
@@ -49,11 +51,14 @@
 #define RV_RPMB_INVALID_ROLLBACK_INDEX          0x40301
 #define RV_RPMB_PERSIST_NAME_NOT_FOUND          0x40302
 #define RV_RPMB_INVALID_PERSIST_DATA_SIZE       0x40303
-
+#define RV_RPMB_AUTHEN_KEY_NOT_PROVISIONED      0x40304
 
 /* error code for bootloader */
 #define RV_BOOT_RPMB_EXCEED_SMC_RETRY_CNT	0x80100
-#define RPMB_AUTHEN_KEY_ERROR		0x07
+#define RPMB_AUTHEN_KEY_ERROR			0x7
+#define RPMB_AUTHEN_KEY_NOT_PROVISIONED		0x700
+#define RPMB_AUTHEN_KEY_PROVISIONED		0x701
+
 /*
  * if the caller of this fucntion is executed on the cache enabled memory area
  * below definitions and macros should be defined
@@ -103,6 +108,7 @@ uint32_t block_RPMB_key(void);
 uint32_t get_RPMB_hmac(const uint8_t *input_data, size_t input_len, uint8_t *output_data);
 uint32_t block_RPMB_hmac(void);
 void rpmb_key_programming(void);
+void rpmb_key_TA(void);
 int rpmb_load_boot_table(void);
 int rpmb_get_rollback_index(size_t loc, uint64_t *rollback_index);
 int rpmb_set_rollback_index(size_t loc, uint64_t rollback_index);

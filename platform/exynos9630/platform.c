@@ -399,7 +399,11 @@ void platform_init(void)
 		if (!init_ldfws()) {
 			printf("ldfw: init done successfully.\n");
 #if defined(CONFIG_USE_RPMB)
+#if defined(CONFIG_RPMB_TA)
+			rpmb_key_TA();
+#else
 			rpmb_key_programming();
+#endif
 #if defined(CONFIG_USE_AVB20)
 			rpmb_load_boot_table();
 #endif
