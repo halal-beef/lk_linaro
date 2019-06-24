@@ -18,6 +18,9 @@
 #include <platform/gpio.h>
 #include <platform/exynos9630.h>
 
+static int chk_wtsr_smpl = 0;
+static int read_int_first = 0;
+
 void pmic_enable_manual_reset(pmic_mrdt deb_time)
 {
 	unsigned char reg;
@@ -147,17 +150,26 @@ void read_pmic_info_s2mpu10 (void)
 	printf("S2MPU10_PM_LDO23M_CTRL: 0x%x\n", read_ldo23_ctrl);
 	printf("S2MPU10_RTC_WTSR_SMPL : 0x%x\n", read_wtsr_smpl);
 
-	if ((read_pwronsrc & (1 << 7)) && (read_int2 & (1 << 5)) && !(read_int1 & (1 << 7)))
+	if ((read_pwronsrc & (1 << 7)) && (read_int2 & (1 << 5)) && !(read_int1 & (1 << 7))) {
 		/* WTSR detect condition - WTSR_ON && WTSR_INT && ! MRB_INT */
+		chk_wtsr_smpl = PMIC_DETECT_WTSR;
 		printf("WTSR detected\n");
-	else if ((read_pwronsrc & (1 << 6)) && (read_int2 & (1 << 3)) && (read_wtsr_smpl & (1 << 7)))
+	} else if ((read_pwronsrc & (1 << 6)) && (read_int2 & (1 << 3)) && (read_wtsr_smpl & (1 << 7))) {
 		/* SMPL detect condition - SMPL_ON && SMPL_INT && SMPL_EN */
+		chk_wtsr_smpl = PMIC_DETECT_SMPL;
 		printf("SMPL detected\n");
+	} else {
+		chk_wtsr_smpl = PMIC_DETECT_NONE;
+	}
 
+	read_int_first = 1;
 	get_pmic_rtc_time(NULL);
 }
 
 int chk_smpl_wtsr_s2mpu10(void)
 {
-	return 0;
+	if (!read_int_first)
+		read_pmic_info_s2mpu10();
+
+	return chk_wtsr_smpl;
 }
