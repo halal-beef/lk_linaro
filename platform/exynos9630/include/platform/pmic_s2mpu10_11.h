@@ -64,7 +64,7 @@
 /* #define S2MPU10_PM_IGNORE_SMPL_DETECT */
 
 /* If ignore WTSR Detection, activate below define */
-#define S2MPU10_PM_IGNORE_WTSR_DETECT
+/* #define S2MPU10_PM_IGNORE_WTSR_DETECT */
 
 /* RTC Counter Register offsets */
 enum {
@@ -83,8 +83,6 @@ enum {
 	PMIC_DETECT_NONE = 0,
 	PMIC_DETECT_WTSR,
 	PMIC_DETECT_SMPL,
-	PMIC_DETECT_SMPL_IGNORE,
-	PMIC_DETECT_WTSR_IGNORE,
 };
 
 /* Manual Reset Debounce Time */
