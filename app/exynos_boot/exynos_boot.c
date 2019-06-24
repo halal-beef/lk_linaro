@@ -18,6 +18,7 @@
 #include <platform/mmu/mmu_func.h>
 #include <lib/sysparam.h>
 #include <platform/wdt_recovery.h>
+#include <platform/pmic_s2mpu10_11.h>
 #include <platform/sfr.h>
 #include <platform/charger.h>
 #include <platform/fastboot.h>
@@ -56,6 +57,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	int cpu;
 	struct exynos_gpio_bank *bank = (struct exynos_gpio_bank *)EXYNOS9630_GPA1CON;
 	int vol_up_val;
+	int chk_wtsr_smpl;
 	int i;
 	//void *part;
 
@@ -129,6 +131,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	}
 
 /*
+
 	if (is_first_boot()) {
 		unsigned int env_val = 0;
 
@@ -150,26 +153,27 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	if (is_first_boot())
 		ab_update_slot_info_bootloader();
 */
-	/* check SMPL & WTSR with S2MPU09 */
-/*
-	chk_smpl = chk_smpl_wtsr_s2mpu09();
-	if (chk_smpl)
-		print_lcd_update(FONT_RED, FONT_BLACK, "WTSR or SMPL DETECTED");
-
-#ifdef S2MPU09_PM_IGNORE_SMPL_DETECT
-	if (chk_smpl == PMIC_DETECT_SMPL_IGNORE) {
-		print_lcd_update(FONT_RED, FONT_BLACK, ",But Ignore SMPL DETECTION");
-		writel(0, CONFIG_RAMDUMP_SCRATCH);
-	}
-#endif
-#ifdef S2MPU09_PM_IGNORE_WTSR_DETECT
-	if (chk_smpl == PMIC_DETECT_WTSR_IGNORE) {
+	/* check SMPL & WTSR with S2MPU10 */
+	chk_wtsr_smpl = chk_smpl_wtsr_s2mpu10();
+	if (chk_wtsr_smpl == PMIC_DETECT_WTSR) {
+		print_lcd_update(FONT_RED, FONT_BLACK, "WTSR DETECTED");
+		printf("WTSR detected\n");
+#ifdef S2MPU10_PM_IGNORE_WTSR_DETECT
 		print_lcd_update(FONT_RED, FONT_BLACK, ",But Ignore WTSR DETECTION");
+		printf(", but ignored by build config\n");
 		writel(0, CONFIG_RAMDUMP_SCRATCH);
-	}
 #endif
-*/
+	} else if (chk_wtsr_smpl == PMIC_DETECT_SMPL) {
+		print_lcd_update(FONT_RED, FONT_BLACK, "SMPL DETECTED");
+		printf("SMPL detected\n");
+#ifdef S2MPU10_PM_IGNORE_SMPL_DETECT
+		print_lcd_update(FONT_RED, FONT_BLACK, ",But Ignore SMPL DETECTION");
+		printf(", but ignored by build config\n");
+		writel(0, CONFIG_RAMDUMP_SCRATCH);
+#endif
+	}
 
+	/* Fastboot upload or download check */
 	if (!is_first_boot()) {
 		pmic_enable_manual_reset(PMIC_MRDT_3);
 		printf("Entering fastboot: not first_boot\n");
