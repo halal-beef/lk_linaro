@@ -126,7 +126,7 @@ void read_pmic_info_s2mpu10 (void)
 {
 	unsigned char read_int1, read_int2, read_int;
 	unsigned char read_ldo21_ctrl, read_ldo22_ctrl, read_ldo23_ctrl;
-	unsigned char read_pwronsrc, read_wtsr_smpl;
+	unsigned char read_pwronsrc, read_offsrc, read_wtsr_smpl;
 
 	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_INT1, &read_int1);
 	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_INT2, &read_int2);
@@ -135,6 +135,7 @@ void read_pmic_info_s2mpu10 (void)
 	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_INT5, &read_int);
 	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_INT6, &read_int);
 	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_PWRONSRC, &read_pwronsrc);
+	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_OFFSRC, &read_offsrc);
 	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_LDO21_CTRL, &read_ldo21_ctrl);
 	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_LDO22_CTRL, &read_ldo22_ctrl);
 	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_LDO23_CTRL, &read_ldo23_ctrl);
@@ -145,6 +146,7 @@ void read_pmic_info_s2mpu10 (void)
 	printf("S2MPU10_PM_INT1: 0x%x\n", read_int1);
 	printf("S2MPU10_PM_INT2: 0x%x\n", read_int2);
 	printf("S2MPU10_PM_PWRONSRC: 0x%x\n", read_pwronsrc);
+	printf("S2MPU10_PM_OFFSRC: 0x%x\n", read_offsrc);
 	printf("S2MPU10_PM_LDO21M_CTRL: 0x%x\n", read_ldo21_ctrl);
 	printf("S2MPU10_PM_LDO22M_CTRL: 0x%x\n", read_ldo22_ctrl);
 	printf("S2MPU10_PM_LDO23M_CTRL: 0x%x\n", read_ldo23_ctrl);
