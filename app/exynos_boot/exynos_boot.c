@@ -171,6 +171,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 */
 
 	if (!is_first_boot()) {
+		pmic_enable_manual_reset(PMIC_MRDT_3);
 		printf("Entering fastboot: not first_boot\n");
 		goto download;
 	} else if (rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET)) {
