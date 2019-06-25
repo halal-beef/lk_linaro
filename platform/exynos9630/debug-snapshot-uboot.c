@@ -200,6 +200,7 @@ int debug_snapshot_getvar_item(const char *name, char *response)
 
 		sprintf(response, "%X, %X, %X", item->rmem.paddr, item->rmem.size,
 		        item->rmem.paddr + item->rmem.size - 1);
+		return 0;
 	}
 
 	snprintf(log_name, sizeof(log_name) - 1, "log_%s", name);
