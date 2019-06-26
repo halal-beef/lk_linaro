@@ -98,8 +98,6 @@ static const char *up_sequencer[] = {
 	"SOC_SEQ",
 	"MIF_SEQ",
 	"CHUB",
-	"UNKNOWN",
-	"L2FLUSH ABORT",
 };
 
 static const char *down_sequencer[] = {
@@ -120,8 +118,6 @@ static const char *down_sequencer[] = {
 	"SOC_SEQ",
 	"MIF_SEQ",
 	"UNKNOWN",
-	"L2FLUSH START",
-	"UNKNOWN",
 };
 
 static const char *power_mode_name[] = {
@@ -130,7 +126,6 @@ static const char *power_mode_name[] = {
 	"NO_POWER_MODE",
 	"SICD",
 	"SLEEP",
-	"SLEEP_HSI2ON",
 };
 
 #define DONE_INDEX (0x21444E45)
@@ -156,6 +151,10 @@ static const char *master[] = {
 	"none",
 	"AUD",
 	"VTS",
+	"CHUB",
+	"CP",
+	"GNSS",
+	"WLBT",
 	"none",
 	"AP",
 };
@@ -310,30 +309,30 @@ static void print_pmudbg_registers(void)
 {
 	const char *pd_name[20] = {
 		"pd-aud",
-		"pd-csis",
-		"pd-dns",
 		"pd-dpu",
-		"pd-dsp0",
-		"pd-dsp1",
-		"pd-dnc",
-		"pd-embedded-g3d",
+		"pd-csis",
 		"pd-g2d",
-		"pd-hsi0",
+		"pd-g3d",
+		"pd-usb",
 		"pd-ipp",
 		"pd-itp",
-		"pd-mfc0",
 		"pd-mcsc",
+		"pd-tnr",
+		"pd-mfc",
+		"pd-vra",
 		"pd-npu0",
 		"pd-npu1",
-		"pd-tnr",
-		"pd-vra",
+		"pd-dnc",
+		"pd-dns",
+		"pd-dsp0",
+		"pd-dsp1",
 		"pd-vts",
 		"pd-ssp",
 	};
 
 	const unsigned int pd_offset[20] = {
-		0x34, 0x58, 0x5c, 0x60,	0x64, 0x68, 0x6c, 0x7c, 0x80, 0x88,
-		0x94, 0x98, 0x9c, 0xb0, 0xb4, 0xb8, 0xcc, 0xd0, 0xd4, 0xd8,
+		0x38, 0x3C, 0x58, 0x60, 0x64, 0x6C, 0x70, 0x74, 0x78, 0x7C,
+		0x80, 0x8C, 0x90, 0x94, 0x98, 0x9C, 0xA0, 0xA4, 0xB0, 0xB8,
 	};
 
 	int i;
@@ -342,15 +341,15 @@ static void print_pmudbg_registers(void)
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU1_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x4));
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU2_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x8));
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU3_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0xc));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_NONCPU_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x10));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER1_CPU0_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x14));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER1_CPU1_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x18));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER1_NONCPU_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x1c));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER2_CPU0_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x20));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER2_CPU1_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x24));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER2_NONCPU_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x28));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "MIF_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0xfc));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "TOP_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x100));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU4_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x10));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU5_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x14));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU6_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x18));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_NONCPU_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x1c));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER1_CPU0_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x20));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER1_CPU1_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x24));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER1_NONCPU_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x28));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "MIF_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0xF4));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "TOP_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0xF8));
 
 	for (i = 0; i < 20; i++) {
 		if (i % 4 == 0)
