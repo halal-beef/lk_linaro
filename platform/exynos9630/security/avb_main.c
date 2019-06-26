@@ -115,7 +115,7 @@ uint32_t update_rp_count_otp(const char *suffix)
 
 	rollback_index = (uint64_t *)(AVB_PRELOAD_BASE + part_get_size_in_bytes(part) -
 			SB_SB_CONTEXT_LEN + SB_BL1_RP_COUNT_OFFSET);
-	printf("[SB]BL1 RP count: %lld\n", *rollback_index);
+	printf("[SB] BL1 RP count: %lld\n", *rollback_index);
 	ret = cm_otp_update_antirbk_sec_ap(*rollback_index);
 	if (ret)
 		goto out;
@@ -127,7 +127,7 @@ uint32_t update_rp_count_otp(const char *suffix)
 
 	rollback_index = (uint64_t *)(AVB_PRELOAD_BASE + EPBL_SIZE -
 			SB_MAX_RSA_SIGN_LEN - SB_SIGN_FIELD_HEADER_SIZE);
-	printf("[SB]Bootloader RP count: %lld\n", *rollback_index);
+	printf("[SB] EPBL RP count: %lld\n", *rollback_index);
 	ret = cm_otp_update_antirbk_non_sec_ap0(*rollback_index);
 	if (ret)
 		goto out;
@@ -142,10 +142,11 @@ uint32_t update_rp_count_avb(AvbOps *ops, AvbSlotVerifyData *ctx_ptr)
 	uint32_t i = 0;
 	uint64_t stored_rollback_index = 0;
 
+	printf("[AVB] Check RP count for update\n");
 	for (i = 0; i < AVB_MAX_NUMBER_OF_ROLLBACK_INDEX_LOCATIONS; i++) {
 		if (ctx_ptr->rollback_indexes[i] != kRollbackIndexNotUsed) {
-			printf("[AVB 2.0]Rollback index location: %d\n", i);
-			printf("[AVB 2.0]Current Image RP count: %lld\n",
+			printf("[AVB 2.0] Rollback index location: %d\n", i);
+			printf("[AVB 2.0] Current Image RP count: %lld\n",
 					ctx_ptr->rollback_indexes[i]);
 			ret = ops->read_rollback_index(ops, i,
 					&stored_rollback_index);
@@ -154,11 +155,11 @@ uint32_t update_rp_count_avb(AvbOps *ops, AvbSlotVerifyData *ctx_ptr)
 						ret);
 				goto out;
 			}
-			printf("[AVB 2.0]Current RPMB RP count: %lld\n",
+			printf("[AVB 2.0] Current RPMB RP count: %lld\n",
 					stored_rollback_index);
 
 			if (ctx_ptr->rollback_indexes[i] > stored_rollback_index) {
-				printf("[AVB 2.0]Update RP count start\n");
+				printf("[AVB 2.0] Update RP count start\n");
 				ret = ops->write_rollback_index(ops, i,
 						ctx_ptr->rollback_indexes[i]);
 				if (ret) {
@@ -173,9 +174,9 @@ uint32_t update_rp_count_avb(AvbOps *ops, AvbSlotVerifyData *ctx_ptr)
 							ret);
 					goto out;
 				}
-				printf("[AVB 2.0]Current Image RP count: %lld\n",
+				printf("[AVB 2.0] Updated Image RP count: %lld\n",
 						ctx_ptr->rollback_indexes[i]);
-				printf("[AVB 2.0]Updated RPMB RP count: %lld\n",
+				printf("[AVB 2.0] Updated RPMB RP count: %lld\n",
 						stored_rollback_index);
 				if (ctx_ptr->rollback_indexes[i] != stored_rollback_index)
 					ret = AVB_ERROR_RP_UPDATE_FAIL;
@@ -257,12 +258,20 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 
 	/* Update RP count */
 	if (!ret && is_slot_marked_successful()) {
+#if defined(CONFIG_AVB_RP_UPDATE)
 		ret = update_rp_count_avb(ops, ctx_ptr);
 		if (ret)
 			return ret;
+#else
+		printf("[AVB] RP count update is disabled\n");
+#endif
+#if defined(CONFIG_OTP_RP_UPDATE)
 		ret = update_rp_count_otp(suffix);
 		if (ret)
 			return ret;
+#else
+		printf("[OTP] RP count update is disabled\n");
+#endif
 	}
 
 #if defined(CONFIG_USE_RPMB)
