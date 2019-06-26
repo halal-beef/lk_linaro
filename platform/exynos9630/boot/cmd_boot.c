@@ -729,13 +729,12 @@ int cmd_boot(int argc, const cmd_args *argv)
 #if defined(CONFIG_USE_AVB20)
 	ab_ret = ab_current_slot();
 	if (ab_ret == AB_ERROR_NOT_SUPPORT)
-		sprintf(ab_suffix, "");
+		avb_ret = avb_main("", cmdline, verifiedbootstate);
 	else if (ab_ret == AB_SLOT_B)
-		sprintf(ab_suffix, "_b");
+		avb_ret = avb_main("_b", cmdline, verifiedbootstate);
 	else
-		sprintf(ab_suffix, "_a");
+		avb_ret = avb_main("_a", cmdline, verifiedbootstate);
 
-	avb_ret = avb_main(ab_suffix, cmdline, verifiedbootstate);
 	printf("AVB: suffix[%s], boot/dtbo image verification result: %d\n", ab_suffix, avb_ret);
 
 	rpmb_get_lock_state(&lock_state);
