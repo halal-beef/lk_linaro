@@ -193,8 +193,8 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 	bool unlock;
 	uint32_t ret = 0;
 	uint32_t i = 0;
-//	uint32_t device_state;
-//	uint32_t boot_state;
+	uint32_t device_state;
+	uint32_t boot_state;
 	struct AvbOps *ops;
 	const char *partition_arr[] = {"boot", "dtbo", NULL};
 	char buf[100];
@@ -228,19 +228,19 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 		snprintf(buf, 100, "[AVB 2.0] authentication success (%s)\n", color);
 	}
 
-//	device_state = !unlock;
+	device_state = !unlock;
 	switch (color[0]) {
 	case 'o':
-//		boot_state = ORANGE;
+		boot_state = ORANGE;
 		break;
 	case 'y':
-//		boot_state = YELLOW;
+		boot_state = YELLOW;
 		break;
 	case 'r':
-//		boot_state = RED;
+		boot_state = RED;
 		break;
 	case 'g':
-//		boot_state = GREEN;
+		boot_state = GREEN;
 		break;
 	default:
 		return AVB_ERROR_INVALID_COLOR;
@@ -250,7 +250,6 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 	printf(buf);
 	avb_print_lcd(buf);
 
-#if 0
 	/* Set root of trust */
 	ret = avb_set_root_of_trust(device_state, boot_state);
 	if (ret)
@@ -265,7 +264,6 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 		if (ret)
 			return ret;
 	}
-#endif
 
 #if defined(CONFIG_USE_RPMB)
 	uint32_t tmp = 0;
