@@ -43,6 +43,7 @@
 #include <stdio.h>
 
 #include <dev/lk_acpm_ipc.h>
+#include "flexpmu_dbg.h"
 
 #define ARCH_TIMER_IRQ		30
 
@@ -285,6 +286,8 @@ void platform_init(void)
 	unsigned int rst_stat = readl(EXYNOS9630_POWER_RST_STAT);
 	u32 ret = 0;
 	unsigned char reg;
+
+	display_flexpmu_dbg();
 
 	display_rst_stat(rst_stat);
 #if defined(CONFIG_AB_UPDATE)
