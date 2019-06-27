@@ -22,7 +22,7 @@
 #include <platform/wdt_recovery.h>
 #include <lib/sysparam.h>
 
-//#define XCT_SECURE_CHECK_DISABLE
+#define XCT_SECURE_CHECK_DISABLE
 #if !defined(XCT_SECURE_CHECK_DISABLE)
 static u32 xct_cs_by_el3(u32 size)
 {
@@ -113,7 +113,12 @@ int cmd_xct(int argc, const cmd_args *argv)
 	part_read(part, (void *)XCT_LDFW_ADDR);
 #if !defined(XCT_SECURE_CHECK_DISABLE)
 	/* Check Securiy signing */
+#if defined(CONFIG_SB40)
+	ret_secure_ldfw = el3_verify_signature_using_image(XCT_LDFW_ADDR, XCT_LDFW_SIZE,
+			XCT_LDFW_ADDR + XCT_LDFW_SIZE - sizeof(SB_V40_SIGN_FIELD), OTHER_NS_BIN);
+#else
 	ret_secure_ldfw = el3_verify_signature_using_image(XCT_LDFW_ADDR, XCT_LDFW_SIZE, TRUST_MEASUREMENT_KERNEL);
+#endif
 	if (ret_secure_ldfw != 0xffffffff) {
 		if (ret_secure_ldfw) {
 			printf("xct ldfw secure check fail!!\n");
@@ -141,7 +146,12 @@ int cmd_xct(int argc, const cmd_args *argv)
 		printf("rx cs:0x%x, calc cs:0x%x\n", cs, cs_from_el3);
 		ret_sec_xct = ERR_CHECKSUM_FAIL;
 	} else {
+#if defined(CONFIG_SB40)
+		ret_sec_xct = el3_verify_signature_using_image(XCT_BIN_LOAD_ADDR, size,
+				XCT_BIN_LOAD_ADDR + size - sizeof(SB_V40_SIGN_FIELD), OTHER_NS_BIN);
+#else
 		ret_sec_xct = el3_verify_signature_using_image(XCT_BIN_LOAD_ADDR, size, TRUST_MEASUREMENT_KERNEL);
+#endif
 		if (ret_sec_xct == 0xffffffff)
 			ret_sec_xct = 0;
 	}
