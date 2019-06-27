@@ -25,9 +25,9 @@
 #define SHA512_BLOCK_LEN                (128)
 
 #define SB_BL1_RP_COUNT_OFFSET		(16)
-#define SB_SB_CONTEXT_LEN		(1024)
+#define SB_SB_CONTEXT_LEN		(2352)
 #define SB_SIGN_FIELD_HEADER_SIZE	(16)
-#define SB_MAX_RSA_KEY_N_LEN		(256)
+#define SB_MAX_RSA_KEY_N_LEN		(512)
 #define SB_MAX_RSA_SIGN_LEN		(SB_MAX_RSA_KEY_N_LEN)
 
 /* keystorage variable */
