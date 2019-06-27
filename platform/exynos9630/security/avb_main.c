@@ -20,8 +20,6 @@
 #include <string.h>
 #include <part.h>
 
-#define EPBL_SIZE		(76 * 1024)
-
 /* By convention, when a rollback index is not used the value remains zero. */
 static const uint64_t kRollbackIndexNotUsed = 0;
 static uint8_t avb_pubkey[SB_MAX_PUBKEY_LEN] __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
@@ -106,28 +104,29 @@ uint32_t is_slot_marked_successful(void)
 uint32_t update_rp_count_otp(const char *suffix)
 {
 	uint32_t ret = 0;
-	uint64_t *rollback_index;
-	char part_name[15] = "bootloader";
+	uint32_t *rollback_index;
+	char part_name[15] = "epbl";
 	void *part;
 
 	part = part_get("fwbl1");
 	part_read(part, (void *)AVB_PRELOAD_BASE);
 
-	rollback_index = (uint64_t *)(AVB_PRELOAD_BASE + part_get_size_in_bytes(part) -
+	rollback_index = (uint32_t *)(AVB_PRELOAD_BASE + part_get_size_in_bytes(part) -
 			SB_SB_CONTEXT_LEN + SB_BL1_RP_COUNT_OFFSET);
-	printf("[SB] BL1 RP count: %lld\n", *rollback_index);
+	printf("[SB] BL1 RP addr: %p\n", rollback_index);
+	printf("[SB] BL1 RP count: %d\n", *rollback_index);
 	ret = cm_otp_update_antirbk_sec_ap(*rollback_index);
 	if (ret)
 		goto out;
 
 	strcat(part_name, suffix);
-
 	part = part_get(part_name);
 	part_read(part, (void *)AVB_PRELOAD_BASE);
 
-	rollback_index = (uint64_t *)(AVB_PRELOAD_BASE + EPBL_SIZE -
+	rollback_index = (uint32_t *)(AVB_PRELOAD_BASE + part_get_size_in_bytes(part) -
 			SB_MAX_RSA_SIGN_LEN - SB_SIGN_FIELD_HEADER_SIZE);
-	printf("[SB] EPBL RP count: %lld\n", *rollback_index);
+	printf("[SB] EPBL RP addr: %p\n", rollback_index);
+	printf("[SB] EPBL RP count: %d\n", *rollback_index);
 	ret = cm_otp_update_antirbk_non_sec_ap0(*rollback_index);
 	if (ret)
 		goto out;
