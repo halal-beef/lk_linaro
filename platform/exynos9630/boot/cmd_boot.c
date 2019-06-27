@@ -342,17 +342,6 @@ static int bootargs_process(void)
 		print_lcd_update(FONT_GREEN, FONT_BLACK, "AB Slot suffix set %s", buf);
 	}
 
-#if defined(CONFIG_USE_AVB20)
-	/* Android Verified Boot */
-	if (readl(EXYNOS9630_POWER_SYSIP_DAT0) != REBOOT_MODE_RECOVERY) {
-		/* set AVB args */
-		if (add_val(cmdline, verifiedbootstate)) {
-			printf("AVB cmdline set failed %s : %s", cmdline, verifiedbootstate);
-			return -1;
-		}
-	}
-#endif
-
 	/* Recovery */
 	if (readl(EXYNOS9630_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY) {
 		/* remove some bootargs to Set recovery boot mode */
@@ -362,8 +351,6 @@ static int bootargs_process(void)
 			printf("bootargs cannot delete, checkit: ro\n");
 		if(remove_val("init", "/init"))
 			printf("bootargs cannot delete, checkit: init\n");
-		if(remove_val("root", "/dev/sda12"))
-			printf("bootargs cannot delete, checkit: root\n");
 
 		/* set root to ramdisk */
 		if (add_val("root", "/dev/ram0")) {
@@ -436,10 +423,6 @@ static void configure_dtb(void)
 	unsigned long sec_pt_base = 0;
 	unsigned int sec_pt_size = 0;
 	unsigned long sec_pt_end = 0;
-#if defined(CONFIG_USE_AVB20)
-	struct AvbOps *ops;
-	bool unlock;
-#endif
 
 	/*
 	 * In this here, it is enabled cache. So you don't use blk read/write function
@@ -613,6 +596,18 @@ mem_node_out:
 	printf("\nbootargs: %s\n", np);
 
 	set_bootargs();
+
+#if defined(CONFIG_USE_AVB20)
+	if (!(readl(EXYNOS9630_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY)) {
+		/* set AVB args */
+		noff = fdt_path_offset (fdt_dtb, "/chosen");
+		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
+		snprintf(str, BUFFER_SIZE, "%s %s %s", np, cmdline, verifiedbootstate);
+		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
+		printf("\nupdated avb bootargs: %s\n", np);
+	}
+#endif
+
 	resize_dt(0);
 }
 
