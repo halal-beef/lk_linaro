@@ -43,7 +43,9 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/debug-store-ramdump.c \
 	$(LOCAL_DIR)/power.c \
 	$(LOCAL_DIR)/tmu.c \
-	$(LOCAL_DIR)/flexpmu_dbg.c
+	$(LOCAL_DIR)/flexpmu_dbg.c \
+	$(LOCAL_DIR)/mmc.c \
+	$(LOCAL_DIR)/dw_mmc.c
 
 MODULE_DEPS += \
 	dev/interrupt/arm_gic \

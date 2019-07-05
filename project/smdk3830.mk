@@ -7,7 +7,8 @@ WITH_LINKER_GC := 1
 
 MODULES += \
 	app/exynos_boot \
-	dev/acpm_ipc
+	dev/acpm_ipc \
+	dev/mmc
 
 GLOBAL_DEFINES += \
 	INPUT_GPT_AS_PT=1 \
