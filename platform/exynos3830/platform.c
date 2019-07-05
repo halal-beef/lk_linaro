@@ -34,6 +34,7 @@
 #include <platform/mmu/mmu_func.h>
 #include <platform/fastboot.h>
 #include <platform/sfr.h>
+#include <dev/mmc.h>
 
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
@@ -308,14 +309,17 @@ void platform_init(void)
 	check_charger_connect();
 
 	/* load_secure_payload(); */
-
-	printf("get_boot_device() == BOOT_UFS\n");
-	ufs_alloc_memory();
-	ufs_init(2);
-	ret = ufs_set_configuration_descriptor();
-	if (ret == 1)
+	if (get_boot_device() == BOOT_EMMC) {
+		printf("get_boot_device() == BOOT_EMMC\n");
+		mmc_init();
+	} else {
+		printf("get_boot_device() == BOOT_UFS\n");
+		ufs_alloc_memory();
 		ufs_init(2);
-
+		ret = ufs_set_configuration_descriptor();
+		if (ret == 1)
+			ufs_init(2);
+	}
 	part_init();
 	if (is_first_boot() && *(unsigned int *)DRAM_BASE == 0xabcdef)
 		debug_snapshot_fdt_init();
