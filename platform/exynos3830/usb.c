@@ -30,7 +30,7 @@ void gadget_probe_pid_vid_version(unsigned short *vid, unsigned short *pid, unsi
 }
 
 static const char vendor_str[] = "Samsung Semiconductor, S.LSI Division";
-static const char product_str[] = "Exynos9630 LK Bootloader";
+static const char product_str[] = "Exynos3830 LK Bootloader";
 static char serial_id[16] = "No Serial";
 
 int gadget_get_vendor_string(void)
@@ -169,12 +169,12 @@ int init_fastboot_variables(void)
 	add_fastboot_variable("version-baseband", "N/A");
 	add_fastboot_variable("version", FASTBOOT_VERSION);
 	add_fastboot_variable("version-bootloader", FASTBOOT_VERSION_BOOTLOADER);
-	add_fastboot_variable("product", "exynos9630");
+	add_fastboot_variable("product", "exynos3830");
 	add_fastboot_variable("serialno", (const char *)serial_id);
 	add_fastboot_variable("secure", "yes");
 	add_fastboot_variable("unlocked", "yes");
 	add_fastboot_variable("off-mode-charge", "0");
-	add_fastboot_variable("variant", "exynos9630");
+	add_fastboot_variable("variant", "exynos3830");
 	add_fastboot_variable("battery-voltage", "2700mV");
 	add_fastboot_variable("battery-soc-ok", "yes");
 	add_fastboot_variable("partition-type:efs", "ext4");
@@ -237,11 +237,11 @@ int init_fastboot_variables(void)
 	return 0;
 }
 
-static unsigned int dwc3_isr_num = (370 + 32);
+static unsigned int dwc3_isr_num = (137 + 32);
 
 int dwc3_plat_init(struct dwc3_plat_config *plat_config)
 {
-	plat_config->base = (void *) 0x13200000;
+	plat_config->base = (void *) 0x13600000;
 	plat_config->num_hs_phy = 1;
 	plat_config->array_intr = &dwc3_isr_num;
 	plat_config->num_intr = 1;
@@ -260,15 +260,21 @@ static struct dwc3_dev_config dwc3_dev_config = {
 
 int dwc3_dev_plat_init(void **base_addr, struct dwc3_dev_config **plat_config)
 {
-	*base_addr = (void *) (0x13200000);
+	*base_addr = (void *) (0x13600000);
 	*plat_config = &dwc3_dev_config;
 	return 0;
 }
 
 static struct exynos_usb_tune_param usbcal_20phy_tune[] = {
 	{ .name = "tx_pre_emp", .value = 0x3, },
-	{ .name = "tx_vref", .value = 0x7, },
-	{ .name = "rx_sqrx", .value = 0x5, },
+	{ .name = "tx_pre_emp_plus", .value = 0x0, },
+	{ .name = "tx_vref", .value = 0xf, },
+	{ .name = "rx_sqrx", .value = 0x7, },
+	{ .name = "tx_rise", .value = 0x3, },
+	{ .name = "compdis", .value = 0x7, },
+	{ .name = "tx_hsxv", .value = 0x3, },
+	{ .name = "tx_fsls", .value = 0x3, },
+	{ .name = "tx_res", .value = 0x3, },
 	{ .name = "utim_clk", .value = USBPHY_UTMI_PHYCLOCK, },
 	{ .value = EXYNOS_USB_TUNE_LAST, },
 };
@@ -278,7 +284,9 @@ static struct exynos_usbphy_info usbphy_cal_info = {
 	.refclk = USBPHY_REFCLK_DIFF_26MHZ,
 	.refsel = USBPHY_REFSEL_CLKCORE,
 	.not_used_vbus_pad = true,
-	.regs_base = (void *) 0x131F0000,
+	.common_block_disable = true,
+//	.usb_io_for_ovc = DISABLE,
+	.regs_base = (void *) 0x135D0000,
 	.tune_param = usbcal_20phy_tune,
 	.hs_rewa = 1,
 };
@@ -298,20 +306,13 @@ void phy_usb_exynos_system_init(int num_phy_port, bool en)
 	if (num_phy_port == 0) {
 		/* 2.0 HS PHY */
 		/* PMU Isolation release */
-		reg = readl((void *)(0x10E60000 + 0x704));
-		if (en)
-			reg |= 0x2;
-		else
-			reg &= ~0x2;
-		writel(reg, (void *)(0x10E60000 + 0x704));
-
-		reg = readl((void *)(0x10E60000 + 0x72c));
+		reg = readl((void *)(0x11860000 + 0x704));
 		if (en)
 			reg |= 0x1;
 		else
 			reg &= ~0x1;
-		writel(reg, (void *)(0x10E60000 + 0x72c));
-
+		writel(reg, (void *)(0x11860000 + 0x704));
+#if 0
 		/* CCI Enable */
 		reg = readl((void *)(0x13020000 + 0x700));
 		if (en)
@@ -319,14 +320,15 @@ void phy_usb_exynos_system_init(int num_phy_port, bool en)
 		else
 			reg &= ~(0x3 << 12);
 		writel(reg, (void *)(0x13020000 + 0x700));
+#endif
 	} else {
 		/* 3.0 PHY */
-		reg = readl((void *)(0x10E60000 + 0x704));
+		reg = readl((void *)(0x11860000 + 0x704));
 		if (en)
 			reg |= 0x1;
 		else
 			reg &= ~0x1;
-		writel(reg, (void *)(0x10E60000 + 0x704));
+		writel(reg, (void *)(0x11860000 + 0x704));
 	}
 }
 
