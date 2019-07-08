@@ -341,7 +341,7 @@ void platform_prepare_reboot(void)
 	 * Send SSU to UFS. Something wrong on SSU should not
 	 * affect reboot sequence.
 	 */
-	scsi_do_ssu();
+//	scsi_do_ssu();
 }
 
 void platform_do_reboot(const char *cmd_buf)
