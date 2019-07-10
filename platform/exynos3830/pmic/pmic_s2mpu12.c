@@ -68,6 +68,11 @@ void pmic_init (void)
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO28_CTRL, &reg);
 	reg |= 0xC0;
 	i3c_write(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO28_CTRL, reg);
+
+	/* Enable TSP power */
+	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO27_CTRL, &reg);
+	reg |= 0xC0;
+	i3c_write(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO27_CTRL, reg);
 }
 
 int get_pmic_rtc_time(char *buf)
@@ -104,16 +109,18 @@ int get_pmic_rtc_time(char *buf)
 void read_pmic_info_s2mpu12 (void)
 {
 	unsigned char read_ldo2_ctrl, read_ldo11_ctrl, read_ldo23_ctrl;
-	unsigned char read_ldo28_ctrl;
+	unsigned char read_ldo27_ctrl, read_ldo28_ctrl;
 
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO2_CTRL, &read_ldo2_ctrl);
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO11_CTRL, &read_ldo11_ctrl);
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO23_CTRL, &read_ldo23_ctrl);
+	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO27_CTRL, &read_ldo27_ctrl);
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO28_CTRL, &read_ldo28_ctrl);
 
 	printf("S2MPU12_PM_LDO2_CTRL: 0x%x\n", read_ldo2_ctrl);
 	printf("S2MPU12_PM_LDO11_CTRL: 0x%x\n", read_ldo11_ctrl);
 	printf("S2MPU12_PM_LDO23_CTRL: 0x%x\n", read_ldo23_ctrl);
+	printf("S2MPU12_PM_LDO27_CTRL: 0x%x\n", read_ldo27_ctrl);
 	printf("S2MPU12_PM_LDO28_CTRL: 0x%x\n", read_ldo28_ctrl);
 }
 
