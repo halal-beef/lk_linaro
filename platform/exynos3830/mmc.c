@@ -161,15 +161,11 @@ int mmc_board_init(struct mmc *mmc, unsigned int channel)
 	mmc->channel = channel;
 	switch (channel) {
 		case 0:
-			/* eMMC device turned only when it is boot device */
-			if (get_boot_device() == BOOT_EMMC) {
-				printf("get_boot_device() == BOOT_EMMC\n");
+			mmc_gpio_set(channel, 0);
+			mmc_clock_set(channel, 0);
+			dwmci_init(mmc, channel);
+			break;
 
-				mmc_gpio_set(channel, 0);
-				mmc_clock_set(channel, 0);
-				dwmci_init(mmc, channel);
-				break;
-			}
 			return -1;
 		case 1:
 			/* SDIO not used */

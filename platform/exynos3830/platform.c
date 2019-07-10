@@ -308,18 +308,7 @@ void platform_init(void)
 
 	check_charger_connect();
 
-	/* load_secure_payload(); */
-	if (get_boot_device() == BOOT_EMMC) {
-		printf("get_boot_device() == BOOT_EMMC\n");
-		mmc_init();
-	} else {
-		printf("get_boot_device() == BOOT_UFS\n");
-		ufs_alloc_memory();
-		ufs_init(2);
-		ret = ufs_set_configuration_descriptor();
-		if (ret == 1)
-			ufs_init(2);
-	}
+	mmc_init();
 	part_init();
 	if (is_first_boot() && *(unsigned int *)DRAM_BASE == 0xabcdef)
 		dbg_snapshot_fdt_init();
