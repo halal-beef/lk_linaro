@@ -18,7 +18,7 @@
 #include <platform/mmu/mmu_func.h>
 #include <lib/sysparam.h>
 #include <platform/wdt_recovery.h>
-#include <platform/pmic_s2mpu10_11.h>
+#include <platform/pmic_s2mpu12.h>
 #include <platform/sfr.h>
 #include <platform/charger.h>
 #include <platform/fastboot.h>
@@ -53,10 +53,10 @@ extern unsigned int uart_log_mode;
 
 static void exynos_boot_task(const struct app_descriptor *app, void *args)
 {
-	unsigned int rst_stat = readl(EXYNOS9630_POWER_RST_STAT);
+	unsigned int rst_stat = readl(EXYNOS3830_POWER_RST_STAT);
 	/* struct pit_entry *ptn; */
 	int cpu;
-	struct exynos_gpio_bank *bank = (struct exynos_gpio_bank *)EXYNOS9630_GPA1CON;
+	struct exynos_gpio_bank *bank = (struct exynos_gpio_bank *)EXYNOS3830_GPA0CON;
 	int vol_up_val;
 	int chk_wtsr_smpl;
 	int i;
@@ -112,8 +112,6 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		pit_access(ptn, PIT_OP_FLASH, (u64)CONFIG_RAMDISK_IMAMGE_BASE, 0);
 #endif
 
-// have to modify
-//		do_fastboot(0, 0);
 		start_usb_gadget();
 		return;
 	}
@@ -122,7 +120,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	exynos_gpio_set_pull(bank, 0, GPIO_PULL_NONE);
 	exynos_gpio_cfg_pin(bank, 0, GPIO_INPUT);
 	for (i = 0; i < 10; i++) {
-		vol_up_val = exynos_gpio_get_value(bank, 0);
+		vol_up_val = exynos_gpio_get_value(bank, 7);
 		printf("Volume up key: %d\n", vol_up_val);
 	}
 	if (vol_up_val == 0) {
@@ -184,10 +182,10 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		sdm_encrypt_secdram();
 		dfd_set_dump_en_for_cacheop(0);
 		goto fastboot;
-	} else if (readl(EXYNOS9630_POWER_SYSIP_DAT0) == REBOOT_MODE_FASTBOOT) {
+	} else if (readl(EXYNOS3830_POWER_SYSIP_DAT0) == REBOOT_MODE_FASTBOOT) {
 		printf("Entering fastboot: reboot bootloader command\n");
 		writel(0, CONFIG_RAMDUMP_SCRATCH);
-		writel(0, EXYNOS9630_POWER_SYSIP_DAT0);
+		writel(0, EXYNOS3830_POWER_SYSIP_DAT0);
 		goto download;
 	} else if ((readl(CONFIG_RAMDUMP_SCRATCH) == CONFIG_RAMDUMP_MODE) && get_charger_mode() == 0) {
 		printf("Entering fastboot: Ramdump_Scratch & Charger\n");
