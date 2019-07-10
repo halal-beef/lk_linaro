@@ -474,7 +474,7 @@ int dsim_probe(u32 dev_id)
 	dsim->data_lane_cnt = dsim->lcd_info->data_lane;
 	dsim_info("using data lane count(%d)\n", dsim->data_lane_cnt);
 
-	dsim->res.ss_regs = (void __iomem *)EXYNOS9630_SYSREG_DPU;
+	dsim->res.ss_regs = (void __iomem *)EXYNOS3830_SYSREG_DPU;
 	dsim->res.phy_regs = (void __iomem *)DPHY_BASE_ADDR;
 	dsim->res.phy_regs_ex = (void __iomem *)DPHY_EX_BASE_ADDR;
 
