@@ -413,10 +413,10 @@ static void configure_dtb(void)
 {
 	char str[BUFFER_SIZE];
 
-#if 0
 	const char *np;
 	int len, noff;
 	struct boot_img_hdr *b_hdr = (boot_img_hdr *)BOOT_BASE;
+#if 0
 	u32 soc_ver = 0;
 	u64 dram_size = *(u64 *)BL_SYS_INFO_DRAM_SIZE;
 	unsigned long sec_dram_base = 0;
@@ -564,9 +564,8 @@ mem_node_out:
 	sprintf(str, "<0x%x>", ECT_SIZE);
 	set_fdt_val("/ect", "parameter_size", str);
 
-#if 0
 	/* Recovery boot mode - add initrd-start end value */
-	if (readl(EXYNOS9630_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY) {
+	if (readl(EXYNOS3830_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY) {
 		memset(str, 0, BUFFER_SIZE);
 		sprintf(str, "<0x%x>", RAMDISK_BASE);
 		set_fdt_val("/chosen", "linux,initrd-start", str);
@@ -577,7 +576,6 @@ mem_node_out:
 		set_fdt_val("/chosen", "linux,initrd-end", str);
 		printf("initrd-end: %s\n", str);
 	}
-
 	noff = fdt_path_offset(fdt_dtb, "/reserved-memory/cp_rmem");
 	if (noff >= 0) {
 		np = fdt_getprop(fdt_dtb, noff, "reg", &len);
@@ -603,7 +601,7 @@ mem_node_out:
 	set_bootargs();
 
 #if defined(CONFIG_USE_AVB20)
-	if (!(readl(EXYNOS9630_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY)) {
+	if (!(readl(EXYNOS3830_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY)) {
 		/* set AVB args */
 		noff = fdt_path_offset (fdt_dtb, "/chosen");
 		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
@@ -611,7 +609,6 @@ mem_node_out:
 		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
 		printf("\nupdated avb bootargs: %s\n", np);
 	}
-#endif
 #endif
 	resize_dt(0);
 }
@@ -634,7 +631,7 @@ int cmd_scatter_load_boot(int argc, const cmd_args *argv);
  */
 int load_boot_images(void)
 {
-#if defined(CONFIG_BOOT_IMAGE_SUPPORT)
+#if 1//defined(CONFIG_BOOT_IMAGE_SUPPORT)
 	cmd_args argv[6];
 	void *part;
 	char boot_part_name[16] = "";
@@ -642,7 +639,7 @@ int load_boot_images(void)
 	unsigned int boot_val = 0;
 
 	ab_support = ab_update_support();
-	boot_val = readl(EXYNOS9630_POWER_SYSIP_DAT0);
+	boot_val = readl(EXYNOS3830_POWER_SYSIP_DAT0);
 	printf("%s: AB[%d], boot_val[0x%02X]\n", __func__, ab_support, boot_val);
 	if (ab_support)
 		print_lcd_update(FONT_WHITE, FONT_BLACK, "AB Update support");
