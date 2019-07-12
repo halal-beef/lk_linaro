@@ -560,7 +560,7 @@ static int mmc_boot_init_card(struct mmc *mmc)
 		} else {
 			return mmc_return;
 		}
-	} while (mmc_retry < mmc->cmd_retry);
+	} while (mmc_retry < MMC_BOOT_RAMP_UP_RETRY);
 
 	/* If card still returned busy status we are out of luck.
 	 * Card cannot be initialized
