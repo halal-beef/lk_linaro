@@ -117,8 +117,8 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	}
 
 	/* Volume up set Input & Pull up */
-	exynos_gpio_set_pull(bank, 0, GPIO_PULL_NONE);
-	exynos_gpio_cfg_pin(bank, 0, GPIO_INPUT);
+	exynos_gpio_set_pull(bank, 7, GPIO_PULL_NONE);
+	exynos_gpio_cfg_pin(bank, 7, GPIO_INPUT);
 	for (i = 0; i < 10; i++) {
 		vol_up_val = exynos_gpio_get_value(bank, 7);
 		printf("Volume up key: %d\n", vol_up_val);
