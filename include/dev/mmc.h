@@ -195,11 +195,10 @@
 #define MMC_BOOT_R1_ADDR_ERR              (1 << 30)
 #define MMC_BOOT_R1_OUT_OF_RANGE          (1 << 31)
 
-
-#define MMC_BOOT_MAX_COMMAND_RETRY    5
-#define MMC_BOOT_RD_BLOCK_LEN         512
-#define MMC_BOOT_WR_BLOCK_LEN         512
-
+#define MMC_BOOT_MAX_COMMAND_RETRY	5
+#define MMC_BOOT_RAMP_UP_RETRY		150
+#define MMC_BOOT_RD_BLOCK_LEN		512
+#define MMC_BOOT_WR_BLOCK_LEN		512
 
 /* For SD */
 #define MMC_BOOT_SD_HC_VOLT_SUPPLIED      0x000001AA
