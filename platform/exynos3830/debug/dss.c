@@ -176,11 +176,8 @@ unsigned long dbg_snapshot_get_item_size(const char *name)
 
 void dbg_snapshot_fdt_init(void)
 {
-	/* TODO : temperally block for normal bootup */
-	/*
 	if (dbg_snapshot_get_items() < 0)
 		return;
-		*/
 }
 
 int dbg_snapshot_getvar_item(const char *name, char *response)
