@@ -55,16 +55,6 @@
 #define FLUSH_LEVEL2			0x2
 #define FLUSH_LEVEL3			0x3
 
-#define CONFIG_PHY_DRAM_NS_BASE		(0xBFFFF000)
-#define CORE_STAT			(CONFIG_PHY_DRAM_NS_BASE + 0x2C)
-
-#define RUNNING				(0 << 0)
-#define RESET				(1 << 0)
-#define RESERVED			(1 << 1)
-#define HOTPLUG				(1 << 2)
-#define C2_STATE			(1 << 3)
-#define CLUSTER_OFF			(1 << 4)
-
 #define DBGC_VERSION_LEN		(48)
 /*******************************************************************************
  * MPIDR macros
@@ -161,7 +151,6 @@ u64 cpu_boot(u64 id, u64 cpu, u64 fn);
 void dfd_run_post_processing(void);
 void write_back_cache(int cpu);
 void dfd_set_dump_en_for_cacheop(int en);
-void dfd_get_dbgc_version(void);
 void llc_flush_disable(void);
 #else
 inline static void dfd_display_reboot_reason(void)
@@ -185,10 +174,6 @@ inline static void write_back_cache(int cpu)
 }
 
 inline static void dfd_set_dump_en_for_cacheop(int en)
-{
-}
-
-inline static void dfd_get_dbgc_version(void)
 {
 }
 
