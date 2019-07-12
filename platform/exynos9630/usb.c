@@ -351,6 +351,9 @@ void platform_do_reboot(const char *cmd_buf)
 		writel(0, CONFIG_RAMDUMP_SCRATCH);
 	}
 
+	/* write reboot reasen (bootloader reboot) */
+	writel(RAMDUMP_SIGN_BL_REBOOT, CONFIG_RAMDUMP_REASON);
+
 	writel(readl(EXYNOS9630_SYSTEM_CONFIGURATION) | 0x2, EXYNOS9630_SYSTEM_CONFIGURATION);
 
 	return;
