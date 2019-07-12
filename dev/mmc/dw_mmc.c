@@ -12,6 +12,7 @@
  */
 
 #include <dev/dw_mmc.h>
+#include <dev/boot.h>
 #include <platform/delay.h>
 
 #define MAX_DIV 0xFF
@@ -778,8 +779,12 @@ static void dwmci_host_init(struct mmc *mmc)
 				   MPSCTRL_VALID, DWMCI_FMPSCTRL0);
 	}
 
-	if (host->mps_secure)
-		dwmci_writel(host, host->mps_secure, DWMCI_FMPSECURITY);
+	if (get_current_boot_device() == BOOT_USB) {
+		if (host->mps_secure) {
+			printf("smu bypass in USB BOOT mode!\n");
+			dwmci_writel(host, host->mps_secure, DWMCI_FMPSECURITY);
+		}
+	}
 
 	host->version = dwmci_readl(host, DWMCI_VERID) & 0xFFFF;
 	dbg("dwmci : version : %08x\n", host->version);
