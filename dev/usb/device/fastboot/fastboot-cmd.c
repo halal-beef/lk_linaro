@@ -28,7 +28,7 @@
 #include <platform/ab_update.h>
 #include <platform/environment.h>
 #include <platform/dfd.h>
-#include <platform/debug-store-ramdump.h>
+#include <platform/dss_store_ramdump.h>
 #include <dev/usb/fastboot.h>
 #include <dev/boot.h>
 #include <dev/rpmb.h>
@@ -419,7 +419,7 @@ int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 	else
 	{
 		LTRACEF("fast cmd:vendor\n");
-		ret = debug_snapshot_getvar_item(cmd_buffer + 7, response + 4);
+		ret = dbg_snapshot_getvar_item(cmd_buffer + 7, response + 4);
 		if (ret != 0)
 			sprintf(response, "FAIL");
 	}
@@ -839,6 +839,13 @@ int fb_do_oem(const char *cmd_buffer, unsigned int rx_sz)
 			sysparam_remove("boot_wait");
 			sysparam_write();
 		}
+		fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+	} else if (!strncmp(cmd_buffer + 4, "str_ram", 7)) {
+		if (!debug_store_ramdump_oem(cmd_buffer + 12))
+			sprintf(response, "OKAY");
+		else
+			sprintf(response, "FAILunsupported command");
+
 		fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 	} else {
 		printf("Unsupported oem command!\n");
