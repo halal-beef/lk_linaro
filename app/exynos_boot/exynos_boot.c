@@ -28,7 +28,7 @@
 #include <dev/usb/gadget.h>
 #include <platform/gpio.h>
 #include <platform/gpio.h>
-#include <platform/debug-store-ramdump.h>
+#include <platform/dss_store_ramdump.h>
 #include <platform/smc.h>
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
@@ -206,9 +206,6 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 
 download:
 	uart_log_mode = 1;
-#ifndef RAMDUMP_MODE_OFF
-	debug_store_ramdump();
-#endif
 	start_usb_gadget();
 	return;
 
@@ -216,7 +213,6 @@ fastboot:
 	uart_log_mode = 1;
 #ifndef RAMDUMP_MODE_OFF
 	debug_store_ramdump();
-	//do_fastboot(0, 0);
 	start_usb_gadget();
 	return;
 #endif
