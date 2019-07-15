@@ -24,15 +24,8 @@
 #include <dev/dpu/hdr_lut.h>
 #include "dpp_coef.h"
 
-/****************** ODMA CAL functions ******************/
-/* EMPTY */
 
-#define DPP_SC_RATIO_MAX	((1 << 20) * 8 / 8)
-#define DPP_SC_RATIO_7_8	((1 << 20) * 8 / 7)
-#define DPP_SC_RATIO_6_8	((1 << 20) * 8 / 6)
-#define DPP_SC_RATIO_5_8	((1 << 20) * 8 / 5)
-#define DPP_SC_RATIO_4_8	((1 << 20) * 8 / 4)
-#define DPP_SC_RATIO_3_8	((1 << 20) * 8 / 3)
+void dpp_hex_dump(void __iomem *base_addr, int size);
 
 /****************** IDMA CAL functions ******************/
 static void idma_reg_set_irq_mask_all(u32 id, u32 en)
@@ -58,18 +51,25 @@ static void idma_reg_set_in_qos_lut(u32 id, u32 lut_id, u32 qos_t)
 	dma_write(id, reg_id, qos_t);
 }
 
+static void idma_reg_set_sfr_clk_gate_en(u32 id, u32 en)
+{
+	u32 val = en ? ~0 : 0;
+
+	dma_write_mask(id, IDMA_ENABLE, val, IDMA_SFR_CLOCK_GATE_EN);
+}
+
 static void idma_reg_set_sram_clk_gate_en(u32 id, u32 en)
 {
 	u32 val = en ? ~0 : 0;
 
-	dma_write_mask(id, IDMA_DYNAMIC_GATING_EN, val, IDMA_SRAM_CG_EN);
+	dma_write_mask(id, IDMA_ENABLE, val, IDMA_SRAM_CLOCK_GATE_EN);
 }
 
-static void idma_reg_set_dynamic_gating_en_all(u32 id, u32 en)
+static void idma_reg_set_dynamic_gating_en(u32 id, u32 en)
 {
 	u32 val = en ? ~0 : 0;
 
-	dma_write_mask(id, IDMA_DYNAMIC_GATING_EN, val, IDMA_DG_EN_ALL);
+	dma_write_mask(id, IDMA_DYNAMIC_GATING_EN, IDMA_DG_EN(val),IDMA_DG_EN_MASK);
 }
 
 static void idma_reg_clear_irq(u32 id, u32 irq)
@@ -80,12 +80,6 @@ static void idma_reg_clear_irq(u32 id, u32 irq)
 static void idma_reg_set_sw_reset(u32 id)
 {
 	dma_write_mask(id, IDMA_ENABLE, ~0, IDMA_SRESET);
-}
-
-static void idma_reg_set_assigned_mo(u32 id, u32 mo)
-{
-	dma_write_mask(id, IDMA_ENABLE, IDMA_ASSIGNED_MO(mo),
-			IDMA_ASSIGNED_MO_MASK);
 }
 
 static int idma_reg_wait_sw_reset_status(u32 id)
@@ -117,8 +111,8 @@ static void idma_reg_set_coordinates(u32 id, struct decon_frame *src)
 
 static void idma_reg_set_pixel_alpha(u32 id, u32 alpha)
 {
-	dma_write_mask(id, IDMA_IN_CON, IDMA_PIXEL_ALPHA(alpha),
-			IDMA_PIXEL_ALPHA_MASK);
+	dma_write_mask(id, IDMA_OUT_CON, IDMA_OUT_FRAME_ALPHA(alpha),
+			IDMA_OUT_FRAME_ALPHA_MASK);
 }
 
 static void idma_reg_set_in_ic_max(u32 id, u32 ic_max)
@@ -127,9 +121,9 @@ static void idma_reg_set_in_ic_max(u32 id, u32 ic_max)
 			IDMA_IN_IC_MAX_MASK);
 }
 
-static void idma_reg_set_rotation(u32 id, u32 rot)
+static void idma_reg_set_flip(u32 id, u32 flip)
 {
-	dma_write_mask(id, IDMA_IN_CON, IDMA_ROTATION(rot), IDMA_ROTATION_MASK);
+	dma_write_mask(id, IDMA_IN_CON, IDMA_IN_FLIP(flip), IDMA_IN_FLIP_MASK);
 }
 
 static void idma_reg_set_block_mode(u32 id, bool en, int x, int y, u32 w, u32 h)
@@ -172,44 +166,6 @@ static void idma_reg_set_test_pattern(u32 id, u32 pat_id, u32 *pat_dat)
 	}
 }
 #endif
-
-static void idma_reg_set_afbc(u32 id, enum dpp_comp_type ct, u32 rcv_num)
-{
-	u32 val = 0;
-
-	if (ct == COMP_TYPE_AFBC)
-		val = ~0;
-
-	dma_write_mask(id, IDMA_IN_CON, val, IDMA_AFBC_EN);
-	dma_write_mask(id, IDMA_RECOVERY_CTRL, val, IDMA_RECOVERY_EN);
-	dma_write_mask(id, IDMA_RECOVERY_CTRL, IDMA_RECOVERY_NUM(rcv_num),
-				IDMA_RECOVERY_NUM_MASK);
-}
-
-static void idma_reg_set_sbwc(u32 id, enum dpp_comp_type ct, u32 rcv_num)
-{
-	u32 val = 0;
-
-	if (ct == COMP_TYPE_SBWC)
-		val = ~0;
-
-	dma_write_mask(id, IDMA_IN_CON, val, IDMA_SBWC_EN);
-	dma_write_mask(id, IDMA_RECOVERY_CTRL, val, IDMA_RECOVERY_EN);
-	dma_write_mask(id, IDMA_RECOVERY_CTRL, IDMA_RECOVERY_NUM(rcv_num),
-				IDMA_RECOVERY_NUM_MASK);
-}
-
-static void idma_reg_set_deadlock(u32 id, u32 en, u32 dl_num)
-{
-	u32 val = en ? ~0 : 0;
-
-	dma_write_mask(id, IDMA_DEADLOCK_EN, val, IDMA_DEADLOCK_TIMER_EN);
-	dma_write_mask(id, IDMA_DEADLOCK_EN, IDMA_DEADLOCK_TIMER(dl_num),
-				IDMA_DEADLOCK_TIMER_MASK);
-}
-
-/****************** ODMA CAL functions ******************/
-/* EMPTY */
 
 /****************** DPP CAL functions ******************/
 static void dpp_reg_set_irq_mask_all(u32 id, u32 en)
@@ -276,6 +232,33 @@ static int dpp_reg_wait_sw_reset_status(u32 id)
 	return -EBUSY;
 }
 
+static const u16 dpp_reg_csc_y2r_3x3[4][3][3] = {
+	/* 00 : BT2020 Limited */
+	{
+		{0x0254, 0x0000, 0x035B},
+		{0x0254, 0xFFA0, 0xFEB3},
+		{0x0254, 0x0449, 0x0000},
+	},
+	/* 01 : BT2020 Full */
+	{
+		{0x0200, 0x0000, 0x02E2},
+		{0x0200, 0xFFAE, 0xFEE2},
+		{0x0200, 0x03AE, 0x0000},
+	},
+	/* 02 : DCI-P3 Limited */
+	{
+		{0x0254, 0x0000, 0x0399},
+		{0x0254, 0xFF98, 0xFEF4},
+		{0x0254, 0x043D, 0x0000},
+	},
+	/* 03 : DCI-P3 Full */
+	{
+		{0x0200, 0x0000, 0x0317},
+		{0x0200, 0xFFA7, 0xFF1A},
+		{0x0200, 0x03A4, 0x0000},
+	},
+};
+
 static void dpp_reg_set_csc_coef(u32 id, u32 csc_std, u32 csc_rng)
 {
 	u32 val, mask;
@@ -284,22 +267,40 @@ static void dpp_reg_set_csc_coef(u32 id, u32 csc_std, u32 csc_rng)
 	u32 c10, c11, c12;
 	u32 c20, c21, c22;
 
-	if ((csc_std > CSC_DCI_P3) && (csc_std <= CSC_ADOBE_RGB))
+	if ((csc_std > CSC_DCI_P3) && (csc_std <= CSC_ADOBE_RGB)){
 		csc_id = (csc_std - CSC_CUSTOMIZED_START) * 2 + csc_rng;
-	else
+
+		c00 = csc_y2r_3x3_t[csc_id][0][0];
+		c01 = csc_y2r_3x3_t[csc_id][0][1];
+		c02 = csc_y2r_3x3_t[csc_id][0][2];
+
+		c10 = csc_y2r_3x3_t[csc_id][1][0];
+		c11 = csc_y2r_3x3_t[csc_id][1][1];
+		c12 = csc_y2r_3x3_t[csc_id][1][2];
+
+		c20 = csc_y2r_3x3_t[csc_id][2][0];
+		c21 = csc_y2r_3x3_t[csc_id][2][1];
+
+		c22 = csc_y2r_3x3_t[csc_id][2][2];
+	} else if ((csc_std >= CSC_BT_2020) && (csc_std <= CSC_DCI_P3)) {
+		csc_id = (csc_std % 2) * 2  + csc_rng;
+
+		c00 = dpp_reg_csc_y2r_3x3[csc_id][0][0];
+		c01 = dpp_reg_csc_y2r_3x3[csc_id][0][1];
+		c02 = dpp_reg_csc_y2r_3x3[csc_id][0][2];
+
+		c10 = dpp_reg_csc_y2r_3x3[csc_id][0][0];
+		c11 = dpp_reg_csc_y2r_3x3[csc_id][0][1];
+		c12 = dpp_reg_csc_y2r_3x3[csc_id][0][2];
+
+
+		c20 = dpp_reg_csc_y2r_3x3[csc_id][0][0];
+		c21 = dpp_reg_csc_y2r_3x3[csc_id][0][1];
+		c22 = dpp_reg_csc_y2r_3x3[csc_id][0][2];
+	} else {
 		dpp_warn("[DPP%d] Undefined CSC Type!(std=%d)\n", id, csc_std);
-
-	c00 = csc_y2r_3x3_t[csc_id][0][0];
-	c01 = csc_y2r_3x3_t[csc_id][0][1];
-	c02 = csc_y2r_3x3_t[csc_id][0][2];
-
-	c10 = csc_y2r_3x3_t[csc_id][1][0];
-	c11 = csc_y2r_3x3_t[csc_id][1][1];
-	c12 = csc_y2r_3x3_t[csc_id][1][2];
-
-	c20 = csc_y2r_3x3_t[csc_id][2][0];
-	c21 = csc_y2r_3x3_t[csc_id][2][1];
-	c22 = csc_y2r_3x3_t[csc_id][2][2];
+		return;
+	}
 
 	mask = (DPP_CSC_COEF_H_MASK | DPP_CSC_COEF_L_MASK);
 	val = (DPP_CSC_COEF_H(c01) | DPP_CSC_COEF_L(c00));
@@ -329,7 +330,7 @@ static void dpp_reg_set_csc_params(u32 id, u32 csc_eq)
 {
 	u32 type = (csc_eq >> CSC_STANDARD_SHIFT) & 0x3F;
 	u32 range = (csc_eq >> CSC_RANGE_SHIFT) & 0x7;
-	u32 mode = (type <= CSC_DCI_P3) ? CSC_COEF_HARDWIRED : CSC_COEF_CUSTOMIZED;
+	u32 mode = (type <= CSC_BT_709) ? CSC_COEF_HARDWIRED : CSC_COEF_CUSTOMIZED;
 	u32 val, mask;
 
 	if (type == CSC_STANDARD_UNSPECIFIED) {
@@ -339,6 +340,7 @@ static void dpp_reg_set_csc_params(u32 id, u32 csc_eq)
 	}
 	if (range == CSC_RANGE_UNSPECIFIED) {
 		dpp_dbg("unspecified CSC range! -> LIMITED\n");
+
 		range = CSC_RANGE_LIMITED;
 	}
 
@@ -353,86 +355,9 @@ static void dpp_reg_set_csc_params(u32 id, u32 csc_eq)
 		id, type, range, mode);
 }
 
-static void dpp_reg_set_h_coef(u32 id, u32 h_ratio)
-{
-	int i, j, k, sc_ratio;
-
-	if (h_ratio <= DPP_SC_RATIO_MAX)
-		sc_ratio = 0;
-	else if (h_ratio <= DPP_SC_RATIO_7_8)
-		sc_ratio = 1;
-	else if (h_ratio <= DPP_SC_RATIO_6_8)
-		sc_ratio = 2;
-	else if (h_ratio <= DPP_SC_RATIO_5_8)
-		sc_ratio = 3;
-	else if (h_ratio <= DPP_SC_RATIO_4_8)
-		sc_ratio = 4;
-	else if (h_ratio <= DPP_SC_RATIO_3_8)
-		sc_ratio = 5;
-	else
-		sc_ratio = 6;
-
-	for (i = 0; i < 9; i++)
-		for (j = 0; j < 8; j++)
-			for (k = 0; k < 2; k++)
-				dpp_write(id, DPP_H_COEF(i, j, k),
-						h_coef_8t[sc_ratio][i][j]);
-}
-
-static void dpp_reg_set_v_coef(u32 id, u32 v_ratio)
-{
-	int i, j, k, sc_ratio;
-
-	if (v_ratio <= DPP_SC_RATIO_MAX)
-		sc_ratio = 0;
-	else if (v_ratio <= DPP_SC_RATIO_7_8)
-		sc_ratio = 1;
-	else if (v_ratio <= DPP_SC_RATIO_6_8)
-		sc_ratio = 2;
-	else if (v_ratio <= DPP_SC_RATIO_5_8)
-		sc_ratio = 3;
-	else if (v_ratio <= DPP_SC_RATIO_4_8)
-		sc_ratio = 4;
-	else if (v_ratio <= DPP_SC_RATIO_3_8)
-		sc_ratio = 5;
-	else
-		sc_ratio = 6;
-
-	for (i = 0; i < 9; i++)
-		for (j = 0; j < 4; j++)
-			for (k = 0; k < 2; k++)
-				dpp_write(id, DPP_V_COEF(i, j, k),
-						v_coef_4t[sc_ratio][i][j]);
-}
-
-static void dpp_reg_set_scale_ratio(u32 id, struct dpp_params_info *p)
-{
-	dpp_write_mask(id, DPP_MAIN_H_RATIO, DPP_H_RATIO(p->h_ratio),
-			DPP_H_RATIO_MASK);
-	dpp_write_mask(id, DPP_MAIN_V_RATIO, DPP_V_RATIO(p->v_ratio),
-			DPP_V_RATIO_MASK);
-
-	dpp_reg_set_h_coef(id, p->h_ratio);
-	dpp_reg_set_v_coef(id, p->v_ratio);
-
-	dpp_dbg("h_ratio : %#x, v_ratio : %#x\n", p->h_ratio, p->v_ratio);
-}
-
 static void dpp_reg_set_img_size(u32 id, u32 w, u32 h)
 {
 	dpp_write(id, DPP_IMG_SIZE, DPP_IMG_HEIGHT(h) | DPP_IMG_WIDTH(w));
-}
-
-static void dpp_reg_set_scaled_img_size(u32 id, u32 w, u32 h)
-{
-	dpp_write(id, DPP_SCALED_IMG_SIZE,
-			DPP_SCALED_IMG_HEIGHT(h) | DPP_SCALED_IMG_WIDTH(w));
-}
-
-static void dpp_reg_set_alpha_type(u32 id, u32 type)
-{
-	/* [type] 0=per-frame, 1=per-pixel */
-	dpp_write_mask(id, DPP_IN_CON, DPP_ALPHA_SEL(type), DPP_ALPHA_SEL_MASK);
 }
 
 static void dpp_reg_set_format(u32 id, u32 fmt)
@@ -440,195 +365,11 @@ static void dpp_reg_set_format(u32 id, u32 fmt)
 	dpp_write_mask(id, DPP_IN_CON, DPP_IMG_FORMAT(fmt), DPP_IMG_FORMAT_MASK);
 }
 
-static void dpp_reg_set_oetf_lut(u32 id, struct dpp_params_info *p)
-{
-	u32 i = 0;
-	u32 *lut_x = NULL;
-	u32 *lut_y = NULL;
-
-	lut_x = p->hdr_params.oetf_x;
-	lut_y = p->hdr_params.oetf_y;
-
-	for (i = 0; i < MAX_OETF; i++) {
-		dpp_write_mask(id,
-			HDR_LSI_LN_OETF_POSX(i),
-			HDR_LSI_LN_OETF_POSX_VAL(i, lut_x[i]),
-			HDR_LSI_LN_OETF_POSX_MASK(i));
-		dpp_write_mask(id,
-			HDR_LSI_LN_OETF_POSY(i),
-			HDR_LSI_LN_OETF_POSY_VAL(i, lut_y[i]),
-			HDR_LSI_LN_OETF_POSY_MASK(i));
-	}
-}
-
-static void dpp_reg_set_eotf_lut(u32 id, struct dpp_params_info *p)
-{
-	u32 i = 0;
-	u32 *lut_x = NULL;
-	u32 *lut_y = NULL;
-
-	lut_x = p->hdr_params.eotf_x;
-	lut_y = p->hdr_params.eotf_y;
-
-	for (i = 0; i < MAX_EOTF; i++) {
-		dpp_write_mask(id,
-			HDR_LSI_LN_EOTF_POSX(i),
-			HDR_LSI_LN_EOTF_POSX_VAL(i, lut_x[i]),
-			HDR_LSI_LN_EOTF_POSX_MASK(i));
-		dpp_write_mask(id,
-			HDR_LSI_LN_EOTF_POSY(i),
-			HDR_LSI_LN_EOTF_POSY_VAL(lut_y[i]),
-			HDR_LSI_LN_EOTF_POSY_MASK(i));
-	}
-}
-
-static void dpp_reg_set_gm_lut(u32 id, struct dpp_params_info *p)
-{
-	u32 i = 0;
-	u32 *lut_gm = NULL;
-
-	lut_gm = p->hdr_params.gm_coef;
-
-	for (i = 0; i < MAX_GM; i++) {
-		dpp_hdr_write(id,
-			HDR_LSI_LN_GM_COEF(i),
-			HDR_LSI_LN_GM_COEF_VAL(lut_gm[i]));
-	}
-}
-
-static void dpp_reg_set_tm_lut(u32 id, struct dpp_params_info *p)
-{
-	u32 i = 0;
-	u32 val = 0;
-	u32 *lut_x = NULL;
-	u32 *lut_y = NULL;
-
-	lut_x = p->hdr_params.tm_x;
-	lut_y = p->hdr_params.tm_y;
-
-	for (i = 0; i < MAX_TM; i++) {
-		dpp_hdr_write_mask(id,
-			HDR_LSI_LN_TM_POSX(i),
-			HDR_LSI_LN_TM_POSX_VAL(i, lut_x[i]),
-			HDR_LSI_LN_TM_POSX_MASK(i));
-		dpp_hdr_write_mask(id,
-			HDR_LSI_LN_TM_POSY(i),
-			HDR_LSI_LN_TM_POSY_VAL(lut_y[i]),
-			HDR_LSI_LN_TM_POSY_MASK(i));
-	}
-
-	/* Tone mapping knee and weight */
-	val = HDR_LSI_LN_TM_CTRL_KNEE_VAL(p->hdr_params.tm_ctrl[1])
-		| HDR_LSI_LN_TM_CTRL_WGHT_VAL(p->hdr_params.tm_ctrl[0]);
-	dpp_hdr_write(id, HDR_LSI_LN_TM_CTRL, val);
-
-	/* Tone mapping coef */
-	val = HDR_LSI_LN_TM_COEFB_VAL(p->hdr_params.tm_coef[2])
-		| HDR_LSI_LN_TM_COEFG_VAL(p->hdr_params.tm_coef[1])
-		| HDR_LSI_LN_TM_COEFR_VAL(p->hdr_params.tm_coef[0]);
-	dpp_hdr_write(id, HDR_LSI_LN_TM_COEF, val);
-#if 0
-	/* Tone mapping range */
-	val = HDR_LSI_LN_TM_RNGX_MAXY_VAL(p->hdr_params.tm_rngx[1])
-		| HDR_LSI_LN_TM_RNGX_MINY_VAL(p->hdr_params.tm_rngx[0]);
-	dpp_hdr_write(id, HDR_LSI_LN_TM_RNGX, val);
-
-	val = HDR_LSI_LN_TM_RNGY_MAXY_VAL(p->hdr_params.tm_rngy[1])
-		| HDR_LSI_LN_TM_RNGY_MINY_VAL(p->hdr_params.tm_rngy[0]);
-	dpp_hdr_write(id, HDR_LSI_LN_TM_RNGY, val);
-
-	/* Tone mapping max */
-	val = HDR_LSI_LN_TM_MAXI_VAL(p->hdr_params.tm_maxi[0]);
-	dpp_hdr_write(id, HDR_LSI_LN_TM_MAXI, val);
-
-	val = HDR_LSI_LN_TM_MAXP_VAL(p->hdr_params.tm_maxp[0]);
-	dpp_hdr_write(id, HDR_LSI_LN_TM_MAXP, val);
-
-	val = HDR_LSI_LN_TM_MAXO_VAL(p->hdr_params.tm_maxo[0]);
-	dpp_hdr_write(id, HDR_LSI_LN_TM_MAXO, val);
-#endif
-}
-
-/* TODO : add static */
-void dpp_reg_set_hdr_params(u32 id, struct dpp_params_info *p)
-{
-	u32 val0 = 0, val1 = 0, val2 = 0, mask = 0;
-
-	/* TODO : HDR enable condition statement */
-
-	/* SLSI HDR enable, HDR processing Enable */
-	val0 = HDR_LSI_LN_COM_CTRL_MODE(0) | HDR_LSI_LN_COM_CTRL_EN;
-	mask = HDR_LSI_LN_COM_CTRL_MODE_MASK | HDR_LSI_LN_COM_CTRL_EN_MASK;
-	dpp_hdr_write_mask(id, DPP_IN_CON, val0, mask);
-
-	/* Compensate Premultiplied Alpha */
-	val1 = (p->blend == DECON_BLENDING_PREMULT) ? ~0 : 0;
-	mask = DPP_DEPREMULTIPLY_EN | DPP_PREMULTIPLY_EN;
-	dpp_hdr_write_mask(id, DPP_IN_CON, val1, mask);
-
-	val2 = (p->hdr != DPP_HDR_OFF) ? 0 : ~0;
-	if (p->hdr == DPP_HDR_ST2084)
-		mask = HDR_LSI_LN_MOD_CTRL_TEN | HDR_LSI_LN_MOD_CTRL_GEN
-		| HDR_LSI_LN_MOD_CTRL_EEN | HDR_LSI_LN_MOD_CTRL_OEN;
-	else if (p->hdr == DPP_HDR_HLG)
-		mask = HDR_LSI_LN_MOD_CTRL_GEN | HDR_LSI_LN_MOD_CTRL_EEN
-		| HDR_LSI_LN_MOD_CTRL_OEN;
-	dpp_hdr_write_mask(id, HDR_LSI_LN_MOD_CTRL, val2, mask);
-
-	if (val0) {
-		dpp_reg_set_eotf_lut(id, p);
-		dpp_reg_set_gm_lut(id, p);
-		dpp_reg_set_tm_lut(id, p);
-		dpp_reg_set_oetf_lut(id, p);
-	}
-}
-
-/* TODO : add static */
-void dpp_reg_set_wcg_params(u32 id, struct dpp_params_info *p)
-{
-	u32 val0 = 0, val1 = 0, val2 = 0, mask = 0;
-
-	/* TODO : HDR enable condition statement */
-
-	/* SLSI HDR enable, HDR processing Enable */
-	val0 = HDR_LSI_LN_COM_CTRL_MODE(0) | HDR_LSI_LN_COM_CTRL_EN;
-	mask = HDR_LSI_LN_COM_CTRL_MODE_MASK | HDR_LSI_LN_COM_CTRL_EN_MASK;
-	dpp_hdr_write_mask(id, DPP_IN_CON, val0, mask);
-
-	/* Compensate Premultiplied Alpha */
-	val1 = (p->blend == DECON_BLENDING_PREMULT) ? ~0 : 0;
-	mask = DPP_DEPREMULTIPLY_EN | DPP_PREMULTIPLY_EN;
-	dpp_hdr_write_mask(id, DPP_IN_CON, val1, mask);
-
-	mask = HDR_LSI_LN_MOD_CTRL_GEN | HDR_LSI_LN_MOD_CTRL_EEN
-		| HDR_LSI_LN_MOD_CTRL_OEN;
-	dpp_hdr_write_mask(id, HDR_LSI_LN_MOD_CTRL, val2, mask);
-
-	if (val0) {
-		dpp_reg_set_eotf_lut(id, p);
-		dpp_reg_set_gm_lut(id, p);
-		dpp_reg_set_oetf_lut(id, p);
-	}
-}
-
-/****************** WB MUX CAL functions ******************/
-/* EMPTY */
-
 /********** IDMA and ODMA combination CAL functions **********/
 /*
- * Y8 : Y8 or RGB base, AFBC or SBWC-Y header
- * C8 : C8 base,        AFBC or SBWC-Y payload
- * Y2 : (SBWC disable - Y2 base), (SBWC enable - C header)
- * C2 : (SBWC disable - C2 base), (SBWC enable - C payload)
+ * Y : Y or RGB base
+ * C : C base
  *
- * PLANE_0_STRIDE : Y-HD (or Y-2B) stride -> yhd_y2_strd
- * PLANE_1_STRIDE : Y-PL (or C-2B) stride -> ypl_c2_strd
- * PLANE_2_STRIDE : C-HD stride           -> chd_strd
- * PLANE_3_STRIDE : C-PL stride           -> cpl_strd
- *
- * [ MFC encoder: buffer for SBWC - similar to 8+2 ]
- * plane[0] fd : Y payload(base addr) + Y header => Y header calc.
- * plane[1] fd : C payload(base addr) + C header => C header calc.
  */
 static void dma_reg_set_base_addr(u32 id, struct dpp_params_info *p,
 		const unsigned long attr)
@@ -636,42 +377,19 @@ static void dma_reg_set_base_addr(u32 id, struct dpp_params_info *p,
 	const struct dpu_fmt *fmt_info = dpu_find_fmt_info(p->format);
 
 	if (test_bit(DPP_ATTR_IDMA, &attr)) {
-		dma_write(id, IDMA_IN_BASE_ADDR_Y8, p->addr[0]);
-		if (p->comp_type == COMP_TYPE_AFBC)
-			dma_write(id, IDMA_IN_BASE_ADDR_C8, p->addr[0]);
-		else
-			dma_write(id, IDMA_IN_BASE_ADDR_C8, p->addr[1]);
+		dma_write(id, IDMA_IN_BASE_ADDR_Y, p->addr[0]);
 
-		if (fmt_info->num_planes == 4) { /* use 4 base addresses */
-			dma_write(id, IDMA_IN_BASE_ADDR_Y2, p->addr[2]);
-			dma_write(id, IDMA_IN_BASE_ADDR_C2, p->addr[3]);
-			dma_write_mask(id, IDMA_SRC_STRIDE_1,
-					IDMA_PLANE_0_STRIDE(p->yhd_y2_strd),
-					IDMA_PLANE_0_STRIDE_MASK);
-			dma_write_mask(id, IDMA_SRC_STRIDE_1,
-					IDMA_PLANE_1_STRIDE(p->ypl_c2_strd),
-					IDMA_PLANE_1_STRIDE_MASK);
-
-			/* C-stride of SBWC: valid if STRIDE_SEL is enabled */
-			dma_write_mask(id, IDMA_SRC_STRIDE_2,
-					IDMA_PLANE_2_STRIDE(p->chd_strd),
-					IDMA_PLANE_2_STRIDE_MASK);
-			dma_write_mask(id, IDMA_SRC_STRIDE_2,
-					IDMA_PLANE_3_STRIDE(p->cpl_strd),
-					IDMA_PLANE_3_STRIDE_MASK);
+		if (fmt_info->num_planes == 2) {
+			dma_write(id, IDMA_IN_BASE_ADDR_C, p->addr[1]);
 		}
 	}
 
 	dpp_dbg("dpp%d: base addr 1p(0x%lx) 2p(0x%lx) 3p(0x%lx) 4p(0x%lx)\n", id,
 			(unsigned long)p->addr[0], (unsigned long)p->addr[1],
 			(unsigned long)p->addr[2], (unsigned long)p->addr[3]);
-	if (p->comp_type == COMP_TYPE_SBWC)
-		dpp_dbg("dpp%d: [stride] yh(0x%lx) yp(0x%lx) ch(0x%lx) cp(0x%lx)\n", id,
-			(unsigned long)p->yhd_y2_strd, (unsigned long)p->ypl_c2_strd,
-			(unsigned long)p->chd_strd, (unsigned long)p->cpl_strd);
 }
 
-/********** IDMA, ODMA, DPP and WB MUX combination CAL functions **********/
+/********** IDMA and DPP combination CAL functions **********/
 static void dma_dpp_reg_set_coordinates(u32 id, struct dpp_params_info *p,
 		const unsigned long attr)
 {
@@ -679,37 +397,37 @@ static void dma_dpp_reg_set_coordinates(u32 id, struct dpp_params_info *p,
 		idma_reg_set_coordinates(id, &p->src);
 
 		if (test_bit(DPP_ATTR_DPP, &attr)) {
-			if (p->rot > DPP_ROT_180)
-				dpp_reg_set_img_size(id, p->src.h, p->src.w);
-			else
-				dpp_reg_set_img_size(id, p->src.w, p->src.h);
+			dpp_reg_set_img_size(id, p->src.w, p->src.h);
 		}
-
-		if (test_bit(DPP_ATTR_SCALE, &attr))
-			dpp_reg_set_scaled_img_size(id, p->dst.w, p->dst.h);
 	}
 }
 
 static int dma_dpp_reg_set_format(u32 id, struct dpp_params_info *p,
 		const unsigned long attr)
 {
-	u32 dma_fmt;
-	u32 alpha_type = 0; /* 0: per-frame, 1: per-pixel */
+	u32 dma_fmt, dpp_fmt;
+
 	const struct dpu_fmt *fmt_info = dpu_find_fmt_info(p->format);
 
-	if (fmt_info->fmt == DECON_PIXEL_FORMAT_RGB_565 && p->is_comp)
-		dma_fmt = IDMA_IMG_FORMAT_BGR565;
-	else if (fmt_info->fmt == DECON_PIXEL_FORMAT_BGR_565 && p->is_comp)
-		dma_fmt = IDMA_IMG_FORMAT_RGB565;
-	else
-		dma_fmt = fmt_info->dma_fmt;
-
-	alpha_type = (fmt_info->len_alpha > 0) ? 1 : 0;
+	dma_fmt = fmt_info->dma_fmt;
 
 	if (test_bit(DPP_ATTR_IDMA, &attr)) {
+		if (dma_fmt >= IDMA_IMG_FORMAT_MAX) {
+			dpp_err(" %s : not supported IDMA image format\n",
+				__func__);
+			//BUG();
+		}
+
 		idma_reg_set_format(id, dma_fmt);
 		if (test_bit(DPP_ATTR_DPP, &attr)) {
-			dpp_reg_set_alpha_type(id, alpha_type);
+			dpp_fmt = fmt_info->dpp_fmt;
+
+			if(dpp_fmt >= DPP_IMG_FORMAT_MAX) {
+
+				dpp_err(" %s : not supported DPP image format\n",
+				__func__);
+			//	BUG();
+			}
 			dpp_reg_set_format(id, fmt_info->dpp_fmt);
 		}
 	}
@@ -738,10 +456,7 @@ void dpp_constraints_params(struct dpp_size_constraints *vc,
 	vc->img_w_min = res->src_w.min * sz_align;
 	vc->img_w_max = res->src_w.max;
 	vc->img_h_min = res->src_h.min * sz_align;
-	if (vi->rot > DPP_ROT_180)
-		vc->img_h_max = res->src_h_rot_max;
-	else
-		vc->img_h_max = res->src_h.max;
+	vc->img_h_max = res->src_h.max;
 	vc->src_mul_x = res->src_x_align * sz_align;
 	vc->src_mul_y = res->src_y_align * sz_align;
 
@@ -785,11 +500,11 @@ void dpp_reg_init(u32 id, const unsigned long attr)
 		idma_reg_set_in_qos_lut(id, 0, 0x44444444);
 		idma_reg_set_in_qos_lut(id, 1, 0x44444444);
 		/* TODO: clock gating will be enabled */
+		idma_reg_set_sfr_clk_gate_en(id, 0);
 		idma_reg_set_sram_clk_gate_en(id, 0);
-		idma_reg_set_dynamic_gating_en_all(id, 0);
+		idma_reg_set_dynamic_gating_en(id, 0);
 		idma_reg_set_pixel_alpha(id, 0xFF);
-		idma_reg_set_in_ic_max(id, 0x20);
-		idma_reg_set_assigned_mo(id, 0x20);
+		idma_reg_set_in_ic_max(id, 0x40);
 	}
 
 	if (test_bit(DPP_ATTR_DPP, &attr)) {
@@ -851,53 +566,49 @@ u32 pattern_data[] = {
 void dpp_reg_configure_params(u32 id, struct dpp_params_info *p,
 		const unsigned long attr)
 {
-	int deadlock_cnt = 0;
-
 	if (test_bit(DPP_ATTR_CSC, &attr) && test_bit(DPP_ATTR_DPP, &attr))
 		dpp_reg_set_csc_params(id, p->eq_mode);
 
-	if (test_bit(DPP_ATTR_SCALE, &attr))
-		dpp_reg_set_scale_ratio(id, p);
+	if (test_bit(DPP_ATTR_SCALE, &attr)) {
+		dpp_err(" %s : scaling is not supported\n", __func__);
+		//BUG();
+	}
 
-	/* configure coordinates and size of IDMA, DPP, ODMA and WB MUX */
+	/* configure coordinates and size of IDMA and DPP */
 	dma_dpp_reg_set_coordinates(id, p, attr);
 
-	if (test_bit(DPP_ATTR_ROT, &attr) || test_bit(DPP_ATTR_FLIP, &attr))
-		idma_reg_set_rotation(id, p->rot);
+	if (test_bit(DPP_ATTR_ROT, &attr)) {
+		dpp_err(" %s : Rotation is not supported\n", __func__);
+		//BUG();
+	}
 
-	/* configure base address of IDMA and ODMA */
+	if (test_bit(DPP_ATTR_FLIP, &attr))
+		idma_reg_set_flip(id, p->rot);
+
+	/* configure base address of IDMA */
 	dma_reg_set_base_addr(id, p, attr);
 
 	if (test_bit(DPP_ATTR_BLOCK, &attr))
 		idma_reg_set_block_mode(id, p->is_block, p->block.x, p->block.y,
 				p->block.w, p->block.h);
 
-	/* configure image format of IDMA, DPP, ODMA and WB MUX */
+	/* configure image format of IDMA and DPP */
 	dma_dpp_reg_set_format(id, p, attr);
-#if defined(CONFIG_EXYNOS_HDR10P)
-	if (test_bit(DPP_ATTR_HDR10P, &attr))
-		dpp_reg_set_hdr_params(id, p);
 
-	if (test_bit(DPP_ATTR_WCG, &attr))
-		dpp_reg_set_wcg_params(id, p);
-#endif
-	if (test_bit(DPP_ATTR_AFBC, &attr))
-		idma_reg_set_afbc(id, p->comp_type, p->rcv_num);
+	if (test_bit(DPP_ATTR_HDR, &attr)) {
+		dpp_err(" %s : HDR is not supported\n", __func__);
+		//BUG();
+	}
 
-	if (test_bit(DPP_ATTR_SBWC, &attr))
-		idma_reg_set_sbwc(id, p->comp_type, p->rcv_num);
+	if (test_bit(DPP_ATTR_AFBC, &attr)) {
+		dpp_err(" %s : AFBC is not supported\n", __func__);
+		//BUG();
+	}
 
-	/*
-	 * To check HW stuck
-	 * dead_lock min: 17ms (17ms: 1-frame time, rcv_time: 1ms)
-	 * but, considered DVFS 3x level switch (ex: 200 <-> 600 Mhz)
-	 */
-
-	deadlock_cnt = p->rcv_num * 51;
-	deadlock_cnt = 0x7fffffff;
-	dpp_dbg("idma deadlock_cnt(%d)\n", deadlock_cnt);
-	/* TODO : deadlock is not set for bring up */
-	idma_reg_set_deadlock(id, 1, deadlock_cnt);
+	if (test_bit(DPP_ATTR_SBWC, &attr)) {
+		dpp_err(" %s : SBWC is not supported\n", __func__);
+		//BUG();
+	}
 
 #if defined(DMA_BIST)
 	idma_reg_set_test_pattern(id, 0, pattern_data);
@@ -936,161 +647,139 @@ u32 idma_reg_get_irq_and_clear(u32 id)
 	return val;
 }
 
+u32 odma_reg_get_irq_and_clear(u32 id)
+{
+      return 0;
+}
+
 void dma_reg_get_shd_addr(u32 id, u32 shd_addr[], const unsigned long attr)
 {
 	if (test_bit(DPP_ATTR_IDMA, &attr)) {
-		shd_addr[0] = dma_read(id, IDMA_IN_BASE_ADDR_Y8 + DMA_SHD_OFFSET);
-		shd_addr[1] = dma_read(id, IDMA_IN_BASE_ADDR_C8 + DMA_SHD_OFFSET);
-		shd_addr[2] = dma_read(id, IDMA_IN_BASE_ADDR_Y2 + DMA_SHD_OFFSET);
-		shd_addr[3] = dma_read(id, IDMA_IN_BASE_ADDR_C2 + DMA_SHD_OFFSET);
+		shd_addr[0] = dma_read(id, IDMA_IN_BASE_ADDR_Y + DMA_SHD_OFFSET);
+		shd_addr[1] = dma_read(id, IDMA_IN_BASE_ADDR_C + DMA_SHD_OFFSET);
 	}
 	dpp_dbg("dpp%d: shadow addr 1p(0x%x) 2p(0x%x) 3p(0x%x) 4p(0x%x)\n",
 			id, shd_addr[0], shd_addr[1], shd_addr[2], shd_addr[3]);
 }
 
-static void dpp_reg_dump_ch_data(int id, enum dpp_reg_area reg_area,
-		u32 sel[], u32 cnt)
-{
-	unsigned char linebuf[128] = {0, };
-	u32 i;
-	int ret;
-	int len = 0;
-	u32 data;
-
-	for (i = 0; i < cnt; i++) {
-		if (!(i % 4) && i != 0) {
-			linebuf[len] = '\0';
-			len = 0;
-			dpp_info("%s\n", linebuf);
-		}
-
-		if (reg_area == REG_AREA_DPP) {
-			dpp_write(id, 0xC04, sel[i]);
-			data = dpp_read(id, 0xC10);
-		} else if (reg_area == REG_AREA_DMA) {
-			dma_write(id, IDMA_DEBUG_CONTROL,
-					IDMA_DEBUG_CONTROL_SEL(sel[i]) |
-					IDMA_DEBUG_CONTROL_EN);
-			data = dma_read(id, IDMA_DEBUG_DATA);
-		} else { /* REG_AREA_DMA_COM */
-			dma_com_write(0, DPU_DMA_DEBUG_CONTROL,
-					DPU_DMA_DEBUG_CONTROL_SEL(sel[i]) |
-					DPU_DMA_DEBUG_CONTROL_EN);
-			data = dma_com_read(0, DPU_DMA_DEBUG_DATA);
-		}
-
-		ret = snprintf((char *)linebuf + len, sizeof(linebuf) - len,
-				"[0x%08x: %08x] ", sel[i], data);
-		if (ret >= (int)sizeof(linebuf) - len) {
-			dpp_err("overflow: %d %ld %d\n",
-					ret, sizeof(linebuf), len);
-			return;
-		}
-		len += ret;
-	}
-	dpp_info("%s\n", linebuf);
-}
-static bool checked;
-
 static void dma_reg_dump_com_debug_regs(int id)
 {
-	u32 sel_glb[99] = {
-		0x0000, 0x0001, 0x0005, 0x0009, 0x000D, 0x000E, 0x0020, 0x0021,
-		0x0025, 0x0029, 0x002D, 0x002E, 0x0040, 0x0041, 0x0045, 0x0049,
-		0x004D, 0x004E, 0x0060, 0x0061, 0x0065, 0x0069, 0x006D, 0x006E,
-		0x0080, 0x0081, 0x0082, 0x0083, 0x00C0, 0x00C1, 0x00C2, 0x00C3,
-		0x0100, 0x0101, 0x0200, 0x0201, 0x0202, 0x0300, 0x0301, 0x0302,
-		0x0303, 0x0304, 0x0400, 0x4000, 0x4001, 0x4005, 0x4009, 0x400D,
-		0x400E, 0x4020, 0x4021, 0x4025, 0x4029, 0x402D, 0x402E, 0x4040,
-		0x4041, 0x4045, 0x4049, 0x404D, 0x404E, 0x4060, 0x4061, 0x4065,
-		0x4069, 0x406D, 0x406E, 0x4100, 0x4101, 0x4200, 0x4201, 0x4300,
-		0x4301, 0x4302, 0x4303, 0x4304, 0x4400, 0x8080, 0x8081, 0x8082,
-		0x8083, 0x80C0, 0x80C1, 0x80C2, 0x80C3, 0x8100, 0x8101, 0x8201,
-		0x8202, 0x8300, 0x8301, 0x8302, 0x8303, 0x8304, 0x8400, 0xC000,
-		0xC001, 0xC002, 0xC005
-	};
+	struct dpp_device *dpp = get_dpp_drvdata(id);
+	struct dpp_device *dpp0 = get_dpp_drvdata(0);
 
-	dpp_info("%s: checked = %d\n", __func__, checked);
+	dma_write(dpp->id, 0x0060, 0x1);
+	dpp_info("=== DPU_DMA GLB SFR DUMP ===\n");
+	dpp_hex_dump(dpp0->res.dma_com_regs, 0x108);
+}
+
+static bool checked;
+
+static void dpp_check_data_glb_dma(void)
+{
+	u32 data[20] = {0,};
+	u32 sel[20] = {
+		0x00000001, 0x00010001, 0x00020001, 0x00030001, 0x00040001,
+		0x00050001, 0x00060001, 0x00070001, 0x80000001, 0x80010001,
+		0x80040001, 0x80050001, 0x80060001, 0x80080001, 0x80090001,
+		0x800a0001, 0x800b0001, 0x800c0001, 0x800d0001, 0x800e0001};
+	int i;
+
 	if (checked)
 		return;
 
-	dpp_info("-< DMA COMMON DEBUG SFR >-\n");
-	dpp_reg_dump_ch_data(id, REG_AREA_DMA_COM, sel_glb, 99);
+	dpp_info("-< DPU_DMA_DATA >-\n");
+	for (i = 0; i < 20; i++) {
+		dma_com_write(0, DPU_DMA_DEBUG_CONTROL, sel[i]);
+		/* dummy dpp data read */
+		/* temp code */
+		dpp_read(0, DPP_CFG_ERR_STATE);
+		data[i] = dma_com_read(0, DPU_DMA_DEBUG_DATA);
 
-	checked = true;
+		dpp_info("[0x%08x: %08x]\n", sel[i], data[i]);
+	}
+	checked = 1;
+}
+
+static void dpp_check_data_g_ch(int id)
+{
+	u32 data[6] = {0,};
+	u32 sel[6] = {
+		0x00000001, 0x00010001, 0x00040001, 0x10000001, 0x10010001,
+		0x10020001};
+	int i;
+
+	dpp_info("-< IDMA%d_G_CH_DATA >-\n", id);
+	for (i = 0; i < 6; i++) {
+		dma_write(id, IDMA_DEBUG_CONTROL, sel[i]);
+		/* dummy dpp data read */
+		/* temp code */
+		dpp_read(id, DPP_CFG_ERR_STATE);
+		data[i] = dma_read(id, IDMA_DEBUG_DATA);
+
+		dpp_info("[0x%08x: %08x]\n", sel[i], data[i]);
+	}
+}
+
+static void dpp_check_data_vg_ch(int id)
+{
+	u32 data[12] = {0, };
+	u32 sel[12] = {
+		0x00000001, 0x00010001, 0x00040001, 0x10000001, 0x10010001,
+		0x10020001, 0x80000001, 0x80010001, 0x80040001, 0x90000001,
+		0x90010001, 0x90020001};
+	int i;
+
+	dpp_info("-< IDMA%d_VG_CH_DATA >-\n", id);
+	for (i = 0; i < 12; i++) {
+		dma_write(id, IDMA_DEBUG_CONTROL, sel[i]);
+
+		/* dummy dpp data read */
+		/* temp code */
+		dpp_read(id, DPP_CFG_ERR_STATE);
+		data[i] = dma_read(id, IDMA_DEBUG_DATA);
+
+		dpp_info("[0x%08x: %08x]\n", sel[i], data[i]);
+	}
 }
 
 static void dma_reg_dump_debug_regs(int id)
 {
-	u32 sel_layer_01[14] = {
-		0x0000, 0x0001, 0x0002, 0x0003, 0x0007, 0x0008, 0x0100, 0x0101,
-		0x0102, 0x0103, 0x7000, 0x7001, 0x7002, 0x7003
-	};
+	dpp_check_data_glb_dma();
 
-	u32 sel_layer_234[52] = {
-		0x0000, 0x0001, 0x0002, 0x0003, 0x0007, 0x0008, 0x0100, 0x0101,
-		0x0102, 0x0103, 0x1000, 0x1001, 0x1002, 0x1003, 0x1007, 0x1008,
-		0x1100, 0x1101, 0x1102, 0x1103, 0x2000, 0x2001, 0x2002, 0x2003,
-		0x2007, 0x2008, 0x2100, 0x2101, 0x2102, 0x2103, 0x3000, 0x3001,
-		0x3002, 0x3003, 0x3007, 0x3008, 0x3100, 0x3101, 0x3102, 0x3103,
-		0x4000, 0x4001, 0x4002, 0x4003, 0x4004, 0x4005, 0x4006, 0x4007,
-		0x7000, 0x7001, 0x7002, 0x7003
-	};
-
-	u32 sel_layer_5[78] = {
-		0x0000, 0x0001, 0x0002, 0x0003, 0x0007, 0x0008, 0x0100, 0x0101,
-		0x0102, 0x0103, 0x1000, 0x1001, 0x1002, 0x1003, 0x1007, 0x1008,
-		0x1100, 0x1101, 0x1102, 0x1103, 0x2000, 0x2001, 0x2002, 0x2003,
-		0x2007, 0x2008, 0x2100, 0x2101, 0x2102, 0x2103, 0x3000, 0x3001,
-		0x3002, 0x3003, 0x3007, 0x3008, 0x3100, 0x3101, 0x3102, 0x3103,
-		0x4000, 0x4001, 0x4002, 0x4003, 0x4004, 0x4005, 0x4006, 0x4007,
-		0x6000, 0x6001, 0x6100, 0x6101, 0x6102, 0x6103, 0x6104, 0x6105,
-		0x6200, 0x6201, 0x6202, 0x6203, 0x6204, 0x6205, 0x6300, 0x6301,
-		0x6302, 0x6303, 0x6305, 0x6306, 0x6400, 0x6401, 0x6402, 0x6403,
-		0x6405, 0x6406, 0x7000, 0x7001, 0x7002, 0x7003
-	};
-
-	dpp_info("-< DPU_DMA%d DEBUG SFR >-\n", id);
-	if (id == 0 || id == 1)
-		dpp_reg_dump_ch_data(id, REG_AREA_DMA, sel_layer_01, 14);
-	else if (id == 2 || id == 3 || id == 4)
-		dpp_reg_dump_ch_data(id, REG_AREA_DMA, sel_layer_234, 52);
-	else /* (id == 5) */
-		dpp_reg_dump_ch_data(id, REG_AREA_DMA, sel_layer_5, 78);
+	switch (id) {
+		case IDMA_G1:
+		case IDMA_G2:
+		case IDMA_G0:
+			dpp_check_data_g_ch(id);
+			break;
+		case IDMA_VG0:
+			dpp_check_data_vg_ch(id);
+			break;
+		default:
+			break;
+	}
 }
 
 static void dpp_reg_dump_debug_regs(int id)
 {
-	u32 sel_gf[3] = {0x0000, 0x0100, 0x0101};
-	u32 sel_vg_vgf[19] = {0x0000, 0x0100, 0x0101, 0x0200, 0x0201, 0x0202,
-		0x0203, 0x0204, 0x0205, 0x0206, 0x0207, 0x0208, 0x0300, 0x0301,
-		0x0302, 0x0303, 0x0304, 0x0400, 0x0401};
-	u32 sel_vgs_vgrfs[37] = {0x0000, 0x0100, 0x0101, 0x0200, 0x0201, 0x0210,
-		0x0211, 0x0220, 0x0221, 0x0230, 0x0231, 0x0240, 0x0241, 0x0250,
-		0x0251, 0x0300, 0x0301, 0x0302, 0x0303, 0x0304, 0x0305, 0x0306,
-		0x0307, 0x0308, 0x0400, 0x0401, 0x0402, 0x0403, 0x0404, 0x0500,
-		0x0501, 0x0502, 0x0503, 0x0504, 0x0505, 0x0600, 0x0601};
-	u32 cnt;
-	u32 *sel = NULL;
+	u32 data[17] = {0,};
+	u32 sel[17] = {
+		0x00000000, 0x00000100, 0x00000200, 0x00000300, 0x00000400,
+		0x00000500,
+		0x00000101, 0x00000102, 0x00000103, 0x00000104, 0x00000105,
+		0x00000106, 0x00000107, 0x00000108, 0x00000109, 0x0000010A,
+		0x0000010B};
+	int i;
 
-	if (id == 0 || id == 1) { /* GF0, GF1 */
-		sel =  sel_gf;
-		cnt = 3;
-	} else if (id == 2 || id == 4) { /* VG, VGF */
-		sel = sel_vg_vgf;
-		cnt = 19;
-	} else if (id == 3 || id == 5) { /* VGS, VGRFS */
-		sel = sel_vgs_vgrfs;
-		cnt = 37;
-	} else {
-		dpp_err("DPP%d is wrong ID\n", id);
-		return;
+	dpp_info("-< DPP%d_CH_DATA >-\n", id);
+	for (i = 0; i < 17; i++) {
+		dpp_write(id, DPP_DEBUG_SEL, sel[i]);
+		data[i] = dpp_read(id, DPP_DEBUG_DATA);
+
+		dpp_info("[0x%08x: %08x]\n", sel[i], data[i]);
 	}
-
-	dpp_write(id, 0x0C00, 0x1);
-	dpp_info("-< DPP%d DEBUG SFR >-\n", id);
-	dpp_reg_dump_ch_data(id, REG_AREA_DPP, sel, cnt);
 }
+
 
 #define __raw_readl(a)          (*(volatile unsigned int *)(a))
 void dpp_hex_dump(void __iomem *base_addr, int size)
@@ -1154,93 +843,8 @@ void __dpp_dump(u32 id, void __iomem *regs, void __iomem *dma_regs,
 	/* TODO: dump for hdr -> dpp_dump_hdr_regs(id, regs, attr); */
 }
 
-static const struct dpu_fmt dpu_cal_formats_list[] = {
-	{
-		.name = "NV16",
-		.fmt = DECON_PIXEL_FORMAT_NV16,
-		.dma_fmt = IDMA_IMG_FORMAT_YUV422_2P,
-		.dpp_fmt = DPP_IMG_FORMAT_YUV422_8P,
-		.bpp = 16,
-		.padding = 0,
-		.bpc = 8,
-		.num_planes = 2,
-		.num_buffers = 2,
-		.num_meta_planes = 0,
-		.len_alpha = 0,
-		.cs = DPU_COLORSPACE_YUV422,
-		.ct = COMP_TYPE_NONE,
-	}, {
-		.name = "NV61",
-		.fmt = DECON_PIXEL_FORMAT_NV61,
-		.dma_fmt = IDMA_IMG_FORMAT_YVU422_2P,
-		.dpp_fmt = DPP_IMG_FORMAT_YUV422_8P,
-		.bpp = 16,
-		.padding = 0,
-		.bpc = 8,
-		.num_planes = 2,
-		.num_buffers = 2,
-		.num_meta_planes = 0,
-		.len_alpha = 0,
-		.cs = DPU_COLORSPACE_YUV422,
-		.ct = COMP_TYPE_NONE,
-	}, {
-		.name = "NV16M_P210",
-		.fmt = DECON_PIXEL_FORMAT_NV16M_P210,
-		.dma_fmt = IDMA_IMG_FORMAT_YUV422_P210,
-		.dpp_fmt = DPP_IMG_FORMAT_YUV422_P210,
-		.bpp = 20,
-		.padding = 12,
-		.bpc = 10,
-		.num_planes = 2,
-		.num_buffers = 2,
-		.num_meta_planes = 1,
-		.len_alpha = 0,
-		.cs = DPU_COLORSPACE_YUV422,
-		.ct = COMP_TYPE_NONE,
-	}, {
-		.name = "NV61M_P210",
-		.fmt = DECON_PIXEL_FORMAT_NV61M_P210,
-		.dma_fmt = IDMA_IMG_FORMAT_YVU422_P210,
-		.dpp_fmt = DPP_IMG_FORMAT_YUV422_P210,
-		.bpp = 20,
-		.padding = 12,
-		.bpc = 10,
-		.num_planes = 2,
-		.num_buffers = 2,
-		.num_meta_planes = 1,
-		.len_alpha = 0,
-		.cs = DPU_COLORSPACE_YUV422,
-		.ct = COMP_TYPE_NONE,
-	}, {
-		.name = "NV16M_S10B",
-		.fmt = DECON_PIXEL_FORMAT_NV16M_S10B,
-		.dma_fmt = IDMA_IMG_FORMAT_YUV422_8P2,
-		.dpp_fmt = DPP_IMG_FORMAT_YUV422_8P2,
-		.bpp = 20,
-		.padding = 0,
-		.bpc = 10,
-		.num_planes = 4,
-		.num_buffers = 2,
-		.num_meta_planes = 1,
-		.len_alpha = 0,
-		.cs = DPU_COLORSPACE_YUV422,
-		.ct = COMP_TYPE_NONE,
-	}, {
-		.name = "NV61M_S10B",
-		.fmt = DECON_PIXEL_FORMAT_NV61M_S10B,
-		.dma_fmt = IDMA_IMG_FORMAT_YVU422_8P2,
-		.dpp_fmt = DPP_IMG_FORMAT_YUV422_8P2,
-		.bpp = 20,
-		.padding = 0,
-		.bpc = 10,
-		.num_planes = 4,
-		.num_buffers = 2,
-		.num_meta_planes = 1,
-		.len_alpha = 0,
-		.cs = DPU_COLORSPACE_YUV422,
-		.ct = COMP_TYPE_NONE,
-	},
-};
+#if 0
+static const struct dpu_fmt dpu_cal_formats_list[] = {};
 
 const struct dpu_fmt *dpu_find_cal_fmt_info(enum decon_pixel_format fmt)
 {
@@ -1252,3 +856,4 @@ const struct dpu_fmt *dpu_find_cal_fmt_info(enum decon_pixel_format fmt)
 
 	return NULL;
 }
+#endif
