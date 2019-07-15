@@ -241,7 +241,7 @@ reboot:
 	dfd_set_dump_en_for_cacheop(0);
 	set_debug_level("low");
 #else
-	dfd_set_dump_en_for_cacheop(1);
+	dfd_set_dump_en_for_cacheop(0);
 	set_debug_level("mid");
 #endif
 	set_debug_level_by_env();
