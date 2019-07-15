@@ -34,7 +34,7 @@ ifeq ($(MAKECMDGOALS), smdk3830)
 	SB_KEY_TYPE := 1
 	SB_RB_COUNT := 0
 	SIGNATURE_BIN := yes
-else ifeq ($(MAKECMDGOALS), erd9630)
+else ifeq ($(MAKECMDGOALS), erd3830)
 	LK_PAD_SIZE := 2097152
 	SB_SIGN_TYPE := 4
 	SB_KEY_TYPE := 1
