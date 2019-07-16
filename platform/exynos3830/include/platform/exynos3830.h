@@ -154,8 +154,8 @@
 #define RAMDUMP_REBOOT_PANIC				0x4
 
 /* AVB2.0 */
-/* #define CONFIG_USE_AVB20 */
-/* #define CONFIG_AVB_HW_HASH */
+#define CONFIG_USE_AVB20
+#define CONFIG_AVB_HW_HASH
 #undef CONFIG_AVB_RP_UPDATE
 #undef CONFIG_OTP_RP_UPDATE
 
