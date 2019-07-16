@@ -23,8 +23,8 @@
 #include <platform/sfr.h>
 #include <platform/smc.h>
 #include <platform/pmic_s2mpu12.h>
-#include <platform/if_pmic_s2mu107.h>
-#include <platform/fg_s2mu107.h>
+#include <platform/if_pmic_s2mu106.h>
+#include <platform/fg_s2mu106.h>
 #include <platform/tmu.h>
 #include <platform/dfd.h>
 #include <platform/ldfw.h>
@@ -300,10 +300,8 @@ void platform_init(void)
 	if (*(unsigned int *)DRAM_BASE == 0xabcdef) {
 		pmic_init();
 		read_pmic_info_s2mpu12();
-		/*
-		s2mu107_sc_init();
-		fg_init_s2mu107();
-		*/
+		s2mu106_charger_init();
+		fg_init_s2mu106();
 	}
 
 	check_charger_connect();
