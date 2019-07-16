@@ -768,7 +768,7 @@ int cmd_boot(int argc, const cmd_args *argv)
 			/* Delay for data write HW operation of ab_update_slot_info()
 				on AB_SLOTINFO_PART partition. */
 			mdelay(500);
-			writel(readl(EXYNOS9630_SYSTEM_CONFIGURATION) | 0x2, EXYNOS9630_SYSTEM_CONFIGURATION);
+			writel(readl(EXYNOS3830_SYSTEM_CONFIGURATION) | 0x2, EXYNOS3830_SYSTEM_CONFIGURATION);
 			do {
 				asm volatile("wfi");
 			} while(1);
