@@ -731,8 +731,10 @@ int cmd_boot(int argc, const cmd_args *argv)
 	}
 #endif
 
-#if defined(CONFIG_AB_UPDATE)
+#if defined(CONFIG_AB_UPDATE) || defined(CONFIG_USE_AVB20)
 	int ab_ret = 0;
+#endif
+#if defined(CONFIG_AB_UPDATE)
 	ab_ret = ab_update_slot_info();
 	if ((ab_ret < 0) && (ab_ret != AB_ERROR_NOT_SUPPORT)) {
 		printf("AB update error! Error code: %d\n", ab_ret);
