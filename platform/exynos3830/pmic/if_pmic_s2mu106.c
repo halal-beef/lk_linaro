@@ -359,6 +359,7 @@ int s2mu106_muic_get_vbus(void)
 	return ret;
 }
 
+#if 0
 int s2mu106_muic_get_ta_attached(void)
 {
 	unsigned char reg;
@@ -461,6 +462,7 @@ void s2mu106_muic_check_cdp(void)
 		IIC_S2MU106_EWrite(S2MU106_MUIC_W_ADDR, S2MU106_AFC_CTRL1, 0x0);
 	}
 }
+#endif
 
 void s2mu106_charger_set_mode(int mode)
 {
@@ -613,7 +615,7 @@ void s2mu106_charger_init(void)
 	s2mu106_charger_reg_init();
 	s2mu106_charger_set_charging_current(SMALL_CHARGER_CURRENT);
 
-	s2mu106_muic_check_cdp();
+	//s2mu106_muic_check_cdp();
 }
 
 
