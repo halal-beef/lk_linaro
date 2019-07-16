@@ -1609,6 +1609,9 @@ static status_t mmc_berase(struct bdev *dev, bnum_t block, uint count)
 	u32 start;
 	int start_cmd, end_cmd;
 
+	/* HACK Erase Ignor */
+	return 0;
+
 	memset((struct mmc_cmd *)&cmd, 0,
 	       sizeof(struct mmc_cmd));
 
