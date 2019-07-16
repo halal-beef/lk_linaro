@@ -11,6 +11,6 @@
 #ifndef __BOARD_INFO_H__
 #define __BOARD_INFO_H__
 
-#define CONFIG_BOARD_ID 0x0
+#define CONFIG_BOARD_ID 0x1
 
 #endif /*__BOARD_INFO_H__ */
