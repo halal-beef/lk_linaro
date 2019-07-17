@@ -351,16 +351,10 @@ void platform_init(void)
 	*/
 	/* read_dram_info(); */
 
-	/*
 	display_tmu_info();
 	display_trip_info();
-	*/
+
 	/*
-	tmu_initialize();
-	read_temperature(TZ_G3D, &temp, PRINT);
-	read_temperature(TZ_LIT, &temp, PRINT);
-	read_temperature(TZ_BIG, &temp, PRINT);
-	display_trip_info();
 	dfd_display_reboot_reason();
 	if ((get_current_boot_device() != BOOT_USB) &&
 		*(unsigned int *)DRAM_BASE == 0xabcdef)
