@@ -35,6 +35,7 @@
 #include <platform/fastboot.h>
 #include <platform/sfr.h>
 #include <dev/mmc.h>
+#include <platform/secure_boot.h>
 
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
@@ -376,6 +377,16 @@ void platform_init(void)
 			/* if it's a case of ramdump */
 			goto by_dumpgpr_out;
 		}
+
+		/* read secure chip state */
+		if (read_secure_chip() == 0)
+			printf("Secure boot is disabled (non-secure chip)\n");
+		else if (read_secure_chip() == 1)
+			printf("Secure boot is enabled (test key)\n");
+		else if (read_secure_chip() == 2)
+			printf("Secure boot is enabled (secure chip)\n");
+		else
+			printf("Can not read secure chip state\n");
 
 		if (!init_keystorage())
 			printf("keystorage: init done successfully.\n");
