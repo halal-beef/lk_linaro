@@ -159,8 +159,8 @@ static int load_partition(u64 addr, u64 ch, u64 *size)
 int init_keystorage(void)
 {
 	s32 ret = 0;
-	u64 addr = EXYNOS9630_KEYSTORAGE_NWD_ADDR;
-	u64 size = EXYNOS9630_KEYSTORAGE_PARTITION_SIZE;
+	u64 addr = EXYNOS3830_KEYSTORAGE_NWD_ADDR;
+	u64 size = EXYNOS3830_KEYSTORAGE_PARTITION_SIZE;
 	SB_KEYSTORAGE_HEADER *header = NULL;
 
 	if (is_usb_boot())
@@ -196,8 +196,8 @@ int init_keystorage(void)
 int init_ssp(void)
 {
 	int ret = 0;
-	u64 addr = EXYNOS9630_SSP_NWD_ADDR;
-	u64 size = EXYNOS9630_SSP_PARTITION_SIZE;
+	u64 addr = EXYNOS3830_SSP_NWD_ADDR;
+	u64 size = EXYNOS3830_SSP_PARTITION_SIZE;
 
 	if (is_usb_boot())
 		/* boot from iROM USB booting */
@@ -222,8 +222,8 @@ int init_ssp(void)
 
 int init_ldfws(void)
 {
-	u64 addr = EXYNOS9630_LDFW_NWD_ADDR;
-	u64 size = EXYNOS9630_LDFW_PARTITION_SIZE;
+	u64 addr = EXYNOS3830_LDFW_NWD_ADDR;
+	u64 size = EXYNOS3830_LDFW_PARTITION_SIZE;
 	struct fw_header *fwh;
 	s64 ret;
 	u32 try, try_fail, i;
@@ -284,8 +284,8 @@ int init_ldfws(void)
 int init_sp(void)
 {
 	s64 ret = 0;
-	u64 addr = EXYNOS9630_LDFW_NWD_ADDR;
-	u64 size = EXYNOS9630_SP_PARTITION_SIZE; /* default size 1MB */
+	u64 addr = EXYNOS3830_LDFW_NWD_ADDR;
+	u64 size = EXYNOS3830_SP_PARTITION_SIZE; /* default size 1MB */
 
 	if (is_usb_boot()) {
 		/* boot from iROM USB booting */
