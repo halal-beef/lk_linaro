@@ -416,7 +416,7 @@ static void configure_dtb(void)
 	const char *np;
 	int len, noff;
 	struct boot_img_hdr *b_hdr = (boot_img_hdr *)BOOT_BASE;
-#if 0
+
 	u32 soc_ver = 0;
 	u64 dram_size = *(u64 *)BL_SYS_INFO_DRAM_SIZE;
 	unsigned long sec_dram_base = 0;
@@ -425,7 +425,6 @@ static void configure_dtb(void)
 	unsigned long sec_pt_base = 0;
 	unsigned int sec_pt_size = 0;
 	unsigned long sec_pt_end = 0;
-#endif
 
 	/*
 	 * In this here, it is enabled cache. So you don't use blk read/write function
@@ -435,7 +434,7 @@ static void configure_dtb(void)
 	merge_dto_to_main_dtb();
 	resize_dt(SZ_4K);
 
-#if 0
+
 	/* Get Secure DRAM information */
 	soc_ver = exynos_smc(SMC_CMD_GET_SOC_INFO, SOC_INFO_TYPE_VERSION, 0, 0);
 	if (soc_ver == SOC_INFO_VERSION(SOC_INFO_MAJOR_VERSION, SOC_INFO_MINOR_VERSION)) {
@@ -557,7 +556,7 @@ static void configure_dtb(void)
 	}
 
 mem_node_out:
-#endif
+
 	sprintf(str, "<0x%x>", ECT_BASE);
 	set_fdt_val("/ect", "parameter_address", str);
 
