@@ -337,50 +337,50 @@ static void print_pmudbg_registers(void)
 
 	int i;
 
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU0_STATES", readl(EXYNOS9630_PMUDBG_BASE));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU1_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x4));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU2_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x8));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU3_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0xc));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU4_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x10));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU5_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x14));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU6_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x18));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_NONCPU_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x1c));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER1_CPU0_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x20));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER1_CPU1_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x24));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER1_NONCPU_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x28));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "MIF_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0xF4));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "TOP_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0xF8));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU0_STATES", readl(EXYNOS3830_PMUDBG_BASE));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU1_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x4));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU2_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x8));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU3_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0xc));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU4_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x10));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU5_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x14));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU6_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x18));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_NONCPU_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x1c));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER1_CPU0_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x20));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER1_CPU1_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x24));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER1_NONCPU_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x28));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "MIF_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0xF4));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "TOP_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0xF8));
 
 	for (i = 0; i < 20; i++) {
 		if (i % 4 == 0)
 			printf("\n");
-		printf("%16s - 0x%x\t", pd_name[i], readl(EXYNOS9630_PMUDBG_BASE + pd_offset[i]));
+		printf("%16s - 0x%x\t", pd_name[i], readl(EXYNOS3830_PMUDBG_BASE + pd_offset[i]));
 	}
 	printf("\n\n");
 }
 
 static void print_acpm_last_gpr(void)
 {
-	if (readl(EXYNOS9630_DUMP_GPR_BASE) == 0xAAAAAAAA)
+	if (readl(EXYNOS3830_DUMP_GPR_BASE) == 0xAAAAAAAA)
 		return;
 
 	printf("ACPM Dump GPR\n");
-	printf("ACPM R0~R3  : %08x %08x %08x %08x\n", readl(EXYNOS9630_DUMP_GPR_BASE),
-	       readl(EXYNOS9630_DUMP_GPR_BASE + 0x4),
-	       readl(EXYNOS9630_DUMP_GPR_BASE + 0x8),
-	       readl(EXYNOS9630_DUMP_GPR_BASE + 0xC));
-	printf("ACPM R4~R7  : %08x %08x %08x %08x\n", readl(EXYNOS9630_DUMP_GPR_BASE + 0x10),
-	       readl(EXYNOS9630_DUMP_GPR_BASE + 0x14),
-	       readl(EXYNOS9630_DUMP_GPR_BASE + 0x18),
-	       readl(EXYNOS9630_DUMP_GPR_BASE + 0x1C));
-	printf("ACPM R8~R11 : %08x %08x %08x %08x\n", readl(EXYNOS9630_DUMP_GPR_BASE + 0x20),
-	       readl(EXYNOS9630_DUMP_GPR_BASE + 0x24),
-	       readl(EXYNOS9630_DUMP_GPR_BASE + 0x28),
-	       readl(EXYNOS9630_DUMP_GPR_BASE + 0x2C));
-	printf("ACPM R12~R15: %08x %08x %08x %08x\n", readl(EXYNOS9630_DUMP_GPR_BASE + 0x30),
-	       readl(EXYNOS9630_DUMP_GPR_BASE + 0x34),
-	       readl(EXYNOS9630_DUMP_GPR_BASE + 0x38),
-	       readl(EXYNOS9630_DUMP_GPR_BASE + 0x3C));
+	printf("ACPM R0~R3  : %08x %08x %08x %08x\n", readl(EXYNOS3830_DUMP_GPR_BASE),
+	       readl(EXYNOS3830_DUMP_GPR_BASE + 0x4),
+	       readl(EXYNOS3830_DUMP_GPR_BASE + 0x8),
+	       readl(EXYNOS3830_DUMP_GPR_BASE + 0xC));
+	printf("ACPM R4~R7  : %08x %08x %08x %08x\n", readl(EXYNOS3830_DUMP_GPR_BASE + 0x10),
+	       readl(EXYNOS3830_DUMP_GPR_BASE + 0x14),
+	       readl(EXYNOS3830_DUMP_GPR_BASE + 0x18),
+	       readl(EXYNOS3830_DUMP_GPR_BASE + 0x1C));
+	printf("ACPM R8~R11 : %08x %08x %08x %08x\n", readl(EXYNOS3830_DUMP_GPR_BASE + 0x20),
+	       readl(EXYNOS3830_DUMP_GPR_BASE + 0x24),
+	       readl(EXYNOS3830_DUMP_GPR_BASE + 0x28),
+	       readl(EXYNOS3830_DUMP_GPR_BASE + 0x2C));
+	printf("ACPM R12~R15: %08x %08x %08x %08x\n", readl(EXYNOS3830_DUMP_GPR_BASE + 0x30),
+	       readl(EXYNOS3830_DUMP_GPR_BASE + 0x34),
+	       readl(EXYNOS3830_DUMP_GPR_BASE + 0x38),
+	       readl(EXYNOS3830_DUMP_GPR_BASE + 0x3C));
 }
 
 void display_flexpmu_dbg(void)
@@ -395,9 +395,9 @@ void display_flexpmu_dbg(void)
 
 	for (i = 0; i < ARRAY_SIZE(flexpmu_dbg); i++) {
 		flexpmu_dbg[i].u32_data[0] =
-			readl(EXYNOS9630_FLEXPMU_DBG_BASE + (i * FLEXPMU_DBG_ENTRY_SIZE) + 0x8);
+			readl(EXYNOS3830_FLEXPMU_DBG_BASE + (i * FLEXPMU_DBG_ENTRY_SIZE) + 0x8);
 		flexpmu_dbg[i].u32_data[1] =
-			readl(EXYNOS9630_FLEXPMU_DBG_BASE + (i * FLEXPMU_DBG_ENTRY_SIZE) + 0xc);
+			readl(EXYNOS3830_FLEXPMU_DBG_BASE + (i * FLEXPMU_DBG_ENTRY_SIZE) + 0xc);
 	}
 
 	print_pmudbg_registers();
