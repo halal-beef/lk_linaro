@@ -35,6 +35,7 @@
 #include "almighty.h"
 #include "drex_v3_3.h"
 #include "mct.h"
+#include "recovery.h"
 
 #define CONFIG_PIT_IMAMGE_BASE 0x80100000
 #define CONFIG_FWBL1_IMAMGE_BASE 0x80200000
@@ -247,6 +248,7 @@ reboot:
 	set_debug_level("mid");
 #endif
 	set_debug_level_by_env();
+	recovery_init();
 	cmd_boot(0, 0);
 	return;
 }
