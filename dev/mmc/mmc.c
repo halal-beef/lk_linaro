@@ -954,7 +954,8 @@ mmc_boot_decode_mmc_info(struct mmc *mmc, unsigned int *raw_csd)
 
 		/* Get erase group data */
 		if (ext_csd_buf[EXT_CSD_ERASE_GROUP_DEF] & 0x01)
-			mmc->erase_grp_size = ext_csd_buf[EXT_CSD_HC_ERASE_GRP_SIZE] * 512 * 1024;
+			mmc->erase_grp_size = ext_csd_buf[EXT_CSD_HC_ERASE_GRP_SIZE] *
+						512 * 1024 / mmc->wr_block_len;
 		else
 			mmc->erase_grp_size = (mmc_extract_bits(42, 46, mmc->csd) + 1) *
 						(mmc_extract_bits(37, 41, mmc->csd) + 1);
@@ -1620,9 +1621,6 @@ static status_t mmc_berase(struct bdev *dev, bnum_t block, uint count)
 	ulong end;
 	u32 start;
 	int start_cmd, end_cmd;
-
-	/* HACK Erase Ignor */
-	return 0;
 
 	memset((struct mmc_cmd *)&cmd, 0,
 	       sizeof(struct mmc_cmd));
