@@ -127,7 +127,7 @@ void mmc_clock_set(unsigned int channel, unsigned int enable)
 		case 0:
 			reg = *(volatile u32 *)CLK_CON_DIV_CLKCMU_CORE_MMC_EMBD;
 			reg &= ~MASK_DIVRATIO;
-			reg |= 0x0;
+			reg |= 0x1;
 			*(volatile u32 *)CLK_CON_DIV_CLKCMU_CORE_MMC_EMBD = reg;
 
 			reg = *(volatile u32 *)CLK_CON_MUX_CLKCMU_CORE_MMC_EMBD;
