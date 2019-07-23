@@ -24,7 +24,6 @@
 #include <dev/dpu/hdr_lut.h>
 #include "dpp_coef.h"
 
-
 void dpp_hex_dump(void __iomem *base_addr, int size);
 
 /****************** IDMA CAL functions ******************/
@@ -665,11 +664,12 @@ void dma_reg_get_shd_addr(u32 id, u32 shd_addr[], const unsigned long attr)
 static void dma_reg_dump_com_debug_regs(int id)
 {
 	struct dpp_device *dpp = get_dpp_drvdata(id);
-	struct dpp_device *dpp0 = get_dpp_drvdata(0);
+	struct dpp_device *dpp0 = get_dpp_drvdata(LOGO_DPP);
 
 	dma_write(dpp->id, 0x0060, 0x1);
-	dpp_info("=== DPU_DMA GLB SFR DUMP ===\n");
-	dpp_hex_dump(dpp0->res.dma_com_regs, 0x108);
+
+	dpp_info("=== DPU_DMA GLB SFR DUMP === \n");
+	dpp_hex_dump(dpp0->res.dma_com_regs, 0x68);
 }
 
 static bool checked;
@@ -689,11 +689,11 @@ static void dpp_check_data_glb_dma(void)
 
 	dpp_info("-< DPU_DMA_DATA >-\n");
 	for (i = 0; i < 20; i++) {
-		dma_com_write(0, DPU_DMA_DEBUG_CONTROL, sel[i]);
+		dma_com_write(LOGO_DPP, DPU_DMA_DEBUG_CONTROL, sel[i]);
 		/* dummy dpp data read */
 		/* temp code */
-		dpp_read(0, DPP_CFG_ERR_STATE);
-		data[i] = dma_com_read(0, DPU_DMA_DEBUG_DATA);
+		dpp_read(LOGO_DPP, DPP_CFG_ERR_STATE);
+		data[i] = dma_com_read(LOGO_DPP, DPU_DMA_DEBUG_DATA);
 
 		dpp_info("[0x%08x: %08x]\n", sel[i], data[i]);
 	}
@@ -804,18 +804,12 @@ void dpp_hex_dump(void __iomem *base_addr, int size)
 static void dma_dump_regs(u32 id, void __iomem *dma_regs)
 {
 	dpp_info("\n=== DPU_DMA%d SFR DUMP ===\n", id);
-	dpp_hex_dump(dma_regs + 0x0000, 0x74);
-	dpp_hex_dump(dma_regs + 0x0100, 0x44);
-	dpp_hex_dump(dma_regs + 0x0200, 0x8);
-	dpp_hex_dump(dma_regs + 0x0300, 0x24);
+	dpp_hex_dump(dma_regs + 0x0000, 0x68);
 
 	dpp_info("=== DPU_DMA%d SHADOW SFR DUMP ===\n", id);
 	dpp_hex_dump(dma_regs + 0x0800, 0x74);
-	dpp_hex_dump(dma_regs + 0x0900, 0x44);
-	dpp_hex_dump(dma_regs + 0x0A00, 0x8);
-	dpp_hex_dump(dma_regs + 0x0B00, 0x24);
 	/* config_err_status */
-	dpp_hex_dump(dma_regs + 0x0B30, 0x4);
+	//dpp_hex_dump(dma_regs + 0x0B30, 0x4);
 }
 
 static void dpp_dump_regs(u32 id, void __iomem *regs, unsigned long attr)
@@ -824,7 +818,7 @@ static void dpp_dump_regs(u32 id, void __iomem *regs, unsigned long attr)
 	dpp_hex_dump(regs + 0x0000, 0x4C);
 	dpp_hex_dump(regs + 0x0A54, 0x4);
 	/* shadow */
-	dpp_hex_dump(regs + 0x0B00, 0x4C);
+	dpp_hex_dump(regs + 0x0B00, 0x44);
 	/* debug */
 	dpp_hex_dump(regs + 0x0D00, 0xC);
 }
@@ -837,23 +831,13 @@ void __dpp_dump(u32 id, void __iomem *regs, void __iomem *dma_regs,
 	dma_dump_regs(id, dma_regs);
 	dma_reg_dump_debug_regs(id);
 
-	dpp_dump_regs(id, regs, attr);
-	dpp_reg_dump_debug_regs(id);
-
-	/* TODO: dump for hdr -> dpp_dump_hdr_regs(id, regs, attr); */
+	//dpp_dump_regs(id, regs, attr);
+	//dpp_reg_dump_debug_regs(id);
 }
 
-#if 0
-static const struct dpu_fmt dpu_cal_formats_list[] = {};
 
 const struct dpu_fmt *dpu_find_cal_fmt_info(enum decon_pixel_format fmt)
 {
-	unsigned int i;
-
-	for (i = 0; i < ARRAY_SIZE(dpu_cal_formats_list); i++)
-		if (dpu_cal_formats_list[i].fmt == fmt)
-			return &dpu_cal_formats_list[i];
 
 	return NULL;
 }
-#endif

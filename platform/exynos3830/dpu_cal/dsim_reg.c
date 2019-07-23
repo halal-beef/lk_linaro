@@ -2194,7 +2194,6 @@ void dsim_reg_init(u32 id, struct exynos_panel_info *lcd_info, struct dsim_clks 
 	if (panel_ctrl)
 		dsim_set_panel_power(dsim, 1);
 #endif
-
 	dsim_reg_set_clocks(id, clks, &lcd_info->dphy_pms, 1);
 
 	dsim_reg_set_lanes_dphy(id, lanes, 1);
@@ -2314,7 +2313,9 @@ int dsim_reg_stop_and_enter_ulps(u32 id, u32 ddi_type, u32 lanes)
 	/* 3.2 OSC clock */
 	dsim_reg_set_link_clock(id, 0);
 	/* 3.3 off DPHY */
+	dsim_reg_set_lanes(id, lanes, 0);
 	dsim_reg_set_lanes_dphy(id, lanes, 0);
+	dsim_reg_set_esc_clk_on_lane(id, 0, lanes);
 	dsim_reg_set_clocks(id, NULL, NULL, 0);
 
 	if (ret < 0) {
@@ -2553,7 +2554,7 @@ void dsim_reg_set_dphy_freq_hopping(u32 id, u32 p, u32 m, u32 k, u32 en)
 void __dsim_dump(u32 id, struct dsim_regs *regs)
 {
 	/* change to updated register read mode (meaning: SHADOW in DECON) */
-	dsim_info("=== DSIM %d LINK SFR DUMP ===\n", id);
+	dsim_info("=== DSIM %d LINK SFR DUMP === %p  %p \n", id, regs->regs,regs->phy_regs);
 	dsim_reg_enable_shadow_read(id, 0);
 	dsim_hex_dump(regs->regs + 0x0000, 0x114);
 
@@ -2568,6 +2569,9 @@ void __dsim_dump(u32 id, struct dsim_regs *regs)
 
 	dsim_info("-[PLL_CTRL : offset + 0x0C00]-\n");
 	dsim_hex_dump(regs->phy_regs + 0x0C00, 0x40);
+
+	dsim_info("-[PLL_STATUS : offset + 0x0C00]-\n");
+	dsim_hex_dump(regs->phy_regs + 0x0C80, 0x10);
 
 	dsim_info("-[DPHY_ACTRL_MC : offset + 0x1000]-\n");
 	dsim_hex_dump(regs->phy_regs + 0x1000, 0x10);

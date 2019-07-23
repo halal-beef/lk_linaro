@@ -180,11 +180,11 @@ static void dpp_parse_dt(unsigned int id, struct dpp_device *dpp)
 {
 	dpp->id = id;
 	switch (dpp->id) {
-	case 0:
+	case LOGO_DPP:
 		dpp->attr = 0x50087;
 		dpp_info("dpp-%d's attr is (0x%08x)\n", dpp->id, (u32)dpp->attr);
 		break;
-	case 1:
+	case FONT_DPP:
 		dpp->attr = 0x50087;
 		dpp_info("dpp-%d's attr is (0x%08x)\n", dpp->id, (u32)dpp->attr);
 		break;
@@ -199,9 +199,9 @@ static int dpp_init_resources(struct dpp_device *dpp)
 {
 	dpp_info("dpp(%d) init resources.\n", dpp->id);
 
-	if (dpp->id == 0)
+	if (dpp->id == LOGO_DPP)
 		dpp->res.regs = (void __iomem *)DPP_IDMAG0_BASE_ADDR;
-	else if (dpp->id == 1)
+	else if (dpp->id == FONT_DPP)
 		dpp->res.regs = (void __iomem *)DPP_IDMAG1_BASE_ADDR;
 	else
 		dpp->res.regs = 0;
@@ -211,9 +211,9 @@ static int dpp_init_resources(struct dpp_device *dpp)
 		return -EINVAL;
 	}
 
-	if (dpp->id == 0)
+	if (dpp->id == LOGO_DPP)
 		dpp->res.dma_regs = (void __iomem *)DPP_IDMAG0_DMA_ADDR;
-	else if (dpp->id == 1)
+	else if (dpp->id == FONT_DPP)
 		dpp->res.dma_regs = (void __iomem *)DPP_IDMAG1_DMA_ADDR;
 	else
 		dpp->res.dma_regs = 0;
@@ -223,7 +223,7 @@ static int dpp_init_resources(struct dpp_device *dpp)
 		return -EINVAL;
 	}
 
-	if (dpp->id == 0) {
+	if (dpp->id == LOGO_DPP) {
 		dpp->res.dma_com_regs = (void __iomem *)DPP_IDMAG0_DMA_COM_ADDR;
 		if (!dpp->res.dma_com_regs) {
 			dpp_err("failed to remap DPU_DMA COMMON SFR region\n");

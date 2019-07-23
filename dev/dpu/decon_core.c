@@ -30,6 +30,7 @@
 #include <lib/font_display.h>
 #include <target/dpu_config.h>
 
+
 int decon_log_level = 6;
 extern struct dsim_device *dsim0_for_decon;
 extern struct dpp_device *dpp_drvdata[MAX_DPP_CNT];
@@ -126,9 +127,8 @@ void decon_show_buffer_update(struct decon_device *decon,
 #if defined(EXYNOS_DPU_DUMP)
 		decon_dump(decon);
 		dsim_dump(dsim_drvdata[0]);
-		dpp_dump(dpp_drvdata[0]);
-		dpp_dump(dpp_drvdata[1]);
-		dpp_dump(dpp_drvdata[2]);
+		dpp_dump(dpp_drvdata[LOGO_DPP]);
+		dpp_dump(dpp_drvdata[FONT_DPP]);
 #endif
 	}
 }
@@ -408,6 +408,7 @@ int display_drv_init(void)
 #ifdef CONFIG_DISPLAY_DRAWLOGO
 
 	/* DPP0 G0 for logo framebuffer */
+
 	ret = dpp_probe(LOGO_DPP, win_fb1);
 	if (ret < 0) {
 		decon_err("dpp%d probe was failed\n", LOGO_DPP);
