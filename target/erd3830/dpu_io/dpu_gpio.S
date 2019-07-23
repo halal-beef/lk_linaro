@@ -24,15 +24,15 @@
 
 	.global display_te_init
 display_te_init:
-	/* Set LCD_TE_HW (GPG0_1) to Pull-down enable, TE is active high */
-	ldr	x0, =EXYNOS9630_GPG0PUD
+	/* Set LCD_TE_HW (GPA4_1) to Pull-down enable, TE is active high */
+	ldr	x0, =EXYNOS3830_GPA4PUD
 	ldr	w1, [x0]
 	bic	w1, w1, #(0xF << 4)
 	orr	w1, w1, #(0x1 << 4)
 	str	w1, [x0]
 
-	/* Set LCD_TE_HW (GPG0_1) to DISP_TES0 */
-	ldr	x0, =EXYNOS9630_GPG0CON
+	/* Set LCD_TE_HW (GPA4_1) to DISP_TES0 */
+	ldr	x0, =EXYNOS3830_GPA4CON
 	ldr	w1, [x0]
 	bic	w1, w1, #(0xF << 4)
 	orr	w1, w1, #(0x2 << 4)
@@ -42,64 +42,76 @@ display_te_init:
 
 	.global display_panel_init
 display_panel_init:
-	/* Set MLCD_RSTB (GPQ0_2) to Pull-up enable, Reset is active low */
-	ldr	x0, =EXYNOS3830_GPQ0PUD
+	/* Set MLCD_RSTB (GPG2_5) to Pull-up enable, Reset is active low */
+	ldr	x0, =EXYNOS3830_GPG2PUD
 	ldr	w1, [x0]
-	bic	w1, w1, #(0xF << 8)
-	orr	w1, w1, #(0x3 << 8)
+	bic	w1, w1, #(0xF << 20)
+	orr	w1, w1, #(0x3 << 20)
 	str	w1, [x0]
 
-	/* Set MLCD_RSTB (GPQ0_2) to Output */
-	ldr	x0, =EXYNOS3830_GPQ0CON
+	/* Set MLCD_RSTB (GPG2_5) to Output */
+	ldr	x0, =EXYNOS3830_GPG2CON
 	ldr	w1, [x0]
-	bic	w1, w1, #(0xF << 8)
-	orr	w1, w1, #(0x1 << 8)
+	bic	w1, w1, #(0xF << 20)
+	orr	w1, w1, #(0x1 << 20)
 	str	w1, [x0]
 
-	/* Set MLCD_RSTB (GPQ0_2) to DRV 4X */
-	ldr	x0, =EXYNOS9630_GPQ0DRV
+	/* Set MLCD_RSTB (GPG2_5) to DRV 4X */
+	ldr	x0, =EXYNOS3830_GPG2DRV
 	ldr	w1, [x0]
-	bic	w1, w1, #(0xF << 8)
-	orr	w1, w1, #(0x3 << 8)
+	bic	w1, w1, #(0xF << 20)
+	orr	w1, w1, #(0x3 << 20)
 	str	w1, [x0]
 
 	ret
 
 	.global display_panel_reset
 display_panel_reset:
-	/* Set MLCD_RSTB (GPQ0_2) to low */
-	ldr	x0, =EXYNOS9630_GPQ0DAT
+	/* Set MLCD_RSTB (GPG2_5) to low */
+	ldr	x0, =EXYNOS3830_GPG2DAT
 	ldr	w1, [x0]
-	bic	w1, w1, #(0x1 << 2)
+	bic	w1, w1, #(0x1 << 5)
 	str	w1, [x0]
 
 	ret
 
 	.global display_panel_release
 display_panel_release:
-	/* Set MLCD_RSTB (GPQ0_2) to high */
-	ldr	x0, =EXYNOS9630_GPQ0DAT
+	/* Set MLCD_RSTB (GPG2_5) to high */
+	ldr	x0, =EXYNOS3830_GPG2DAT
 	ldr	w1, [x0]
-	bic	w1, w1, #(0x1 << 2)
-	orr	w1, w1, #(0x1 << 2)
+	bic	w1, w1, #(0x1 << 5)
+	orr	w1, w1, #(0x1 << 5)
 	str	w1, [x0]
 
 	ret
 
 	.global display_panel_power
 display_panel_power:
-	/* Set VDD_DISP_1P6_EN (GPP3_2) to Output */
-	ldr             x0, =EXYNOS9630_GPP3CON
+	/* Set VDD_DISP_1P6_EN (GPG1_1) to Output */
+	ldr             x0, =EXYNOS3830_GPG1CON
 	ldr             w1, [x0]
-	bic             w1, w1, #(0xF << 8)
-	orr             w1, w1, #(0x1 << 8)
+	bic             w1, w1, #(0xF << 4)
+	orr             w1, w1, #(0x1 << 4)
 	str             w1, [x0]
 
-	ldr             x0, =EXYNOS9630_GPP3DAT
+	ldr             x0, =EXYNOS3830_GPG1DAT
 	ldr             w1, [x0]
-	bic             w1, w1, #(0x1 << 2)
-	orr             w1, w1, #(0x1 << 2)
+	bic             w1, w1, #(0x1 << 1)
+	orr             w1, w1, #(0x1 << 1)
 	str             w1, [x0]
 
+	ldr	x0, =EXYNOS3830_GPG2CON
+	ldr	w1, [x0]
+	bic	w1, w1, #(0xF << 24)
+	orr	w1, w1, #(0x1 << 24)
+	str	w1, [x0]
+
+	ldr	x0, =EXYNOS3830_GPG2DAT
+	ldr	w1, [x0]
+	bic	w1, w1, #(0x1 << 6)
+	orr	w1, w1, #(0x1 << 6)
+	str	w1, [x0]
+	/* Set MLCD_RSTB (GPG2_5) to DRV 4X */
 	ret
 

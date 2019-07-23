@@ -24,7 +24,7 @@
 #define __DISPLAY_CONFIG_H__
 
 /* Enable BOOTLOADER DISPLAY : call display function at platform.c */
-/* #define CONFIG_EXYNOS_BOOTLOADER_DISPLAY */
+#define CONFIG_EXYNOS_BOOTLOADER_DISPLAY
 
 /* Enable DSIM BIST FOR TEST : DSIM BIST CONFIG needs CONFIG_EXYNOS_BOOTLOADER_DISPLAY */
 //#define CONFIG_EXYNOS_DSIM_BIST
@@ -39,13 +39,13 @@
 #endif
 
 /* Enable FONT : FONT CONFIG needs CONFIG_EXYNOS_BOOTLOADER_DISPLAY */
-/* #define CONFIG_DISPLAY_DRAWFONT */
+#define CONFIG_DISPLAY_DRAWFONT
 #if defined(CONFIG_DISPLAY_DRAWFONT)
 #define CONFIG_EXYNOS_BOOTLOADER_DISPLAY
 #endif
 
 /* Enable LOGO : LOGO CONFIG needs CONFIG_EXYNOS_BOOTLOADER_DISPLAY */
-/* #define CONFIG_DISPLAY_DRAWLOGO */
+#define CONFIG_DISPLAY_DRAWLOGO
 #if defined(CONFIG_DISPLAY_DRAWLOGO)
 #define CONFIG_EXYNOS_BOOTLOADER_DISPLAY
 #endif
@@ -62,8 +62,8 @@
 #define CONFIG_DISPLAY_FONT_BASE_ADDRESS	0xfac00000
 #define CONFIG_DISPLAY_TEMP_BASE_ADDRESS	0xfc000000
 
-#define LCD_WIDTH		1440
-#define LCD_HEIGHT		2960
+#define LCD_WIDTH		1080
+#define LCD_HEIGHT		1920
 
 
 /* =================================================== */
@@ -83,7 +83,7 @@
 /* TODO : divide platform info and target info */
 //#define NUM_OF_DPP   4
 #define MAX_DPP_CNT	4
-#define LOGO_DPP	0
+#define LOGO_DPP	2
 #define FONT_DPP	1
 #define DFT_DSIM	0
 #define DFT_DECON	0
@@ -92,7 +92,7 @@
 /* DECON Properties */
 static struct decon_dt_info decon_dt = {
 	.max_win	= 4,
-	.dft_win	= 2,	/* window for font should be top window, It means it's zero */
+	.dft_win	= 0,	/* window for font should be top window, It means it's zero */
 	.dft_ch		= LOGO_DPP,
 	.psr_mode	= 2,	/* 0: video mode, 1: DP command mode, 2: MIPI command mode */
 	.trig_mode	= 0,	/* 0: hw trigger, 1: sw trigger */
