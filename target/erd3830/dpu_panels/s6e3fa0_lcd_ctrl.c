@@ -45,7 +45,7 @@
 #define S6E3FA0_HORIZONTAL	1080
 #define S6E3FA0_VERTICAL	1920
 
-#define CONFIG_DECON_LCD_VIDEO_MODE
+//#define CONFIG_DECON_LCD_VIDEO_MODE
 
 struct exynos_panel_info s6e3fa0_lcd_info = {
 #if defined(CONFIG_DECON_LCD_VIDEO_MODE)
@@ -76,13 +76,11 @@ struct exynos_panel_info s6e3fa0_lcd_info = {
 	.yres = S6E3FA0_VERTICAL,
 
 	/* Mhz */
-	.hs_clk = 1100,
+	.hs_clk = 898,
 	.esc_clk = 20,
 
-	.dphy_pms.p = 3,
-	.dphy_pms.m = 127,
-	.dphy_pms.s = 0,
-	.cmd_underrun_cnt = {3022, },
+	.dphy_pms = {2, 276, 2, 20165}, /* pmsk */
+	.cmd_underrun_cnt = {583, },
 #endif
 	/* Maybe, width and height will be removed */
 	.width = 70,

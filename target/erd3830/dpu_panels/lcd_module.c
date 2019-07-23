@@ -24,35 +24,35 @@
 
 #define GAMMA_PARAM_SIZE	26
 
-#define S6E3HA8_CMD_VBP		15
-#define S6E3HA8_CMD_VFP		8
-#define S6E3HA8_CMD_VSA		1
-#define S6E3HA8_CMD_HBP		2
-#define S6E3HA8_CMD_HFP		2
-#define S6E3HA8_CMD_HSA		2
+#define S6E3FA0_CMD_VBP		10
+#define S6E3FA0_CMD_VFP		3
+#define S6E3FA0_CMD_VSA		1
+#define S6E3FA0_CMD_HBP		2
+#define S6E3FA0_CMD_HFP		2
+#define S6E3FA0_CMD_HSA		2
 
-#define S6E3HA8_HORIZONTAL	1440
-#define S6E3HA8_VERTICAL	2960
+#define S6E3FA0_HORIZONTAL	1080
+#define S6E3FA0_VERTICAL	1920
 
-#define CONFIG_DECON_LCD_VIDEO_MODE
+//#define CONFIG_DECON_LCD_VIDEO_MODE
 
 struct exynos_panel_info common_lcd_info = {
 	.mode = DECON_MIPI_COMMAND_MODE,
-	.vfp = S6E3HA8_CMD_VFP,
-	.vbp = S6E3HA8_CMD_VBP,
-	.hfp = S6E3HA8_CMD_HFP,
-	.hbp = S6E3HA8_CMD_HBP,
-	.vsa = S6E3HA8_CMD_VSA,
-	.hsa = S6E3HA8_CMD_HSA,
-	.xres = S6E3HA8_HORIZONTAL,
-	.yres = S6E3HA8_VERTICAL,
+	.vfp = S6E3FA0_CMD_VFP,
+	.vbp = S6E3FA0_CMD_VBP,
+	.hfp = S6E3FA0_CMD_HFP,
+	.hbp = S6E3FA0_CMD_HBP,
+	.vsa = S6E3FA0_CMD_VSA,
+	.hsa = S6E3FA0_CMD_HSA,
+	.xres = S6E3FA0_HORIZONTAL,
+	.yres = S6E3FA0_VERTICAL,
 
 	/* Mhz */
 	.hs_clk = 898,
 	.esc_clk = 20,
 
-	.dphy_pms = {2, 138, 2, 0},
-	.cmd_underrun_cnt = {3022},
+	.dphy_pms = {2, 276, 2, 20165}, /* pmsk */
+	.cmd_underrun_cnt = {583},
 	/* Maybe, width and height will be removed */
 	.width = 70,
 	.height = 121,
@@ -61,7 +61,7 @@ struct exynos_panel_info common_lcd_info = {
 //	.mic_enabled = 0,
 //	.mic_ver = 0,
 
-	.dsc = {1, 1, 2, 40, 720, 240},
+	.dsc = {0, 0, 0, 40, 720, 240},
 //	.dsc_enabled = 1,
 //	.dsc_cnt = 1,
 //	.dsc_slice_num = 2,
