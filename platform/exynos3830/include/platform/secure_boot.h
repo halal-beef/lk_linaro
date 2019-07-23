@@ -165,6 +165,10 @@ uint32_t el3_sss_hash_final(
 	struct ace_hash_ctx *ctx,
 	uint8_t *hash);
 
+uint32_t el3_verify_signature_using_hash(
+	uint64_t sign_field_ptr,
+	uint8_t *hash);
+
 uint32_t el3_verify_signature_using_image(
 	uint64_t signed_img_ptr,
 	uint64_t signed_img_len,
