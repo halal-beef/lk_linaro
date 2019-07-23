@@ -59,16 +59,20 @@ static void dpp_get_params(struct dpp_device *dpp, struct dpp_params_info *p,  u
 	p->addr[2] = 0x0;
 	p->addr[3] = 0x0;
 
-	if (dpp->id == 0) {
+	if (dpp->id == LOGO_DPP) {
 		/* dpp 0 is for logo */
 		p->rot = DPP_ROT_XFLIP;
-	} else if (dpp->id == 1) {
-		/* dpp 2 is for font */
-		p->rot = DPP_ROT_NORMAL;
-	} else if (dpp->id == 2) {
+	} else if (dpp->id == FONT_DPP) {
 		/* dpp 2 is for font */
 		p->rot = DPP_ROT_NORMAL;
 	}
+#if 0
+	else if (dpp->id == 2) {
+		/* dpp 2 is for font */
+		p->rot = DPP_ROT_XFLIP;
+		//p->rot = DPP_ROT_NORMAL;
+	}
+#endif
 
 	p->hdr = 0;
 	p->min_luminance = 0;
