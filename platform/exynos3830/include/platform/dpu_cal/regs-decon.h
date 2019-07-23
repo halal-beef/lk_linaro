@@ -23,12 +23,12 @@
 #ifndef _REGS_DISP_SS_H
 #define _REGS_DISP_SS_H
 
-#define DISP_DPU_MIPI_PHY_CON			0x0008
+#define DISP_DPU_MIPI_PHY_CON			0x1008
 /* _v : [0,1] */
 #define SEL_RESET_DPHY_MASK(_v)			(0x1 << (4 + (_v)))
 #define M_RESETN_M4S4_TOP_MASK			(0x1 << 0)
 
-#define DISP_DPU_TE_QACTIVE_PLL_EN		0x0010
+#define DISP_DPU_TE_QACTIVE_PLL_EN		0x1010
 #define TE_QACTIVE_PLL_EN			(0x1 << 0)
 
 #endif /* _REGS_DISP_SS_H */

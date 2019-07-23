@@ -23,7 +23,7 @@
 #ifndef _REGS_DSIM_H
 #define _REGS_DSIM_H
 
-#define DISP_DPU_MIPI_PHY_CON			0x0008
+#define DISP_DPU_MIPI_PHY_CON			0x1008
 /* _v : [0,1] */
 #define SEL_RESET_DPHY_MASK(_v)			(0x1 << (4 + (_v)))
 #define M_RESETN_M4S4_MODULE_MASK		(0x1 << 1)

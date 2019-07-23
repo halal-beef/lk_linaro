@@ -293,7 +293,7 @@ static inline void dpp_hdr_write_mask(u32 id, u32 reg_id, u32 val, u32 mask)
 /* DPU_DMA Common part */
 static inline u32 dma_com_read(u32 id, u32 reg_id)
 {
-	struct dpp_device *dpp = get_dpp_drvdata(0);
+	struct dpp_device *dpp = get_dpp_drvdata(LOGO_DPP);
 	return readl(dpp->res.dma_com_regs + reg_id);
 }
 
@@ -307,13 +307,13 @@ static inline u32 dma_com_read_mask(u32 id, u32 reg_id, u32 mask)
 static inline void dma_com_write(u32 id, u32 reg_id, u32 val)
 {
 	/* get reliable address when probing IDMA_G0 */
-	struct dpp_device *dpp = get_dpp_drvdata(0);
+	struct dpp_device *dpp = get_dpp_drvdata(LOGO_DPP);
 	writel(val, dpp->res.dma_com_regs + reg_id);
 }
 
 static inline void dma_com_write_mask(u32 id, u32 reg_id, u32 val, u32 mask)
 {
-	struct dpp_device *dpp = get_dpp_drvdata(0);
+	struct dpp_device *dpp = get_dpp_drvdata(LOGO_DPP);
 	u32 old = dma_com_read(id, reg_id);
 
 	val = (val & mask) | (old & ~mask);
