@@ -32,6 +32,7 @@ extern struct exynos_panel_info s6e3fa0_lcd_info;
 
 static int s6e3fa0_get_id(struct dsim_device *dsim)
 {
+	dsim_info("%s     id %d\n", __func__,0xff244040);
 	return 0xff244040; /* s6e3fa0 */
 }
 
@@ -48,6 +49,7 @@ static int s6e3fa0_probe(struct dsim_device *dsim)
 
 static int s6e3fa0_displayon(struct dsim_device *dsim)
 {
+	dsim_info("%s     \n", __func__);
 	s6e3fa0_lcd_init(dsim->id, dsim->lcd_info);
 	s6e3fa0_lcd_enable_exynos(dsim->id);
 	return 1;
