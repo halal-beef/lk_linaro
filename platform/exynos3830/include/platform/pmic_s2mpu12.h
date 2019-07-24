@@ -8,28 +8,27 @@
  * to third parties without the express written permission of Samsung Electronics.
  */
 
-#ifndef __S2MPU10_PMIC_H__
-#define __S2MPU10_PMIC_H__
+#ifndef __S2MPU12_PMIC_H__
+#define __S2MPU12_PMIC_H__
 
-/* S2MPU10 slave address */
-#define S2MPU10_COMMON_ADDR	0x0
-#define S2MPU10_PM_ADDR		0x1
+/* S2MPU12 slave address */
+#define S2MPU12_COMMON_ADDR	0x0
 #define S2MPU12_PM_ADDR		0x1
-#define S2MPU10_RTC_ADDR	0x2
+#define S2MPU12_RTC_ADDR	0x2
 
-/* S2MPU10 Register Address */
-#define S2MPU10_COMMON_CHIPID		0x000
-#define S2MPU10_PM_INT1			0x000
-#define S2MPU10_PM_INT2			0x001
-#define S2MPU10_PM_INT3			0x002
-#define S2MPU10_PM_INT4			0x003
-#define S2MPU10_PM_INT5			0x004
-#define S2MPU10_PM_INT6			0x005
-#define S2MPU10_PM_PWRONSRC		0x00E
-#define S2MPU10_PM_OFFSRC		0x00F
-#define S2MPU10_PM_RTC_BUF		0x011
-#define S2MPU10_PM_CTRL1		0x012
-#define S2MPU10_PM_CTRL3		0x014
+/* S2MPU12 Register Address */
+#define S2MPU12_COMMON_CHIPID		0x004
+#define S2MPU12_PM_INT1			0x000
+#define S2MPU12_PM_INT2			0x001
+#define S2MPU12_PM_INT3			0x002
+#define S2MPU12_PM_INT4			0x003
+#define S2MPU12_PM_INT5			0x004
+#define S2MPU12_PM_INT6			0x005
+#define S2MPU12_PM_PWRONSRC		0x00E
+#define S2MPU12_PM_OFFSRC		0x00F
+#define S2MPU12_PM_RTC_BUF		0x011
+#define S2MPU12_PM_CTRL1		0x012
+#define S2MPU12_PM_CTRL3		0x014
 
 #define S2MPU12_PM_LDO2_CTRL		0x02C
 #define S2MPU12_PM_LDO11_CTRL		0x035
@@ -37,41 +36,23 @@
 #define S2MPU12_PM_LDO27_CTRL		0x045
 #define S2MPU12_PM_LDO28_CTRL		0x046
 
-#define S2MPU10_PM_LDO21_CTRL		0x04A
-#define S2MPU10_PM_LDO22_CTRL		0x04B
-#define S2MPU10_PM_LDO23_CTRL		0x04C
+#define S2MPU12_RTC_WTSR_SMPL	0x001
+#define S2MPU12_RTC_UPDATE		0x002
+#define S2MPU12_RTC_CAP_SEL		0x003
+#define S2MPU12_RTC_MSEC		0x004
+#define S2MPU12_RTC_SEC			0x005
+#define S2MPU12_RTC_MIN			0x006
+#define S2MPU12_RTC_HOUR		0x007
+#define S2MPU12_RTC_WEEK		0x008
+#define S2MPU12_RTC_DAY			0x009
+#define S2MPU12_RTC_MON			0x00A
+#define S2MPU12_RTC_YEAR		0x00B
 
-#define S2MPU10_PM_INT1M		0x006
-#define S2MPU10_PM_INT2M		0x007
-#define S2MPU10_PM_INT3M		0x008
-#define S2MPU10_PM_INT4M		0x009
-#define S2MPU10_PM_INT5M		0x00A
-#define S2MPU10_PM_INT6M		0x00B
-
-#define S2MPU10_RTC_WTSR_SMPL	0x001
-#define S2MPU10_RTC_UPDATE		0x002
-#define S2MPU10_RTC_CAP_SEL		0x003
-#define S2MPU10_RTC_MSEC		0x004
-#define S2MPU10_RTC_SEC			0x005
-#define S2MPU10_RTC_MIN			0x006
-#define S2MPU10_RTC_HOUR		0x007
-#define S2MPU10_RTC_WEEK		0x008
-#define S2MPU10_RTC_DAY			0x009
-#define S2MPU10_RTC_MON			0x00A
-#define S2MPU10_RTC_YEAR		0x00B
-#define S2MPU10_PM_ETC_OTP		0x013
-
-/* S2MPU11 Register Address */
-#define S2MPU11_PM_ADDR			0x1
-#define S2MPU11_PM_INT1M		0x003
-#define S2MPU11_PM_INT2M		0x004
-#define S2MPU11_PM_INT3M		0x005
-#
 /* If ignore SMPL Detection, activate below define */
-/* #define S2MPU10_PM_IGNORE_SMPL_DETECT */
+/* #define S2MPU12_PM_IGNORE_SMPL_DETECT */
 
 /* If ignore WTSR Detection, activate below define */
-/* #define S2MPU10_PM_IGNORE_WTSR_DETECT */
+/* #define S2MPU12_PM_IGNORE_WTSR_DETECT */
 
 /* RTC Counter Register offsets */
 enum {
@@ -120,7 +101,7 @@ typedef enum {
 /*
  * RTC_BUF
  */
-#define _32KHZPERI_EN	(0x1 << 2)
+#define _32KHZPERI_EN	(0x1 << 1)
 #define _32KHZAP_EN	(0x1 << 0)
 
 /*
@@ -138,13 +119,13 @@ typedef enum {
 /*
  * LDOx_CTRL
  */
-#define S2MPU10_OUTPUT_ON_NORMAL	(0x3 << 6)
+#define S2MPU12_OUTPUT_ON_NORMAL	(0x3 << 6)
 
 void pmic_init(void);
 void pmic_enable_manual_reset(pmic_mrdt);
 void read_pmic_info_s2mpu12(void);
-int chk_smpl_wtsr_s2mpu10(void);
+int chk_smpl_wtsr_s2mpu12(void);
 int get_pmic_rtc_time(char *buf);
 
-#endif /*__S2MPU10_PMIC_H__*/
+#endif /*__S2MPU12_PMIC_H__*/
 

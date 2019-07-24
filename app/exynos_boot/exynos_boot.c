@@ -153,7 +153,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		ab_update_slot_info_bootloader();
 */
 	/* check SMPL & WTSR with S2MPU10 */
-	chk_wtsr_smpl = chk_smpl_wtsr_s2mpu10();
+	chk_wtsr_smpl = chk_smpl_wtsr_s2mpu12();
 	if (chk_wtsr_smpl == PMIC_DETECT_WTSR) {
 		print_lcd_update(FONT_RED, FONT_BLACK, "WTSR DETECTED");
 		printf("WTSR detected\n");

@@ -25,17 +25,17 @@ void pmic_enable_manual_reset(pmic_mrdt deb_time)
 	unsigned char reg;
 
 	/* Disable Warm Reset */
-	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_CTRL3, &reg);
+	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_CTRL3, &reg);
 	reg &= ~WRSTEN;
 	reg |= MRSEL;
-	i3c_write(0, S2MPU10_PM_ADDR, S2MPU10_PM_CTRL3, reg);
+	i3c_write(0, S2MPU12_PM_ADDR, S2MPU12_PM_CTRL3, reg);
 
 	/* Enable Manual Reset */
-	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_CTRL1, &reg);
+	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_CTRL1, &reg);
 	reg |= MRSTB_EN;
 	reg &= 0xF0;
 	reg |= (0x0F & deb_time);
-	i3c_write(0, S2MPU10_PM_ADDR, S2MPU10_PM_CTRL1, reg);
+	i3c_write(0, S2MPU12_PM_ADDR, S2MPU12_PM_CTRL1, reg);
 }
 
 void pmic_int_mask(unsigned int chan, unsigned int addr, unsigned int interrupt)
@@ -81,13 +81,13 @@ int get_pmic_rtc_time(char *buf)
 	u8 tmp;
 	u8 time[NR_PMIC_RTC_CNT_REGS];
 
-	i3c_read(0, S2MPU10_RTC_ADDR, S2MPU10_RTC_UPDATE, &tmp);
+	i3c_read(0, S2MPU12_RTC_ADDR, S2MPU12_RTC_UPDATE, &tmp);
 	tmp |= 0x1;
-	i3c_write(0, S2MPU10_RTC_ADDR, S2MPU10_RTC_UPDATE, tmp);
+	i3c_write(0, S2MPU12_RTC_ADDR, S2MPU12_RTC_UPDATE, tmp);
 	u_delay(40);
 
 	for (i = 0; i < NR_PMIC_RTC_CNT_REGS; i++)
-		i3c_read(0, S2MPU10_RTC_ADDR, (S2MPU10_RTC_SEC + i), &time[i]);
+		i3c_read(0, S2MPU12_RTC_ADDR, (S2MPU12_RTC_SEC + i), &time[i]);
 
 	printf("RTC TIME: %d-%02d-%02d %02d:%02d:%02d(0x%02x)%s\n",
 			time[PMIC_RTC_YEAR] + 2000, time[PMIC_RTC_MONTH],
@@ -108,23 +108,56 @@ int get_pmic_rtc_time(char *buf)
 
 void read_pmic_info_s2mpu12 (void)
 {
+	unsigned char read_int1, read_int2, read_int;
 	unsigned char read_ldo2_ctrl, read_ldo11_ctrl, read_ldo23_ctrl;
 	unsigned char read_ldo27_ctrl, read_ldo28_ctrl;
+	unsigned char read_pwronsrc, read_offsrc, read_wtsr_smpl;
+
+	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_INT1, &read_int1);
+	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_INT2, &read_int2);
+	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_INT3, &read_int);
+	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_INT4, &read_int);
+	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_INT5, &read_int);
+	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_INT6, &read_int);
+	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_PWRONSRC, &read_pwronsrc);
+	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_OFFSRC, &read_offsrc);
 
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO2_CTRL, &read_ldo2_ctrl);
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO11_CTRL, &read_ldo11_ctrl);
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO23_CTRL, &read_ldo23_ctrl);
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO27_CTRL, &read_ldo27_ctrl);
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO28_CTRL, &read_ldo28_ctrl);
+	/* read PMIC RTC */
+	i3c_read(0, S2MPU12_RTC_ADDR, S2MPU12_RTC_WTSR_SMPL, &read_wtsr_smpl);
 
+	printf("S2MPU12_PM_INT1: 0x%x\n", read_int1);
+	printf("S2MPU12_PM_INT2: 0x%x\n", read_int2);
+	printf("S2MPU12_PM_PWRONSRC: 0x%x\n", read_pwronsrc);
+	printf("S2MPU12_PM_OFFSRC: 0x%x\n", read_offsrc);
 	printf("S2MPU12_PM_LDO2_CTRL: 0x%x\n", read_ldo2_ctrl);
 	printf("S2MPU12_PM_LDO11_CTRL: 0x%x\n", read_ldo11_ctrl);
 	printf("S2MPU12_PM_LDO23_CTRL: 0x%x\n", read_ldo23_ctrl);
 	printf("S2MPU12_PM_LDO27_CTRL: 0x%x\n", read_ldo27_ctrl);
 	printf("S2MPU12_PM_LDO28_CTRL: 0x%x\n", read_ldo28_ctrl);
+	printf("S2MPU12_RTC_WTSR_SMPL : 0x%x\n", read_wtsr_smpl);
+
+	if ((read_pwronsrc & (1 << 7)) && (read_int2 & (1 << 5)) && !(read_int1 & (1 << 7))) {
+		/* WTSR detect condition - WTSR_ON && WTSR_INT && ! MRB_INT */
+		chk_wtsr_smpl = PMIC_DETECT_WTSR;
+		printf("WTSR detected\n");
+	} else if ((read_pwronsrc & (1 << 6)) && (read_int2 & (1 << 3)) && (read_wtsr_smpl & (1 << 7))) {
+		/* SMPL detect condition - SMPL_ON && SMPL_INT && SMPL_EN */
+		chk_wtsr_smpl = PMIC_DETECT_SMPL;
+		printf("SMPL detected\n");
+	} else {
+		chk_wtsr_smpl = PMIC_DETECT_NONE;
+	}
+
+	read_int_first = 1;
+	get_pmic_rtc_time(NULL);
 }
 
-int chk_smpl_wtsr_s2mpu10(void)
+int chk_smpl_wtsr_s2mpu12(void)
 {
 	if (!read_int_first)
 		read_pmic_info_s2mpu12();
