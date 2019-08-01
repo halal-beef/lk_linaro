@@ -179,6 +179,31 @@ void s6e3fa0_lcd_init(unsigned int id, struct exynos_panel_info *lcd)
 		dsim_err("fail to send SEQ_TEST_KEY_ON_C0 command.\n");
 	mdelay(12);
 
+	if (dsim_wr_data(id, MIPI_DSI_DCS_SHORT_WRITE_PARAM,
+				SEQ_BCTRL_ON[0],
+				SEQ_BCTRL_ON[1]) < 0)
+		dsim_err("fail to send SEQ_BCTRL_ON command.\n");
+	mdelay( 12);
+
+	if (dsim_wr_data(id, MIPI_DSI_DCS_SHORT_WRITE_PARAM,
+				SEQ_DFT_BRIGHTNESS[0],
+				SEQ_DFT_BRIGHTNESS[1]) < 0)
+		dsim_err("fail to send SEQ_DFT_BRIGHTNESS command.\n");
+	mdelay( 12);
+
+
+	if (dsim_wr_data(id, MIPI_DSI_DCS_SHORT_WRITE_PARAM,
+				SEQ_EOT_PARAM_IDX_JUMP[0],
+				SEQ_EOT_PARAM_IDX_JUMP[1]) < 0)
+		dsim_err("fail to send SEQ_CTRL_ON command.\n");
+	mdelay( 12);
+
+	if (dsim_wr_data(id, MIPI_DSI_DCS_SHORT_WRITE_PARAM,
+				SEQ_EOT_IG_EOT_ERR[0],
+				SEQ_EOT_IG_EOT_ERR[1]) < 0)
+		dsim_err("fail to send SEQ_CTRL_ON command.\n");
+	mdelay( 12);
+
 	if (lcd->mode == DECON_MIPI_COMMAND_MODE) {
 		if (dsim_wr_data(id, MIPI_DSI_DCS_SHORT_WRITE,
 				SEQ_TE_ON[0], 0) < 0)

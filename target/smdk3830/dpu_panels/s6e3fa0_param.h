@@ -191,6 +191,21 @@ static const unsigned char SEQ_ACL_40_RE_LOW[] = {
 	0x00
 };
 
+static const unsigned char SEQ_BCTRL_ON[] = {
+	0x53,
+	0x20
+};
+
+static const unsigned char SEQ_EOT_PARAM_IDX_JUMP[] = {
+	0xB0,
+	0x05
+};
+
+static const unsigned char SEQ_EOT_IG_EOT_ERR[] = {
+	0xE7,
+	0x47
+};
+
 static const unsigned char SEQ_DISPCTL[] = {
 	0xF2,
 	0x02, 0x03, 0xC, 0xA0, 0x01, 0x48
