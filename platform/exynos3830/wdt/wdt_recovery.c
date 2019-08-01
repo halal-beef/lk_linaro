@@ -18,13 +18,15 @@ static unsigned int watchdog_count;
 
 void wdt_stop(void)
 {
-	unsigned long wtcon, pmu_reg;
-
+	unsigned long wtcon;
+/* NO WDT_RESET_REQUEST for exynos3830 */
+/*
+	unsigned long pmu_reg;
 	pmu_reg = readl(EXYNOS3830_POWER_MASK_WDT_RESET_REQUEST);
 	pmu_reg |= (0x1 << EXYNOS3830_WDT_MASK_RESET_BIT);
 	writel(pmu_reg, EXYNOS3830_POWER_MASK_WDT_RESET_REQUEST);
 	printf("Watchdog mask_wdt_reset register mask!\n");
-
+*/
 	wtcon = readl(EXYNOS3830_WDT_WTCON);
 	wtcon &= ~(EXYNOS3830_WDT_WTCON_ENABLE | EXYNOS3830_WDT_WTCON_RSTEN);
 	writel(wtcon, EXYNOS3830_WDT_WTCON);
@@ -39,7 +41,7 @@ void wdt_start(unsigned int timeout)
 {
 	unsigned int count = timeout * (EXYNOS3830_WDT_FREQ / EXYNOS3830_WDT_INIT_PRESCALER);
 	unsigned int divisor = 1;
-	unsigned long wtcon, pmu_reg;
+	unsigned long wtcon;
 
 	printf("watchdog cl0 start, count = %x, timeout = %d\n", count, timeout);
 
@@ -67,11 +69,14 @@ void wdt_start(unsigned int timeout)
 	/* watchdog start */
 	wdt_stop();
 
+/* NO WDT_RESET_REQUEST for exynos3830 */
+/*
+	unsigned long pmu_reg;
 	pmu_reg = readl(EXYNOS3830_POWER_MASK_WDT_RESET_REQUEST);
 	pmu_reg &= ~(0x1 << EXYNOS3830_WDT_MASK_RESET_BIT);
 	writel(pmu_reg, EXYNOS3830_POWER_MASK_WDT_RESET_REQUEST);
 	printf("Watchdog mask_wdt_reset register clear!\n");
-
+*/
 	wtcon = readl(EXYNOS3830_WDT_WTCON);
 	wtcon |= EXYNOS3830_WDT_WTCON_ENABLE | EXYNOS3830_WDT_WTCON_DIV128;
 
