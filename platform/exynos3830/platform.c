@@ -201,12 +201,11 @@ static void print_el3_monitor_version(void)
 
 static int check_charger_connect(void)
 {
-#if 0
 	unsigned char read_pwronsrc = 0;
 	unsigned int rst_stat = readl(EXYNOS3830_POWER_RST_STAT);
 
 	if ((rst_stat & PIN_RESET) == PIN_RESET) {
-		i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_PWRONSRC, &read_pwronsrc);
+		i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_PWRONSRC, &read_pwronsrc);
 
 		/* Check USB or TA connected and PWRONSRC(USB)  */
 		if(read_pwronsrc & ACOK)
@@ -216,7 +215,7 @@ static int check_charger_connect(void)
 	} else {
 		charger_mode = 0;
 	}
-#endif
+
 	return 0;
 }
 
