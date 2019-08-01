@@ -39,15 +39,20 @@ static void wfi(void)
 static int debug_store_is_skip(void)
 {
 	struct exynos_gpio_bank *bank = (struct exynos_gpio_bank *)EXYNOS3830_GPA1CON;
+	int gpio = 0;	/* Volume Down */
 	int ret = 0;
 	int cnt = 100;
+
+	/* Volume up set Input & Pull NONE */
+	exynos_gpio_set_pull(bank, gpio, GPIO_PULL_NONE);
+	exynos_gpio_cfg_pin(bank, gpio, GPIO_INPUT);
 
 	print_lcd_update(FONT_GREEN, FONT_BLACK, "After 10 seconds, store ramdump");
 	print_lcd_update(FONT_GREEN, FONT_BLACK, "press Vol-Down to skip store ramdump");
 
 	do {
 		u_delay(100000);
-		if (!exynos_gpio_get_value(bank, 0)) {
+		if (!exynos_gpio_get_value(bank, gpio)) {
 			ret = -1;
 			break;
 		}
@@ -149,11 +154,11 @@ int debug_store_ramdump(void)
 	}
 
 	print_lcd_update(FONT_GREEN, FONT_BLACK, "Finish storing ramdump!");
-	printf("%s: Finish storing ramdump!", __func__);
+	printf("%s: Finish storing ramdump!\n", __func__);
 	printf("%s: Wait for 1 second for storing ramdump data\n", __func__);
 	u_delay(1000000);
 
-#ifndef CONFIG_OFFLINE_RAMDUMP
+#ifdef DEBUG_STORE_RAMDUMP_TEST
 	goto store_out;
 #endif
 
