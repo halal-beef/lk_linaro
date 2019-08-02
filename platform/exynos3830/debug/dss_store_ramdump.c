@@ -177,6 +177,7 @@ store_out:
 
 int debug_store_ramdump_redirection(void *ptr)
 {
+#ifdef DEBUG_STORE_RAMDUMP_TEST
 	void *part;
 	struct fastboot_ramdump_hdr *hdr = ptr;
 	u64 storage_base;
@@ -194,6 +195,9 @@ int debug_store_ramdump_redirection(void *ptr)
 		printf("%s: current ram data will be extracted\n", __func__);
 		goto redirection_out;
 	}
+
+	printf("%s: do ramdump redirection base[0x%lx] size[%lx]\n",
+					__func__,  hdr->base, hdr->size);
 
 	/* Set possible redirection base and dump size */
 	dram_size = *(u64 *)BL_SYS_INFO_DRAM_SIZE;
@@ -237,12 +241,15 @@ int debug_store_ramdump_redirection(void *ptr)
 		storage_base = RAMDUMP_OFFSET + hdr->base - 0x80000000UL;
 
 	hdr->base = redirection_base;
-	ret = part_read_partial(part, (void *)hdr->base, (u64)storage_base, (u64)(hdr->size + 1));
+	ret = part_read_partial(part, (void *)hdr->base, (u64)storage_base, (u64)(hdr->size));
 	if (ret)
 		 printf("%s: part read fail(line:%u)\n", __func__, __LINE__);
 
 redirection_out:
 	return ret;
+#else
+	return 0;
+#endif
 }
 
 int debug_store_ramdump_oem(const char *cmd)

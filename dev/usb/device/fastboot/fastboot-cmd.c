@@ -597,15 +597,15 @@ int fb_do_download(const char *cmd_buffer, unsigned int rx_sz)
 
 static void start_ramdump(void *buffer)
 {
-	struct fastboot_ramdump_hdr *hdr = buffer;
+	struct fastboot_ramdump_hdr hdr = *(struct fastboot_ramdump_hdr *)buffer;
 	static uint32_t ramdump_cnt = 0;
 	char buf[] = "OKAY";
 
-	LTRACEF_LEVEL(INFO, "\nramdump start address is [0x%lx]\n", hdr->base);
-	LTRACEF_LEVEL(INFO, "ramdump size is [0x%lx]\n", hdr->size);
-	LTRACEF_LEVEL(INFO, "version is [0x%lx]\n", hdr->version);
+	LTRACEF_LEVEL(INFO, "\nramdump start address is [0x%lx]\n", hdr.base);
+	LTRACEF_LEVEL(INFO, "ramdump size is [0x%lx]\n", hdr.size);
+	LTRACEF_LEVEL(INFO, "version is [0x%lx]\n", hdr.version);
 
-	if (hdr->version != 2) {
+	if (hdr.version != 2) {
 		LTRACEF_LEVEL(INFO, "you are using wrong version of fastboot!!!\n");
 	}
 
@@ -613,7 +613,12 @@ static void start_ramdump(void *buffer)
 	if (ramdump_cnt++ == 0)
 		set_tzasc_action(0);
 
-	fastboot_set_payload_data(USBDIR_IN, (void *)hdr->base, hdr->size);
+	if (debug_store_ramdump_redirection(&hdr)) {
+		printf("Failed ramdump~! \n");
+		return;
+	}
+
+	fastboot_set_payload_data(USBDIR_IN, (void *)hdr.base, hdr.size);
 	fastboot_send_status(buf, strlen(buf), FASTBOOT_TX_SYNC);
 }
 
