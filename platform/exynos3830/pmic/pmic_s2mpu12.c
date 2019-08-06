@@ -58,6 +58,7 @@ void pmic_init (void)
 	/* Enable warm reset */
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_CTRL3, &reg);
 	reg |= WRSTEN;
+	reg &= ~MRSEL;
 	i3c_write(0, S2MPU12_PM_ADDR, S2MPU12_PM_CTRL3, reg);
 
 	/* Enable eMMC power */
