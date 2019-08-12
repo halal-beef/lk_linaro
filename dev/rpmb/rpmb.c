@@ -743,9 +743,10 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		/* Authenticated data read request */
 		addrp = (u32 *)(packet->data);
 		addr = *addrp;
-		blk_cnt = packet->count;
+		blk_cnt = *((u32 *)(packet->data)+1);
 		start_blk = packet->address;
 		*addrp = 0;
+		*(addrp+1) = 0;
 
 		buf = malloc(512*blk_cnt);
 		if (buf == NULL) {
@@ -818,7 +819,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		ret = get_RPMB_hmac(hmac, blk_cnt * HMAC_CALC_SIZE, output_data);
 		if (ret != RV_SUCCESS)
 			printf("RPMB: get hamc value: fail: 0x%X\n", ret);
-		
+
 		result = memcmp((void *)(output_data),
 				(void *)(buf + HMAC_START_BYTE + ((blk_cnt - 1) * RPMB_SIZE)),
 				HMAC_SIZE);
@@ -1184,7 +1185,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 		/* Authenticated data read request */
 		addrp = (u32 *)(packet->data);
 		addr = *addrp;
-		blk_cnt = packet->count;
+		blk_cnt = *((u32 *)(packet->data)+1);
 		start_blk = packet->address;
 		*addrp = 0;
 		*(addrp+1) = 0;
@@ -1488,7 +1489,12 @@ static int rpmb_read_block(int addr, int blkcnt, u8 *buf)
 		memset((void *)&packet, 0,512);
 
 		packet.request = 0x04;
+#ifdef USE_MMC0
+		packet.count = 0;
+#else
 		packet.count = 1;
+#endif
+		*((u32 *)(packet.data) + 1) = 1;
 
 #ifdef ENABLE_CM_NONCE
 		memset(nonce, 0, NONCE_SIZE);
