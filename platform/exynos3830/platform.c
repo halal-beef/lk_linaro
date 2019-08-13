@@ -344,17 +344,16 @@ void platform_init(void)
 	 */
 	print_lcd_update(FONT_BLUE, FONT_BLACK, "LK display is enabled!");
 #endif
-	/*
+
 	dfd_display_reboot_reason();
 	dfd_display_core_stat();
-	*/
-	/* read_dram_info(); */
+
+	read_dram_info();
 
 	display_tmu_info();
 	display_trip_info();
 
 	/*
-	dfd_display_reboot_reason();
 	if ((get_current_boot_device() != BOOT_USB) &&
 		*(unsigned int *)DRAM_BASE == 0xabcdef)
 		init_fastboot_variables();
