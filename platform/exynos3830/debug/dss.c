@@ -41,7 +41,7 @@ struct dbg_snapshot_bl {
 	unsigned int magic2;
 	unsigned int item_count;
 	unsigned int reserved;
-	struct dss_item item[16];
+	struct dss_item item[25];
 };
 
 struct dbg_snapshot_bl static_dss_bl = {
