@@ -90,10 +90,12 @@ static void set_gpio_lcd_reset(enum board_gpio_type gpio_type)
 	}
 
 	/* RESET: "0" -> "1" */
+	printf("OLED RST(0)\n");
 	display_panel_reset();
-	mdelay(5);
+	mdelay(100);
+	printf("OLED RST(1)\n");
 	display_panel_release();
-	mdelay(10);
+	mdelay(100);
 }
 
 /* Configure and set a GPIO for LCD_POWER_ON */
