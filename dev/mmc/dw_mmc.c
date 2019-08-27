@@ -672,7 +672,7 @@ static void dwmci_end_data(struct dw_mci *host)
 static int dwmci_data_transfer(struct dw_mci *host)
 {
 	unsigned int mask;
-	unsigned int timeout = 100000;
+	unsigned int timeout = 10000000;
 
 	while (timeout--) {
 		mask = dwmci_readl(host, DWMCI_RINTSTS);
@@ -693,6 +693,7 @@ static int dwmci_data_transfer(struct dw_mci *host)
 			dwmci_writel(host, 0x0, DWMCI_IDINTEN);
 			break;
 		}
+		udelay(1);
 	}
 
 	if (timeout == 0) {
