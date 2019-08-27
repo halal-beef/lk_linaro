@@ -71,7 +71,8 @@ unsigned long long simple_strtoull(const char *cp, char **endp, unsigned int bas
 	}
 	if (endp)
 		*endp = (char *) cp;
-		return result;
+
+	return result;
 }
 
 int uid_str_valid(const char *uid)
