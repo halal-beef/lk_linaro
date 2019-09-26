@@ -29,6 +29,7 @@
 #include <platform/environment.h>
 #include <platform/dfd.h>
 #include <platform/dss_store_ramdump.h>
+#include <platform/wdt_recovery.h>
 #include <dev/usb/fastboot.h>
 #include <dev/boot.h>
 #include <dev/rpmb.h>
@@ -852,6 +853,10 @@ int fb_do_oem(const char *cmd_buffer, unsigned int rx_sz)
 			sprintf(response, "FAILunsupported command");
 
 		fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+	} else if (!strncmp(cmd_buffer + 4, "edl", 3)) {
+		sprintf(response, "OKAY");
+		fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+		force_wdt_recovery();
 	} else {
 		printf("Unsupported oem command!\n");
 		sprintf(response, "FAILunsupported command");
