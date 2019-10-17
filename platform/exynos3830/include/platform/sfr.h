@@ -13,4 +13,6 @@
 
 #include "exynos3830.h"
 
+#define EXYNOS_ADC_BASE				EXYNOS3830_ADC_BASE
+
 #endif	/* __SFR_H__ */
