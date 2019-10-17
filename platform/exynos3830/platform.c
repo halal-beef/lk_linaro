@@ -35,6 +35,7 @@
 #include <platform/fastboot.h>
 #include <platform/sfr.h>
 #include <platform/acpm.h>
+#include <platform/board_rev.h>
 #include <dev/mmc.h>
 #include <platform/secure_boot.h>
 #include <lib/font_display.h>
@@ -314,7 +315,7 @@ void display_acpm_version(void)
 void platform_init(void)
 {
 	unsigned int rst_stat = readl(EXYNOS3830_POWER_RST_STAT);
-	u32 ret = 0;
+	int ret = 0;
 
 	display_flexpmu_dbg();
 	display_acpm_version();
@@ -336,6 +337,9 @@ void platform_init(void)
 
 	if (*(unsigned int *)DRAM_BASE == 0xabcdef)
 		check_charger_connect();
+
+	ret = get_board_rev();
+	ret < 0 ? (board_rev = 0):(board_rev = ret);
 
 	mmc_init();
 	part_init();
@@ -428,7 +432,7 @@ void platform_init(void)
 			printf("ldfw: init failed.\n");
 		}
 
-		ret = (u32)init_sp();
+		ret = init_sp();
 		if (!ret)
 			printf("secure_payload: init done successfully.\n");
 		else
