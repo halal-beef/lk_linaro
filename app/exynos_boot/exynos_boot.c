@@ -51,6 +51,7 @@ int cmd_boot(int argc, const cmd_args *argv);
 int ab_update_slot_info_bootloader(void);
 static void do_memtester(unsigned int loop);
 extern unsigned int uart_log_mode;
+extern unsigned int board_rev;
 
 static void exynos_boot_task(const struct app_descriptor *app, void *args)
 {
@@ -62,6 +63,8 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	int chk_wtsr_smpl;
 	int i;
 	//void *part;
+
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "Board revision : 0x%X", board_rev);
 
 	if (*(unsigned int *)DRAM_BASE != 0xabcdef) {
 		printf("Running on DRAM by TRACE32: skip auto booting\n");
