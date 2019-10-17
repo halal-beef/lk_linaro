@@ -8,14 +8,20 @@
  * to third parties without the express written permission of Samsung Electronics.
  */
 
-#ifndef __BOARD_INFO_H__
-#define __BOARD_INFO_H__
+#ifndef __B_REV_GPIO_H__
 
-#define CONFIG_BOARD_ID 0x0
+#define REV_GPIO_LINES	1
 
-#define CONFIG_USE_RPMB
-#define USE_MMC0
+/*
+ * HW_REV_M - 0: Advanced, 1: Mass
+ */
 
-#define CONFIG_GET_B_REV_FROM_ADC
+struct b_rev_gpio_info b_rev_gpio[REV_GPIO_LINES] = {
+	{
+		/*
+		 * Fill in initial value
+		 */
+	},
+};
 
-#endif /*__BOARD_INFO_H__ */
+#endif /*__B_REV_GPIO_H__*/
