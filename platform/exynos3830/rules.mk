@@ -42,7 +42,8 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/debug/dfd.c \
 	$(LOCAL_DIR)/debug/dfd_asm_helper.S \
 	$(LOCAL_DIR)/debug/dss.c \
-	$(LOCAL_DIR)/debug/dss_store_ramdump.c
+	$(LOCAL_DIR)/debug/dss_store_ramdump.c \
+	$(LOCAL_DIR)/board_rev/board_rev.c
 
 MODULE_DEPS += \
 	dev/interrupt/arm_gic \
@@ -51,7 +52,7 @@ MODULE_DEPS += \
 	lib/cksum \
 	dev/usb/dwc3 \
 	dev/usb/phy/exynos \
-	dev/usb/device/fastboot 
+	dev/usb/device/fastboot
 
 LINKER_SCRIPT += $(BUILDDIR)/system-onesegment.ld
 
