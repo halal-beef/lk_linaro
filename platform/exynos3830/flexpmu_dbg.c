@@ -332,8 +332,8 @@ static void print_pmudbg_registers(void)
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER1_CPU2_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x1c));
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER1_CPU3_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x20));
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER1_NONCPU_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x24));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "MIF_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x84));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "TOP_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x8c));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "MIF_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x94));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "TOP_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x98));
 
 	for (i = 0; i < 6; i++) {
 		if (i % 4 == 0)
