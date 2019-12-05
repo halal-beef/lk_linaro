@@ -613,6 +613,7 @@ mem_node_out:
 	printf("\nbootargs: %s\n", np);
 
 	set_bootargs();
+	set_usb_serialno();
 
 #if defined(CONFIG_USE_AVB20)
 	/* set AVB args */
