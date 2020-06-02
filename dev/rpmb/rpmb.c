@@ -1583,6 +1583,10 @@ static int rpmb_read_block(int addr, int blkcnt, u8 *buf)
 			printf("RPMB: rpmb_read_block(%d) fail !!!\n", packet.address);
 			return ret;
 		}
+		if (packet.result) {
+			printf("RPMB: rpmb_read_block fail (result: 0x%x)\n", packet.result);
+			return packet.result;
+		}
 	}
 
 	return RV_SUCCESS;
@@ -1654,7 +1658,10 @@ static int rpmb_write_block(int addr, int blkcnt, u8 *buf)
 			printf("RPMB: write block (%d) fail !!!\n", packet.address);
 			return ret;
 		}
-
+		if (packet.result) {
+			printf("RPMB: rpmb_write_block fail (result: 0x%x)\n", packet.result);
+			return packet.result;
+		}
 	}
 
 	return RV_SUCCESS;
