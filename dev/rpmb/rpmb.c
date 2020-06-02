@@ -789,6 +789,9 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 			printf("Authenticated data read response (Swapped)\n");
 			dump_packet((u8 *) packet, RPMB_SIZE);
 #endif
+			bio_close(dev);
+			ret = -1;
+			goto out;
 		} else {
 #ifdef RPMB_DEBUG
 			dprintf(INFO, "HMAC compare success !!\n");
@@ -1218,6 +1221,10 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 			printf("Authenticated data read response (Swapped)\n");
 			dump_packet((u8 *) packet, RPMB_SIZE);
 #endif
+			free(hmac);
+			bio_close(dev);
+			ret = -1;
+			goto out;
 		} else {
 #ifdef RPMB_DEBUG
 			dprintf(INFO, "HMAC compare success !!\n");
