@@ -568,6 +568,43 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		dump_packet(packet->Key_MAC, HMAC_SIZE);
 		mmc_report(packet, SECU_PROT_IN);
 #endif
+		/* Read Write Counter OP's Response HMAC verification */
+		memcpy((void *) hmac, (void *)(buf + DATA_START_BYTE), HMAC_CALC_SIZE);
+
+		memset(output_data, 0, sizeof(output_data));
+		ret = get_RPMB_hmac(hmac, HMAC_CALC_SIZE, output_data);
+		if (ret != RV_SUCCESS)
+			printf("RPMB: get hamc value: fail: 0x%X\n", ret);
+		result = memcmp((void *)(output_data), (void *)(buf + HMAC_START_BYTE), HMAC_SIZE);
+		if (result != 0) {
+			printf("HMAC compare fail !!\n");
+#ifdef RPMB_DEBUG
+			printf("HMAC Host value\n");
+			dump_packet(output_data, HMAC_SIZE);
+			dump_packet((void *)(buf + HMAC_START_BYTE),HMAC_SIZE);
+
+			printf("Read Counter Value response (Not Swapped)\n");
+			dump_packet((void *) buf, RPMB_SIZE);
+			printf("Read Counter Value response (Swapped)\n");
+			dump_packet((u8 *) packet, RPMB_SIZE);
+#endif
+			bio_close(dev);
+			ret = -1;
+			goto out;
+
+		} else {
+#ifdef RPMB_DEBUG
+			dprintf(INFO, "HMAC compare success !!\n");
+			dprintf(INFO, "RPMB: HMAC: ");
+			print_byte_to_hex(output_data, RPMB_HMAC_LEN);
+			dprintf(INFO, "\n");
+			dprintf(INFO, "Read Counter Value response (Not Swapped)\n");
+			dump_packet((void *) buf, RPMB_SIZE);
+			dprintf(INFO, "Read Counter Value response (Swapped)\n");
+			dump_packet((u8 *) packet, RPMB_SIZE);
+#endif
+		}
+
 		bio_close(dev);
 
 		break;
@@ -990,6 +1027,41 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 		dump_packet(packet->Key_MAC, HMAC_SIZE);
 		ufs_upiu_report(packet, SECU_PROT_IN);
 #endif
+		/* Read Write Counter OP's Response HMAC verification */
+		memcpy((void *) hmac, (void *)(buf + DATA_START_BYTE), HMAC_CALC_SIZE);
+		memset(output_data, 0, sizeof(output_data));
+		ret = get_RPMB_hmac(hmac, HMAC_CALC_SIZE, output_data);
+		if (ret != RV_SUCCESS)
+			printf("RPMB: get hamc value: fail: 0x%X\n", ret);
+
+		result = memcmp((void *)(output_data), (void *)(buf + HMAC_START_BYTE), HMAC_SIZE);
+		if (result != 0) {
+			printf("HMAC compare fail !!\n");
+#ifdef RPMB_DEBUG
+			printf("HMAC Host value\n");
+			dump_packet(output_data, HMAC_SIZE);
+			dump_packet((void *)(buf + HMAC_START_BYTE),HMAC_SIZE);
+			printf("Read Counter Value response (Not Swapped)\n");
+			dump_packet((void *) buf, RPMB_SIZE);
+			printf("Read Counter Value response (Swapped)\n");
+			dump_packet((u8 *) packet, RPMB_SIZE);
+#endif
+			free(hmac);
+			bio_close(dev);
+			ret = -1;
+			goto out;
+		} else {
+#ifdef RPMB_DEBUG
+			dprintf(INFO, "HMAC compare success !!\n");
+			dprintf(INFO, "RPMB: HMAC: ");
+			print_byte_to_hex(output_data, RPMB_HMAC_LEN);
+			dprintf(INFO, "\n");
+			dprintf(INFO, "Read Counter Value response (Not Swapped)\n");
+			dump_packet((void *) buf, RPMB_SIZE);
+			dprintf(INFO, "Read Counter Value response (Swapped)\n");
+			dump_packet((u8 *) packet, RPMB_SIZE);
+#endif
+		}
 
 		free(hmac);
 		bio_close(dev);
