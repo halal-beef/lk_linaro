@@ -453,7 +453,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		dev = bio_open("mmcrpmb");
 		if (dev == NULL) {
 			printf("bio open fail\n");
-			ret = -1;
+			ret = RV_SRPMB_BIO_OPEN_FAIL;
 			goto out;
 		}
 
@@ -462,7 +462,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		if (cnt == 0) {
 			printf("Authentication write command fail\n");
 			bio_close(dev);
-			ret = -1;
+			ret = RV_SRPMB_SECU_PROT_OUT_FAIL;
 			goto out;
 		}
 
@@ -486,7 +486,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		if (cnt == 0) {
 			printf("Result read request fail !!!\n");
 			bio_close(dev);
-			ret = -1;
+			ret = RV_SRPMB_SECU_PROT_OUT_FAIL;
 			goto out;
 		}
 #ifdef RPMB_DEBUG
@@ -498,7 +498,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		if (cnt == 0) {
 			printf("Result read fail !!!\n");
 			bio_close(dev);
-			ret = -1;
+			ret = RV_SRPMB_SECU_PROT_IN_FAIL;
 			goto out;
 		}
 
@@ -530,7 +530,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		dev = bio_open("mmcrpmb");
 		if (dev == NULL) {
 			printf("bio open fail\n");
-			ret = -1;
+			ret = RV_SRPMB_BIO_OPEN_FAIL;
 			goto out;
 		}
 
@@ -539,7 +539,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		if (cnt == 0) {
 			printf("Write counter read request fail !!!\n");
 			bio_close(dev);
-			ret = -1;
+			ret = RV_SRPMB_SECU_PROT_OUT_FAIL;
 			goto out;
 		}
 
@@ -553,7 +553,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		if (cnt == 0) {
 			printf("Write counter read fail !!!\n");
 			bio_close(dev);
-			ret = -1;
+			ret = RV_SRPMB_SECU_PROT_IN_FAIL;
 			goto out;
 		}
 
@@ -589,7 +589,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 			dump_packet((u8 *) packet, RPMB_SIZE);
 #endif
 			bio_close(dev);
-			ret = -1;
+			ret = RV_SPRMB_HMAC_VERIFICATION_FAIL;
 			goto out;
 
 		} else {
@@ -671,7 +671,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		dev = bio_open("mmcrpmb");
 		if (dev == NULL) {
 			printf("bio open fail\n");
-			ret = -1;
+			ret = RV_SRPMB_BIO_OPEN_FAIL;
 			goto out;
 		}
 
@@ -680,7 +680,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		if (cnt == 0) {
 			printf("RPMB: Write fail !!!\n");
 			bio_close(dev);
-			ret = -1;
+			ret = RV_SRPMB_SECU_PROT_OUT_FAIL;
 			goto out;
 		}
 
@@ -703,7 +703,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		if (cnt == 0) {
 			printf("RPMB: Request read result fail !!!\n");
 			bio_close(dev);
-			ret = -1;
+			ret = RV_SRPMB_SECU_PROT_OUT_FAIL;
 			goto out;
 		}
 
@@ -717,7 +717,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		if (cnt == 0) {
 			printf("RPMB: Read result fail !!!\n");
 			bio_close(dev);
-			ret = -1;
+			ret = RV_SRPMB_SECU_PROT_IN_FAIL;
 			goto out;
 		}
 
@@ -752,7 +752,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 			dump_packet((u8 *) packet, RPMB_SIZE);
 #endif
 			bio_close(dev);
-			ret = -1;
+			ret = RV_SPRMB_HMAC_VERIFICATION_FAIL;
 			goto out;
                 } else {
 #ifdef RPMB_DEBUG
@@ -792,7 +792,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		dev = bio_open("mmcrpmb");
 		if (dev == NULL) {
 			printf("bio open fail\n");
-			ret = -1;
+			ret = RV_SRPMB_BIO_OPEN_FAIL;
 			goto out;
 		}
 
@@ -801,7 +801,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		if (cnt == 0) {
 			printf("RPMB: Request read data fail !!!\n");
 			bio_close(dev);
-			ret = -1;
+			ret = RV_SRPMB_SECU_PROT_OUT_FAIL;
 			goto out;
 		}
 
@@ -815,7 +815,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		if (cnt == 0) {
 			printf("RPMB: Read data fail !!!\n");
 			bio_close(dev);
-			ret = -1;
+			ret = RV_SRPMB_SECU_PROT_IN_FAIL;
 			goto out;
 		}
 
@@ -861,7 +861,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 			dump_packet((u8 *) packet, RPMB_SIZE);
 #endif
 			bio_close(dev);
-			ret = -1;
+			ret = RV_SPRMB_HMAC_VERIFICATION_FAIL;
 			goto out;
 		} else {
 #ifdef RPMB_DEBUG
@@ -941,7 +941,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 		dev = bio_open("scsirpmb");
 		if (dev == NULL) {
 			printf("bio open fail\n");
-			ret = -1;
+			ret = RV_SRPMB_BIO_OPEN_FAIL;
 			goto out;
 		}
 
@@ -950,7 +950,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 		if (cnt == 0) {
 			printf("Authentication write command fail\n");
 			bio_close(dev);
-			ret = -1;
+			ret = RV_SRPMB_SECU_PROT_OUT_FAIL;
 			goto out;
 		}
 
@@ -973,7 +973,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 		if (cnt == 0) {
 			printf("Result read request fail !!!\n");
 			bio_close(dev);
-			ret = -1;
+			ret = RV_SRPMB_SECU_PROT_OUT_FAIL;
 			goto out;
 		}
 #ifdef RPMB_DEBUG
@@ -986,7 +986,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 		if (cnt == 0) {
 			printf("Result read fail !!!\n");
 			bio_close(dev);
-			ret = -1;
+			ret = RV_SRPMB_SECU_PROT_IN_FAIL;
 			goto out;
 		}
 
@@ -1021,7 +1021,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 		if (dev == NULL) {
 			printf("bio open fail\n");
 			free(hmac);
-			ret = -1;
+			ret = RV_SRPMB_BIO_OPEN_FAIL;
 			goto out;
 		}
 
@@ -1031,7 +1031,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 			printf("Write counter read request fail !!!\n");
 			bio_close(dev);
 			free(hmac);
-			ret = -1;
+			ret = RV_SRPMB_SECU_PROT_OUT_FAIL;
 			goto out;
 		}
 
@@ -1046,7 +1046,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 			printf("Write counter read fail !!!\n");
 			bio_close(dev);
 			free(hmac);
-			ret = -1;
+			ret = RV_SRPMB_SECU_PROT_IN_FAIL;
 			goto out;
 		}
 
@@ -1082,7 +1082,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 #endif
 			free(hmac);
 			bio_close(dev);
-			ret = -1;
+			ret = RV_SPRMB_HMAC_VERIFICATION_FAIL;
 			goto out;
 		} else {
 #ifdef RPMB_DEBUG
@@ -1165,7 +1165,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 		if (dev == NULL) {
 			printf("bio open fail\n");
 			free(hmac);
-			ret = -1;
+			ret = RV_SRPMB_BIO_OPEN_FAIL;
 			goto out;
 		}
 
@@ -1175,7 +1175,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 			printf("RPMB: Write fail !!!\n");
 			bio_close(dev);
 			free(hmac);
-			ret = -1;
+			ret = RV_SRPMB_SECU_PROT_OUT_FAIL;
 			goto out;
 		}
 
@@ -1199,7 +1199,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 			printf("RPMB: Request read result fail !!!\n");
 			bio_close(dev);
 			free(hmac);
-			ret = -1;
+			ret = RV_SRPMB_SECU_PROT_OUT_FAIL;
 			goto out;
 		}
 
@@ -1214,7 +1214,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 			printf("RPMB: Read result fail !!!\n");
 			bio_close(dev);
 			free(hmac);
-			ret = -1;
+			ret = RV_SRPMB_SECU_PROT_IN_FAIL;
 			goto out;
 		}
 
@@ -1250,7 +1250,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 #endif
 			free(hmac);
 			bio_close(dev);
-			ret = -1;
+			ret = RV_SPRMB_HMAC_VERIFICATION_FAIL;
 			goto out;
 		} else {
 #ifdef RPMB_DEBUG
@@ -1292,7 +1292,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 		if (dev == NULL) {
 			printf("bio open fail\n");
 			free(hmac);
-			ret = -1;
+			ret = RV_SRPMB_BIO_OPEN_FAIL;
 			goto out;
 		}
 
@@ -1302,7 +1302,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 			printf("RPMB: Request read data fail !!!\n");
 			bio_close(dev);
 			free(hmac);
-			ret = -1;
+			ret = RV_SRPMB_SECU_PROT_OUT_FAIL;
 			goto out;
 		}
 
@@ -1317,7 +1317,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 			printf("RPMB: Read data fail !!!\n");
 			bio_close(dev);
 			free(hmac);
-			ret = -1;
+			ret = RV_SRPMB_SECU_PROT_IN_FAIL;
 			goto out;
 		}
 
@@ -1364,7 +1364,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 #endif
 			free(hmac);
 			bio_close(dev);
-			ret = -1;
+			ret = RV_SPRMB_HMAC_VERIFICATION_FAIL;
 			goto out;
 		} else {
 #ifdef RPMB_DEBUG
@@ -1432,7 +1432,7 @@ int read_write_counter(void)
 	}
 	if(memcmp(packet.nonce, nonce, NONCE_SIZE)) {
 		printf("read_write_counter NONCE compare fail\n");
-		return -1;
+		return RV_SRPMB_NONCE_VERIFICATION_FAIL;
 	}
 	return RV_SUCCESS;
 }
@@ -1577,7 +1577,7 @@ static int rpmb_read_block(int addr, int blkcnt, u8 *buf)
 #endif
 		if(memcmp((u8 *)&packet.nonce, nonce, NONCE_SIZE)) {
 			printf("Authentication read NONCE compare fail\n");
-			return -1;
+			return RV_SRPMB_NONCE_VERIFICATION_FAIL;
 		}
 		if (ret != RV_SUCCESS) {
 			printf("RPMB: rpmb_read_block(%d) fail !!!\n", packet.address);
@@ -1624,7 +1624,7 @@ static int rpmb_write_block(int addr, int blkcnt, u8 *buf)
 #endif
 	if(memcmp((u8 *)&packet.nonce, nonce, NONCE_SIZE)) {
 		printf("Authentication write NONCE compare fail\n");
-		return -1;
+		return RV_SRPMB_NONCE_VERIFICATION_FAIL;
 	}
 	if (ret != RV_SUCCESS) {
 		printf("RPMB : fail to read write coutner !!!\n");
