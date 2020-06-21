@@ -589,7 +589,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 			dump_packet((u8 *) packet, RPMB_SIZE);
 #endif
 			bio_close(dev);
-			ret = RV_SPRMB_HMAC_VERIFICATION_FAIL;
+			ret = RPMB_AUTHEN_KEY_MISMATCH;
 			goto out;
 
 		} else {
@@ -752,7 +752,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 			dump_packet((u8 *) packet, RPMB_SIZE);
 #endif
 			bio_close(dev);
-			ret = RV_SPRMB_HMAC_VERIFICATION_FAIL;
+			ret = RPMB_AUTHEN_KEY_MISMATCH;
 			goto out;
                 } else {
 #ifdef RPMB_DEBUG
@@ -861,7 +861,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 			dump_packet((u8 *) packet, RPMB_SIZE);
 #endif
 			bio_close(dev);
-			ret = RV_SPRMB_HMAC_VERIFICATION_FAIL;
+			ret = RPMB_AUTHEN_KEY_MISMATCH;
 			goto out;
 		} else {
 #ifdef RPMB_DEBUG
@@ -1082,7 +1082,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 #endif
 			free(hmac);
 			bio_close(dev);
-			ret = RV_SPRMB_HMAC_VERIFICATION_FAIL;
+			ret = RPMB_AUTHEN_KEY_MISMATCH;
 			goto out;
 		} else {
 #ifdef RPMB_DEBUG
@@ -1250,7 +1250,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 #endif
 			free(hmac);
 			bio_close(dev);
-			ret = RV_SPRMB_HMAC_VERIFICATION_FAIL;
+			ret = RPMB_AUTHEN_KEY_MISMATCH;
 			goto out;
 		} else {
 #ifdef RPMB_DEBUG
@@ -1364,7 +1364,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 #endif
 			free(hmac);
 			bio_close(dev);
-			ret = RV_SPRMB_HMAC_VERIFICATION_FAIL;
+			ret = RPMB_AUTHEN_KEY_MISMATCH;
 			goto out;
 		} else {
 #ifdef RPMB_DEBUG
@@ -1491,7 +1491,7 @@ void rpmb_key_programming(void)
 	// if (ret == other error)	set_rpmb_provision(1) already programmed
 
 	ret = read_write_counter();
-	if (ret == RPMB_AUTHEN_KEY_ERROR) {
+	if (ret == RPMB_AUTHEN_KEY_NOT_PGAM) {
 		ret = authentication_key_programming();
 		if (ret == RV_SUCCESS) {
 			set_RPMB_provision(1);
