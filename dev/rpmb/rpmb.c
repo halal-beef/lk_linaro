@@ -360,13 +360,13 @@ int do_rpmb_test(int argc, char *argv[])
 	else
 		dprintf(INFO, "[CM] RPMB: key wasn't blocked correctly: 0x%X\n\n", ret);
 
-	/* Test 4: RPMB get hamc with input data */
+	/* Test 4: RPMB get hmac with input data */
 	dprintf(INFO, "[CM] RPMB: Test4:: get hmac value\n");
 
 	memset(output_data, 0, sizeof(output_data));
 	ret = get_RPMB_hmac(input_data, sizeof(input_data), output_data);
 	if (ret != RV_SUCCESS) {
-		dprintf(INFO, "[CM] RPMB: get hamc value: fail: 0x%X\n", ret);
+		dprintf(INFO, "[CM] RPMB: get hmac value: fail: 0x%X\n", ret);
 		return ret;
 	}
 	dprintf(INFO, "[CM] RPMB: get hmac value: success\n");
@@ -574,7 +574,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		memset(output_data, 0, sizeof(output_data));
 		ret = get_RPMB_hmac(hmac, HMAC_CALC_SIZE, output_data);
 		if (ret != RV_SUCCESS)
-			printf("RPMB: get hamc value: fail: 0x%X\n", ret);
+			printf("RPMB: get hmac value: fail: 0x%X\n", ret);
 		result = memcmp((void *)(output_data), (void *)(buf + HMAC_START_BYTE), HMAC_SIZE);
 		if (result != 0) {
 			printf("HMAC compare fail !!\n");
@@ -642,7 +642,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		/* hmac calculation include all block data. */
 		ret = get_RPMB_hmac(hmac, blk_cnt * HMAC_CALC_SIZE, output_data);
 		if (ret != RV_SUCCESS)
-			printf("[CM] RPMB: get hamc value: fail: 0x%X\n", ret);
+			printf("[CM] RPMB: get hmac value: fail: 0x%X\n", ret);
 		else {
 #ifdef RPMB_DEBUG
 			dprintf(INFO, "[CM] RPMB: get hmac value: success\n");
@@ -737,7 +737,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		memset(output_data, 0, sizeof(output_data));
 		ret = get_RPMB_hmac(hmac, HMAC_CALC_SIZE, output_data);
 		if (ret != RV_SUCCESS)
-			printf("RPMB: get hamc value: fail: 0x%X\n", ret);
+			printf("RPMB: get hmac value: fail: 0x%X\n", ret);
 
 		result = memcmp((void *)(output_data), (void *)(buf + HMAC_START_BYTE), HMAC_SIZE);
 		if (result != 0) {
@@ -834,7 +834,8 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 
 		ret = get_RPMB_hmac(hmac, blk_cnt * HMAC_CALC_SIZE, output_data);
 		if (ret != RV_SUCCESS)
-			printf("RPMB: get hamc value: fail: 0x%X\n", ret);
+			printf("RPMB: get hmac value: fail: 0x%X\n", ret);
+
 		result = memcmp((void *)(output_data),
 				(void *)(buf + HMAC_START_BYTE + ((blk_cnt - 1) * RPMB_SIZE)),
 				HMAC_SIZE);
@@ -1066,7 +1067,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 		memset(output_data, 0, sizeof(output_data));
 		ret = get_RPMB_hmac(hmac, HMAC_CALC_SIZE, output_data);
 		if (ret != RV_SUCCESS)
-			printf("RPMB: get hamc value: fail: 0x%X\n", ret);
+			printf("RPMB: get hmac value: fail: 0x%X\n", ret);
 
 		result = memcmp((void *)(output_data), (void *)(buf + HMAC_START_BYTE), HMAC_SIZE);
 		if (result != 0) {
@@ -1144,7 +1145,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 #endif
 
 		if (ret != RV_SUCCESS)
-			printf("[CM] RPMB: get hamc value: fail: 0x%X\n", ret);
+			printf("[CM] RPMB: get hmac value: fail: 0x%X\n", ret);
 		else {
 #ifdef RPMB_DEBUG
 			dprintf(INFO, "[CM] RPMB: get hmac value: success\n");
@@ -1234,7 +1235,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 		memset(output_data, 0, sizeof(output_data));
 		ret = get_RPMB_hmac(hmac, HMAC_CALC_SIZE, output_data);
 		if (ret != RV_SUCCESS)
-			printf("RPMB: get hamc value: fail: 0x%X\n", ret);
+			printf("RPMB: get hmac value: fail: 0x%X\n", ret);
 
 		result = memcmp((void *)(output_data), (void *)(buf + HMAC_START_BYTE), HMAC_SIZE);
 		if (result != 0) {
@@ -1345,7 +1346,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 		}
 
 		if (ret != RV_SUCCESS)
-			printf("RPMB: get hamc value: fail: 0x%X\n", ret);
+			printf("RPMB: get hmac value: fail: 0x%X\n", ret);
 
 		if (result != 0) {
 			printf("HMAC compare fail !!\n");
