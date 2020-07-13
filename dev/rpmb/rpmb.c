@@ -568,7 +568,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		dump_packet(packet->Key_MAC, HMAC_SIZE);
 		mmc_report(packet, SECU_PROT_IN);
 #endif
-		if(packet->result == RPMB_AUTHEN_KEY_NOT_PGAM) {
+		if (packet->result == RPMB_AUTHEN_KEY_NOT_PGAM) {
 			ret = RV_SUCCESS;
 			bio_close(dev);
 			break;
@@ -1068,7 +1068,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 		dump_packet(packet->Key_MAC, HMAC_SIZE);
 		ufs_upiu_report(packet, SECU_PROT_IN);
 #endif
-		if(packet->result == RPMB_AUTHEN_KEY_NOT_PGAM) {
+		if (packet->result == RPMB_AUTHEN_KEY_NOT_PGAM) {
 			ret = RV_SUCCESS;
 			free(hmac);
 			bio_close(dev);
