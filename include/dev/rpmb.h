@@ -82,6 +82,11 @@
 #define CACHE_CLEAN(addr, len)		clean_dcache_range((unsigned long long)(addr), (unsigned long long)((addr) + (len)))
 #define CACHE_INVALIDATE(addr, len)	invalidate_dcache_range((unsigned long long)(addr), (unsigned long long)((addr) + (len)))
 
+/* RPMB MAGIC parameter, used in booting sequence */
+#define RPMB_BL_PARTITION		4
+#define RPMB_MAGIC_BLK			10
+#define RPMB_TEST_MAGIC			0x544f4f42424d5052 /*RPMBBOOT (reverse)*/
+
 /* RPMB function number */
 enum {
 	RPMB_GET_KEY = 1,
@@ -134,6 +139,8 @@ int rpmb_write_persistent_value(const char *name,
 		const uint8_t *value);
 int rpmb_get_lock_state(uint32_t *state);
 int rpmb_set_lock_state(uint32_t state);
+static int rpmb_read_block(int addr, int blkcnt, u8 *buf, u16 *result);
+static int rpmb_write_block(int addr, int blkcnt, u8 *buf, u16 *result);
 
 /* Parameter */
 #define HMAC_SIZE			32
