@@ -42,6 +42,9 @@
 #define INT2VOIDP(x)            (void *)(uintptr_t)(x)
 #define INT2U8P(x)              (u8 *)(uintptr_t)(x)
 
+#define RPMB_MAGIC_RETRY_CNT		2
+#define LK_RPMB_MAGIC_TEST
+
 struct boot_header {
 	u32     magic;
 	u32     ri_block_base;
@@ -1498,11 +1501,14 @@ int authentication_key_programming(void)
 void rpmb_key_programming(void)
 {
 	int ret;
+#ifdef LK_RPMB_MAGIC_TEST
+	int retry_cnt = 0;
+	bool magic_flag = false;
 	uint64_t magic;
 	u32 addr;
 	u16 packet_result;
 	u8 buf[RPMB_BLOCK_SIZE];
-
+#endif
 	// key program and set provision state
 	// if (ret == Authentication key not yet programmed (07h)) key programming and if it is ok set_rpmb_provision(1) if not,  set_rpmb_provision(0)
 	// if (ret == OK) set_rpmb_provision(1) already programmed
@@ -1535,6 +1541,7 @@ void rpmb_key_programming(void)
 	else
 		dprintf(INFO, "RPMB: key blocking: success\n");
 
+#ifdef LK_RPMB_MAGIC_TEST
 	//RPMB write & read test
 	addr = RPMB_BLOCK_PER_PARTITION * (RPMB_BL_PARTITION - 1) + RPMB_MAGIC_BLK;
 	magic = RPMB_TEST_MAGIC;
@@ -1544,29 +1551,45 @@ void rpmb_key_programming(void)
 #ifdef RPMB_DEBUG
 	printf("RPMB : MAGIC FOR BOOT = 0x%llX [%s] (in write)\n", magic, buf);
 #endif
-	packet_result = 0x0;
-	ret = rpmb_write_block(addr, 1, buf, &packet_result);
-	if (ret != RV_SUCCESS)
-		printf("RPMB : Magic Block Write: fail: 0x%X\n", ret);
-	else
-		dprintf(INFO, "RPMB: Magic Block Write: success\n");
+	while (retry_cnt < RPMB_MAGIC_RETRY_CNT) {
+		packet_result = 0x0;
+		ret = rpmb_write_block(addr, 1, buf, &packet_result);
+		if (ret != RV_SUCCESS)
+			printf("RPMB : Magic Block Write: fail [%d try]: 0x%X\n", retry_cnt++, ret);
+		else {
+			dprintf(INFO, "RPMB: Magic Block Write: success\n");
+			magic_flag = true;
+			break;
+		}
+	}
 
-	packet_result = 0x0;
-	ret = rpmb_read_block(addr, 1, buf, &packet_result);
-	if (ret != RV_SUCCESS)
-		printf("RPMB : Magic Block Read: error: 0x%X\n", ret);
-	else
-		dprintf(INFO, "RPMB: Magic Block Write: success\n");
+	if ((magic_flag == true) && (retry_cnt < RPMB_MAGIC_RETRY_CNT)) {
+		retry_cnt = 0;
+		magic_flag = false;
+		while (retry_cnt < RPMB_MAGIC_RETRY_CNT) {
+			packet_result = 0x0;
+			ret = rpmb_read_block(addr, 1, buf, &packet_result);
+			if (ret != RV_SUCCESS)
+				printf("RPMB : Magic Block Read: fail [%d try]: 0x%X\n", retry_cnt++, ret);
+			else {
+				dprintf(INFO, "RPMB: Magic Block Read: success\n");
+				magic_flag = true;
+				break;
+			}
+		}
+	}
 
-	memcpy(&magic, buf, sizeof(uint64_t));
+	if (magic_flag == true) {
+		memcpy(&magic, buf, sizeof(uint64_t));
 #ifdef RPMB_DEBUG
-	printf("RPMB: MAGIC FOR BOOT = 0x%llX [%s] (in read)\n", magic, buf);
+		printf("RPMB: MAGIC FOR BOOT = 0x%llX [%s] (in read)\n", magic, buf);
 #endif
-	if (magic != RPMB_TEST_MAGIC)
-		printf("RPMB : Comparing Magic Block: fail!!!\n");
-	else
-		dprintf(INFO, "RPMB: Magic Block Compare: success\n");
-
+		if (magic != RPMB_TEST_MAGIC)
+			printf("RPMB : Comparing Magic Block: fail!!!\n");
+		else
+			dprintf(INFO, "RPMB: Magic Block Compare: success\n");
+	}
+#endif
 #ifndef CONFIG_USE_AVB20
 	//RPMB hmac block
 	ret = block_RPMB_hmac();
