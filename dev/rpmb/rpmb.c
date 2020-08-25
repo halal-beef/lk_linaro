@@ -1563,7 +1563,7 @@ void rpmb_key_programming(void)
 		}
 	}
 
-	if ((magic_flag == true) && (retry_cnt < RPMB_MAGIC_RETRY_CNT)) {
+	if (magic_flag == true) {
 		retry_cnt = 0;
 		magic_flag = false;
 		while (retry_cnt < RPMB_MAGIC_RETRY_CNT) {
