@@ -25,6 +25,38 @@
 #define SetBits(uAddr, uBaseBit, uMaskValue, uSetValue) \
 	Set32(uAddr, (Get32(uAddr) & ~((uMaskValue)<<(uBaseBit))) | (((uMaskValue)&(uSetValue))<<(uBaseBit)))
 
+/* Macros from U-Boot */
+#define __arch_getl(a)			(*(volatile unsigned int *)(a))
+#define __arch_putl(v,a)		(*(volatile unsigned int *)(a) = (v))
+#define __raw_readl(a)			__arch_getl(a)
+#define __raw_writel(v,a)		__arch_putl(v,a)
+#define in_32(a)			__raw_readl(a)
+#define out_32(a,v)			__raw_writel(v,a)
+#define clrsetbits(type, addr, clear, set) \
+	out_##type((addr), (in_##type(addr) & ~(clear)) | (set))
+#define clrsetbits_32(addr, clear, set) clrsetbits(32, addr, clear, set)
+
+/* GPA3/GPA4 pins */
+#define EXYNOS3830_GPA3CON		(EXYNOS3830_GPIO_ALIVE_BASE + 0x0060)
+#define EXYNOS3830_GPA3PUD		(EXYNOS3830_GPIO_ALIVE_BASE + 0x0068)
+#define EXYNOS3830_GPA4CON		(EXYNOS3830_GPIO_ALIVE_BASE + 0x0080)
+#define EXYNOS3830_GPA4PUD		(EXYNOS3830_GPIO_ALIVE_BASE + 0x0088)
+#define GPA3CON_MASK			(0xf << 28)
+#define GPA3CON_SET			(0x2 << 28)
+#define GPA3PUD_MASK			(0xf << 28)
+#define GPA3PUD_SET			(0x0 << 28)
+#define GPA4CON_MASK			0xf
+#define GPA4CON_SET			0x2
+#define GPA4PUD_MASK			0xf
+#define GPA4PUD_SET			0x0
+
+/* PMU related definitions */
+#define EXYNOS3830_UART_IO_SHARE_CTRL	(EXYNOS3830_POWER_BASE + 0x0760)
+#define SEL_RXD_AP_UART_MASK		(0x3 << 16)
+#define SEL_RXD_AP_UART_GPIO_1		(0x3 << 16)
+#define SEL_TXD_GPIO_1_MASK		(0x3 << 20)
+#define SEL_TXD_GPIO_1_AP_UART_TXD	(0x0 << 20)
+
 #define rUART_BASE				EXYNOS3830_UART_BASE
 
 #define rUART_ULCONN               0x00
@@ -44,16 +76,43 @@
 #define rUART_UINTMN               0x38
 #define rUART_USI_CON              0xc4
 
+/* Define this for E850-96 board */
+#define UART_DEBUG_1
+
 unsigned int globalUartBase;
 unsigned int uart_log_mode = 0;
 
+static void uart_simple_uart_debug_1_enable(void)
+{
+	/* Use UART_DEBUG_1 as AP UART */
+	clrsetbits_32(EXYNOS3830_UART_IO_SHARE_CTRL,
+		SEL_RXD_AP_UART_MASK | SEL_TXD_GPIO_1_MASK,
+		SEL_RXD_AP_UART_GPIO_1 | SEL_TXD_GPIO_1_AP_UART_TXD);
+}
 
+static void uart_simple_uart_debug_1_gpio_init(void)
+{
+	/* Mux GPA3[7] and GPA4[0] pins to UART_DEBUG_1 RX/TX lines */
+	clrsetbits_32(EXYNOS3830_GPA3CON, GPA3CON_MASK, GPA3CON_SET);
+	clrsetbits_32(EXYNOS3830_GPA4CON, GPA4CON_MASK, GPA4CON_SET);
+
+	/* Disable pull-up/pull-down */
+	clrsetbits_32(EXYNOS3830_GPA3PUD, GPA3PUD_MASK, GPA3PUD_SET);
+	clrsetbits_32(EXYNOS3830_GPA4PUD, GPA4PUD_MASK, GPA4PUD_SET);
+}
 
 /* This is how to use sample */
 void uart_test_function(void)
 {
 	char array[9]={0};
+
+#ifdef UART_DEBUG_1
+	uart_simple_uart_debug_1_enable();
+	uart_simple_uart_debug_1_gpio_init();
+#else
 	uart_simple_GPIOInit();
+#endif
+
 	if(*(unsigned int *)0x80000000 == 0xabcdef)
 		uart_simple_UartInit(rUART_BASE, 200000000, 115200);
 	else
