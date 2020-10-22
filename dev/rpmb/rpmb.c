@@ -74,6 +74,7 @@ struct persist_data persistentData[PERSIST_DATA_CNT];
 static u8 nonce[NONCE_SIZE];
 static uint32_t rpmb_block_partition_size;
 static uint32_t rpmb_max_partition_size;
+static uint32_t rpmb_operation_flag;
 
 static void dump_packet(u8 * data, u32 len)
 {
@@ -1575,12 +1576,18 @@ void rpmb_key_programming(void)
 
 	//RPMB Get Partition Info by SMC Call
 	ret = get_RPMB_partition_info(&rpmb_max_partition_size, &rpmb_block_partition_size);
-	if (ret != RV_SUCCESS) {
+	if (ret == RV_RPMB_INVALID_SMC) {
 		printf("RPMB: get partition param from ldfw: failed: 0x%X\n", ret);
 		rpmb_max_partition_size = RPMB_DEFAULT_MAX_PARTITION;
 		rpmb_block_partition_size = RPMB_DEFAULT_MAX_BLOCK_PER_PARTITION;
-	} else
+		rpmb_operation_flag = SRPMB_ENABLE;
+	} else if (ret != RV_SUCCESS) {
+		printf("RPMB: get partition param from ldfw: failed: 0x%X\n", ret);
+		rpmb_operation_flag = SRPMB_DISABLE;
+	} else {
 		dprintf(INFO, "RPMB: get partition param from ldfw: success\n");
+		rpmb_operation_flag = SRPMB_ENABLE;
+	}
 
 #ifdef LK_RPMB_MAGIC_TEST
 	//RPMB write & read test
@@ -1650,6 +1657,11 @@ static int rpmb_read_block(int addr, int blkcnt, u8 *buf, u16 *result)
 	uint32_t *addrp = NULL;
 	struct rpmb_packet packet;
 
+	if (rpmb_operation_flag == SRPMB_DISABLE) {
+		printf("RPMB: %s fail, due to parameter SMC Fail!!!\n", __func__);
+		return RV_RPMB_INVALID_PARTITION_PARAM;
+	}
+
 	for(block = 0 ; block < blkcnt ; block++) {
 		memset((void *)&packet, 0,512);
 
@@ -1716,6 +1728,11 @@ static int rpmb_write_block(int addr, int blkcnt, u8 *buf, u16 *result)
 	uint32_t *addrp;
 	uint32_t wc;
 	struct rpmb_packet packet;
+
+	if (rpmb_operation_flag == SRPMB_DISABLE) {
+		printf("RPMB: %s fail, due to parameter SMC Fail!!!\n", __func__);
+		return RV_RPMB_INVALID_PARTITION_PARAM;
+	}
 
 	memset((void *)&packet, 0, 512);
 #ifdef ENABLE_CM_NONCE
