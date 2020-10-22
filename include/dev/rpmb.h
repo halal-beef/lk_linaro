@@ -36,6 +36,10 @@
 /* define maximum retry count */
 #define MAX_SMC_RETRY_CNT			0x5000
 
+/* define srpmb flag */
+#define SRPMB_DISABLE				0
+#define SRPMB_ENABLE				1
+
 /* error codes from CryptoManager F/W */
 #define RV_SUCCESS				0
 #define RV_SYNC_AES_BUSY			0x20000
@@ -50,7 +54,11 @@
 #define RV_RPMB_INVALID_ROLLBACK_INDEX          0x40301
 #define RV_RPMB_PERSIST_NAME_NOT_FOUND          0x40302
 #define RV_RPMB_INVALID_PERSIST_DATA_SIZE       0x40303
+#define RV_RPMB_AUTHEN_KEY_NOT_PROVISIONED      0x40304
+#define RV_RPMB_INVALID_PARTITION_PARAM		0x40305
 
+/* error code from RPMB F/W */
+#define RV_RPMB_INVALID_SMC			0x10100
 
 /* error code made by dev/rpmb.c*/
 #define RV_SPRMB_HMAC_VERIFICATION_FAIL		0x50A01
