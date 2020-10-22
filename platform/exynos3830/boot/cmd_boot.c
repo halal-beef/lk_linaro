@@ -301,6 +301,8 @@ static int bootargs_process(void)
 	update_val("console", "ttySAC0,115200n8");
 	add_val("androidboot.console", "ttySAC0");
 	update_val("androidboot.dtbo_idx", dtbo_idx);
+	/* Show kernel messages with loglevel=4 and less */
+	add_val("quiet", NULL);
 
 	/* reason */
 	memset(buf, 0, sizeof(buf));
