@@ -199,7 +199,12 @@ int set_fdt_val(const char *path, const char *property, const char *value)
 
 	offset = fdt_path_offset(fdt_dtb, path);
 	if (offset < 0) {
-		printf("libfdt fdt_path_offset(): %s\n", fdt_strerror(offset));
+		printf("### %s:\n", __func__);
+		printf(" libfdt fdt_path_offset(): %s\n", fdt_strerror(offset));
+		printf(" path         = %s\n", path);
+		printf(" property     = %s\n", property);
+		printf(" value        = %s\n", value);
+		printf(" parsed_value = %s\n", parsed_value);
 		return 1;
 	}
 
