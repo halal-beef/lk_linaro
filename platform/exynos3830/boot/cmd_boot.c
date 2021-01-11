@@ -757,6 +757,7 @@ int load_boot_images(void)
 	return 0;
 }
 
+extern void decon_stop(void);
 int cmd_boot(int argc, const cmd_args *argv)
 {
 #if defined(CONFIG_FACTORY_MODE)
@@ -873,7 +874,7 @@ int cmd_boot(int argc, const cmd_args *argv)
 	clean_invalidate_dcache_all();
 	disable_mmu_dcache();
 #endif
-
+	decon_stop();
 	void (*kernel_entry)(int r0, int r1, int r2, int r3);
 
 	kernel_entry = (void (*)(int, int, int, int))KERNEL_BASE;

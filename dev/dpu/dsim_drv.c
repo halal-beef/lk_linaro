@@ -36,6 +36,20 @@ int dsim_log_level = 6;
 struct dsim_device *dsim0_for_decon;
 struct dsim_device *dsim_drvdata[MAX_DSIM_CNT];
 
+extern void kd101n65_lcd_init(unsigned int id, struct exynos_panel_info *lcd);
+void lcd_dispaly_on(void)
+{
+	struct dsim_device *dsim = NULL;
+	dsim_err("%s enter ++ \n", __func__);
+
+	dsim = dsim_drvdata[0];
+	if(dsim != NULL) {
+		kd101n65_lcd_init(dsim->id, dsim->lcd_info);
+	} else {
+		dsim_err("%s dsim is null \n", __func__);
+	}
+	dsim_err("%s exit -- \n", __func__);
+}
 
 static int dsim_get_interrupt_src(struct dsim_device *dsim, u32 reg_id, unsigned int timeout)
 {
@@ -88,6 +102,8 @@ static void dsim_long_data_wr(struct dsim_device *dsim, unsigned long d0, u32 d1
 				*(u8 *)(d0 + (data_cnt + 1)));
 			} else if ((d1 - data_cnt) == 1) {
 				payload = *(u8 *)(d0 + data_cnt);
+				dsim_dbg("count = 1 payload = %x, %x\n", payload,
+				*(u8 *)(d0 + data_cnt));
 			}
 
 			dsim_reg_wr_tx_payload(dsim->id, payload);

@@ -112,6 +112,15 @@ u32 wincon(u32 transp_len, u32 a0, u32 a1,
 	return data;
 }
 
+void decon_stop(void)
+{
+	struct decon_mode_info psr = {0};
+	struct decon_device *decon = decon_drvdata[0];
+
+	decon_to_psr_info(decon, &psr);
+	decon_reg_stop(decon->id,0,&psr,1,60);
+}
+
 void decon_show_buffer_update(struct decon_device *decon,
 		struct dsim_device *dsim, u32 color)
 {
@@ -258,7 +267,7 @@ void decon_show_color_map(struct decon_device *decon,
 	decon_reg_all_win_shadow_update_req(decon->id);
 
 	decon_to_psr_info(decon, &psr);
-	call_panel_ops(dsim, displayon, dsim);
+	//call_panel_ops(dsim, displayon, dsim);
 	decon_reg_start(decon->id, &psr);
 
 	/* Enable irq and clear */

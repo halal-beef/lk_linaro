@@ -69,21 +69,25 @@ struct exynos_panel_info common_lcd_info = {
 	.data_lane = 4,
 };
 
-struct exynos_panel_info *common_get_lcd_info(void)
-{
-	return &common_lcd_info;
-}
-
 extern struct dsim_lcd_driver s6e3fa0_mipi_lcd_driver;
 extern struct dsim_lcd_driver nt36672a_mipi_lcd_driver;
 extern struct dsim_lcd_driver s6e3ha8_mipi_lcd_driver;
 extern struct dsim_lcd_driver s6e3ha9_mipi_lcd_driver;
+extern struct dsim_lcd_driver kd101n65_mipi_lcd_driver;
+extern struct exynos_panel_info kd101n65_lcd_info;
+
+struct exynos_panel_info *common_get_lcd_info(void)
+{
+	//return &common_lcd_info;
+	return &kd101n65_lcd_info;
+}
 
 struct dsim_lcd_driver *panel_list[NUM_OF_VERIFIED_PANEL] = {
-	&s6e3fa0_mipi_lcd_driver,
-	&nt36672a_mipi_lcd_driver,
-	&s6e3ha8_mipi_lcd_driver,
-	&s6e3ha9_mipi_lcd_driver,
+	//&s6e3fa0_mipi_lcd_driver,
+	//&nt36672a_mipi_lcd_driver,
+	//&s6e3ha8_mipi_lcd_driver,
+	//&s6e3ha9_mipi_lcd_driver,
+	&kd101n65_mipi_lcd_driver,
 };
 
 /* fill panel id to panel_ids arrary from panel driver each */
@@ -104,6 +108,10 @@ u32 ddi_id;
 /* read ddi's id(panel_ids[]) for matching expected id */
 int cm_read_id(struct dsim_device *dsim)
 {
+#if 1
+	ddi_id = 0xff;
+	return dsim->cm_panel_ops->id =  0xff;
+#else
 	int err = 0;
 	u32 id = 0, i;
 
@@ -134,6 +142,7 @@ int cm_read_id(struct dsim_device *dsim)
 	}
 
 	return dsim->cm_panel_ops->id = id;
+#endif
 }
 
 /* return panel_ops of matched panel driver */
