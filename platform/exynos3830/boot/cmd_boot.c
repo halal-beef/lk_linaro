@@ -301,6 +301,9 @@ static int bootargs_process(void)
 	update_val("console", "ttySAC0,115200n8");
 	update_val("androidboot.dtbo_idx", dtbo_idx);
 
+	/* Add devkmsg */
+	add_val("printk.devkmsg", "on");
+
 	/* reason */
 	memset(buf, 0, sizeof(buf));
 	update_boot_reason(buf);
