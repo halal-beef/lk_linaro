@@ -271,15 +271,6 @@ void platform_early_init(void)
 	}
 #endif
 
-	/*
-	 * XXX: For normal booting condition except second boot(USB boot) or
-	 * warm/WDT reset.
-	 */
-	if (!(rst_stat & (WARM_RESET | LITTLE_WDT_RESET)) && is_first_boot()) {
-		/* Set MUIC to UART mode */
-		muic_sw_uart();
-	}
-
 	uart_test_function();
 	printf("LK build date: %s, time: %s\n", __DATE__, __TIME__);
 	dbg_snapshot_boot_cnt();
