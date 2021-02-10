@@ -739,7 +739,7 @@ int load_boot_images(void)
 
 	part_read(part, (void *)BOOT_BASE);
 
-	if (b_hdr->header_version == 3) {
+	if (b_hdr->header_version >= 3) {
 		argv[6].u = VENDOR_BOOT_BASE;
 		sprintf(boot_part_name, "vendor_boot");
 		part = part_get_ab(boot_part_name);
