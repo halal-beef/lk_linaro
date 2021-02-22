@@ -10,8 +10,10 @@
 
 #include <arch.h>
 #include <arch/arm64.h>
+#include <string.h>
+#include <target/board_info.h>
 #ifdef USE_MMC0
-#include <mmc.h>
+#include <dev/mmc.h>
 #else
 #include <dev/scsi.h>
 #endif
@@ -1445,6 +1447,85 @@ out:
 #endif
 
 /*
+ * function for recognize rpmb size. RPMB size can be vary depending on the storage device.
+ * Exynos supports UFS and MMC. The function is different.
+ */
+#ifdef USE_MMC0
+int recog_MMC_RPMB_size(void)
+{
+	bdev_t *dev;
+	mmc_device_t *mdev;
+	struct mmc *mmc;
+	int size;
+
+	dev = bio_open("mmcrpmb");
+	if (dev == NULL) {
+		printf("%s: bio open fail\n", __func__);
+		return -1;
+	}
+
+	mdev = (mmc_device_t *)dev->private;
+	if (mdev == NULL) {
+		printf("%s: mdev structure is NULL\n", __func__);
+		return -1;
+	}
+
+	mmc = (struct mmc *)mdev->mmc;
+	if (mmc == NULL) {
+		printf("%s: mmc structure is NULL\n", __func__);
+		return -1;
+	}
+
+	size = (int)mmc->rpmb_size;
+
+	if (size < 8)
+		dprintf(INFO, "RPMB: Size is %dKB\n", size * 128);
+	else
+		dprintf(INFO, "RPMB: Size is %dMB\n", size * 128 / 1024);
+
+	bio_close(dev);
+	return size * 128;
+}
+#else
+int recog_UFS_RPMB_size(void) {
+	/* Will be implemented*/
+	return 1;
+}
+#endif
+
+int set_RPMB_size(void) {
+	uint64_t r0 = SMC_AARCH64_PREFIX | SMC_SRPMB_SET_PARTITION_INFO;
+	uint64_t r1 = 0;
+	uint64_t r2 = 0;
+	uint64_t r3 = 0;
+	uint32_t ret = RV_SUCCESS;
+	int size;
+
+#ifdef USE_MMC0
+	size = recog_MMC_RPMB_size();
+#else
+	size = recog_UFS_RPMB_size();
+#endif
+	if (size < 0) {
+		printf("RPMB: fail to get RPMB SIZE\n");
+		return -1;
+	}
+
+	r1 = (uint64_t)size;
+
+	ret = exynos_smc(r0, r1, r2, r3);
+	if (ret == RV_RPMB_INVALID_SMC) {
+		printf("RPMB: %s: Not supported(use default): 0x%X\n", __func__, ret);
+	} else if (ret != RV_SUCCESS) {
+		printf("RPMB: %s: Failed: 0x%X\n", __func__, ret);
+	} else {
+		dprintf(INFO, "RPMB: %s: Success\n", __func__);
+	}
+
+	return ret;
+}
+
+/*
  * function to force execute RPMB write operation to specific block.
  * This is make-up code for RPMB Specification security Hole.
  */
@@ -1625,22 +1706,28 @@ void rpmb_key_programming(void)
 	else
 		dprintf(INFO, "RPMB: key blocking: success\n");
 
-	//RPMB Get Partition Info by SMC Call
-	ret = get_RPMB_partition_info(&rpmb_max_partition_size, &rpmb_block_partition_size);
-	if (ret == RV_RPMB_INVALID_SMC) {
-		printf("RPMB: get partition param from ldfw: failed: 0x%X\n", ret);
-		rpmb_max_partition_size = RPMB_DEFAULT_MAX_PARTITION;
-		rpmb_block_partition_size = RPMB_DEFAULT_MAX_BLOCK_PER_PARTITION;
-		rpmb_operation_flag = SRPMB_ENABLE;
-	} else if (ret != RV_SUCCESS) {
-		printf("RPMB: get partition param from ldfw: failed: 0x%X\n", ret);
+	ret = set_RPMB_size();
+	if (ret != RV_SUCCESS && ret != RV_RPMB_INVALID_SMC) {
+		printf("RPMB: fail to set RPMB SIZE: 0x%X\n", ret);
 		rpmb_operation_flag = SRPMB_DISABLE;
 	} else {
-		dprintf(INFO, "RPMB: get partition param from ldfw: success\n");
-		rpmb_operation_flag = SRPMB_ENABLE;
-	}
+		//RPMB Get Partition Info by SMC Call
+		ret = get_RPMB_partition_info(&rpmb_max_partition_size, &rpmb_block_partition_size);
+		if (ret == RV_RPMB_INVALID_SMC) {
+			printf("RPMB: get partition param from ldfw: Not Supported(use default): 0x%X\n", ret);
+			rpmb_max_partition_size = RPMB_DEFAULT_MAX_PARTITION;
+			rpmb_block_partition_size = RPMB_DEFAULT_MAX_BLOCK_PER_PARTITION;
+			rpmb_operation_flag = SRPMB_ENABLE;
+		} else if (ret != RV_SUCCESS) {
+			printf("RPMB: get partition param from ldfw: failed: 0x%X\n", ret);
+			rpmb_operation_flag = SRPMB_DISABLE;
+		} else {
+			dprintf(INFO, "RPMB: get partition param from ldfw: success\n");
+			rpmb_operation_flag = SRPMB_ENABLE;
+		}
 
-	force_RPMB_write();
+		force_RPMB_write();
+	}
 
 #ifndef CONFIG_USE_AVB20
 	//RPMB hmac block
