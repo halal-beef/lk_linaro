@@ -28,6 +28,7 @@
 #define SMC_CM_DRBG				0x1019
 #define SMC_SRPMB_SET_PROVISION			0x3818
 #define SMC_SRPMB_GET_PARTITION_INFO		0x3823
+#define SMC_SRPMB_SET_PARTITION_INFO		0x3824
 
 /* key and hmac length definition */
 #define RPMB_KEY_LEN				32
