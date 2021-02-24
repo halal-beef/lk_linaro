@@ -299,17 +299,17 @@ uint32_t set_RPMB_provision(uint64_t state)
 	return ret;
 }
 
-uint32_t get_RPMB_partition_info(uint32_t *rpmb_max_partition, uint32_t *rpmb_partition_per_block)
+uint32_t get_RPMB_partition_info(uint32_t *rpmb_max_partition, uint32_t *rpmb_block_per_partition)
 {
 	uint64_t r0 = SMC_AARCH64_PREFIX | SMC_SRPMB_GET_PARTITION_INFO;
 	uint64_t r1 = (uint64_t) rpmb_max_partition;
-	uint64_t r2 = (uint64_t) rpmb_partition_per_block;
+	uint64_t r2 = (uint64_t) rpmb_block_per_partition;
 	uint64_t r3 = 0;
 	uint32_t ret = RV_SUCCESS;
 
 #ifdef CACHE_ENABLED
 	CACHE_INVALIDATE(rpmb_max_partition, sizeof(uint32_t));
-	CACHE_INVALIDATE(rpmb_partition_per_block, sizeof(uint32_t));
+	CACHE_INVALIDATE(rpmb_block_per_partition, sizeof(uint32_t));
 #endif
 
 	ret = exynos_smc(r0, r1, r2, r3);
@@ -319,12 +319,12 @@ uint32_t get_RPMB_partition_info(uint32_t *rpmb_max_partition, uint32_t *rpmb_pa
 	}
 #ifdef CACHE_ENABLED
 	CACHE_INVALIDATE(rpmb_max_partition, sizeof(uint32_t));
-	CACHE_INVALIDATE(rpmb_partition_per_block, sizeof(uint32_t));
+	CACHE_INVALIDATE(rpmb_block_per_partition, sizeof(uint32_t));
 #endif
 
 #ifdef RPMB_DEBUG
-	dprintf(INFO, "RPMB: %s: Max_partition %d, Partition per Block %d\n", __func__,
-			*rpmb_max_partition, *rpmb_partition_per_block);
+	dprintf(INFO, "RPMB: %s: Max_partition %d, Block per Partition %d\n", __func__,
+			*rpmb_max_partition, *rpmb_block_per_partition);
 #endif
 	return ret;
 }
