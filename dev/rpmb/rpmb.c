@@ -1456,7 +1456,7 @@ int recog_MMC_RPMB_size(void)
 	bdev_t *dev;
 	mmc_device_t *mdev;
 	struct mmc *mmc;
-	int size;
+	int size, ret;
 
 	dev = bio_open("mmcrpmb");
 	if (dev == NULL) {
@@ -1467,13 +1467,15 @@ int recog_MMC_RPMB_size(void)
 	mdev = (mmc_device_t *)dev->private;
 	if (mdev == NULL) {
 		printf("%s: mdev structure is NULL\n", __func__);
-		return -1;
+		ret = -1;
+		goto out;
 	}
 
 	mmc = (struct mmc *)mdev->mmc;
 	if (mmc == NULL) {
 		printf("%s: mmc structure is NULL\n", __func__);
-		return -1;
+		ret = -1;
+		goto out;
 	}
 
 	size = (int)mmc->rpmb_size;
@@ -1483,8 +1485,10 @@ int recog_MMC_RPMB_size(void)
 	else
 		dprintf(INFO, "RPMB: Size is %dMB\n", size * 128 / 1024);
 
+	ret = size * 128;
+out:
 	bio_close(dev);
-	return size * 128;
+	return ret;
 }
 #else
 int recog_UFS_RPMB_size(void) {
