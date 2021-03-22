@@ -106,7 +106,9 @@ uint32_t avb_set_root_of_trust(
 	uint8_t hash[SHA512_DIGEST_LEN];
 	uint32_t hash_len = 0;
 	struct ace_hash_ctx ctx;
-	struct boot_img_hdr *b_hdr = (boot_img_hdr *)BOOT_BASE;
+	struct boot_img_hdr *b_hdr = (struct boot_img_hdr *)BOOT_BASE;
+	struct boot_img_hdr_v2 *b_hdr_v2 = (struct boot_img_hdr_v2 *)BOOT_BASE;
+	struct boot_img_hdr_v3 *b_hdr_v3 = (struct boot_img_hdr_v3 *)BOOT_BASE;
 
 	if (ctx_ptr == NULL) {
 		printf("[AVB] ctx_ptr is Null\n");
@@ -150,8 +152,10 @@ uint32_t avb_set_root_of_trust(
 		printf("[AVB] hash final fail [0x%X]\n", ret);
 		goto out;
 	}
-
-	os_version = (b_hdr->os_version & 0xFFFFF800) >> 11;
+	if(b_hdr->header_version == 3)
+		os_version = (b_hdr_v3->os_version & 0xFFFFF800) >> 11;
+	else
+		os_version = (b_hdr_v2->os_version & 0xFFFFF800) >>11;
 
 	if (os_version == 0)
 		printf("[AVB] os_version parsing fail\n");
