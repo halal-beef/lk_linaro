@@ -425,7 +425,10 @@ static void configure_dtb(void)
 
 	const char *np;
 	int len, noff;
-	struct boot_img_hdr *b_hdr = (boot_img_hdr *)BOOT_BASE;
+	struct boot_img_hdr *b_hdr = (struct boot_img_hdr *)BOOT_BASE;
+	struct boot_img_hdr_v2 *b_hdr_v2 = (struct boot_img_hdr_v2 *)BOOT_BASE;
+	struct boot_img_hdr_v3 *b_hdr_v3 = (struct boot_img_hdr_v3 *)BOOT_BASE;
+	struct vendor_boot_img_hdr *vb_hdr = (struct vendor_boot_img_hdr *)VENDOR_BOOT_BASE;
 
 	u32 soc_ver = 0;
 	u64 dram_size = *(u64 *)BL_SYS_INFO_DRAM_SIZE;
@@ -580,7 +583,11 @@ mem_node_out:
 	printf("initrd-start: %s\n", str);
 
 	memset(str, 0, BUFFER_SIZE);
-	sprintf(str, "<0x%x>", RAMDISK_BASE + b_hdr->ramdisk_size);
+	if(b_hdr->header_version == 3)
+		sprintf(str, "<0x%x>", RAMDISK_BASE + vb_hdr->vendor_ramdisk_size + b_hdr_v3->ramdisk_size);
+	else
+		sprintf(str, "<0x%x>", RAMDISK_BASE + b_hdr_v2->ramdisk_size);
+
 	set_fdt_val("/chosen", "linux,initrd-end", str);
 	printf("initrd-end: %s\n", str);
 
@@ -601,12 +608,21 @@ mem_node_out:
 			part_read_partial(part, (void *)addr_r, 0, 8 * 1024);
 		}
 	}
-
-	if (b_hdr->cmdline[0] && (!b_hdr->cmdline[BOOT_ARGS_SIZE - 1])) {
-		noff = fdt_path_offset(fdt_dtb, "/chosen");
-		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
-		snprintf(str, BUFFER_SIZE, "%s %s", np, b_hdr->cmdline);
-		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
+	if (b_hdr->header_version == 3) {
+		if (b_hdr_v3->cmdline[0] && (!b_hdr_v3->cmdline[BOOT_ARGS_SIZE - 1])) {
+			noff = fdt_path_offset(fdt_dtb, "/chosen");
+			np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
+			snprintf(str, BUFFER_SIZE, "%s %s", np, b_hdr_v3->cmdline);
+			fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
+		}
+	}
+	else{
+		if (b_hdr_v2->cmdline[0] && (!b_hdr_v2->cmdline[BOOT_ARGS_SIZE - 1])) {
+			noff = fdt_path_offset(fdt_dtb, "/chosen");
+			np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
+			snprintf(str, BUFFER_SIZE, "%s %s", np, b_hdr_v2->cmdline);
+			fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
+		}
 	}
 
 	noff = fdt_path_offset (fdt_dtb, "/chosen");
@@ -628,6 +644,7 @@ mem_node_out:
 }
 
 int cmd_scatter_load_boot(int argc, const cmd_args *argv);
+int do_load_dtb_from_vendor_boot(int argc, const cmd_args *argv);
 
 /*
  * load images from boot.img / recovery.img / dtbo.img partition
@@ -646,11 +663,12 @@ int cmd_scatter_load_boot(int argc, const cmd_args *argv);
 int load_boot_images(void)
 {
 #if defined(CONFIG_BOOT_IMAGE_SUPPORT)
-	cmd_args argv[6];
+	cmd_args argv[7],argv1[3];
 	void *part;
 	char boot_part_name[16] = "";
 	unsigned int ab_support = 0;
 	unsigned int boot_val = 0;
+	struct boot_img_hdr *b_hdr = (struct boot_img_hdr *)BOOT_BASE;
 
 	ab_support = ab_update_support();
 	boot_val = readl(EXYNOS3830_POWER_SYSIP_DAT0);
@@ -695,7 +713,27 @@ int load_boot_images(void)
 
 	part_read(part, (void *)BOOT_BASE);
 
-	cmd_scatter_load_boot(5, argv);
+	if (b_hdr->header_version == 3) {
+		argv[6].u = VENDOR_BOOT_BASE;
+		sprintf(boot_part_name, "vendor_boot");
+		part = part_get_ab(boot_part_name);
+		if (part == 0) {
+			printf("Partition '%s' does not exist\n", boot_part_name);
+			return -1;
+		}
+		part_read(part, (void *)VENDOR_BOOT_BASE);
+	}
+	else
+		argv[6].u =0x0;
+
+	cmd_scatter_load_boot(6, argv);
+
+	if (b_hdr->header_version == 3) {
+		argv1[1].u = VENDOR_BOOT_BASE;
+		argv1[2].u = DT_BASE;
+
+		do_load_dtb_from_vendor_boot(3,argv1);
+	}
 #else
 	void *part;
 
