@@ -299,7 +299,6 @@ static int bootargs_process(void)
 
 	/* Below console value can be used for bootargs change */
 	update_val("console", "ttySAC0,115200n8");
-	add_val("androidboot.console", "ttySAC0");
 	update_val("androidboot.dtbo_idx", dtbo_idx);
 
 	/* reason */
