@@ -62,6 +62,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	int vol_up_val;
 	int chk_wtsr_smpl;
 	int i;
+	int err;
 	//void *part;
 
 	print_lcd_update(FONT_WHITE, FONT_BLACK, "Board revision : 0x%X", board_rev);
@@ -215,14 +216,6 @@ download:
 	start_usb_gadget();
 	return;
 
-fastboot:
-	uart_log_mode = 1;
-#ifndef RAMDUMP_MODE_OFF
-	debug_store_ramdump();
-	start_usb_gadget();
-	return;
-#endif
-
 reboot:
 /*
 	vol_up_val = exynos_gpio_get_value(bank, 5);
@@ -252,8 +245,21 @@ reboot:
 #endif
 	set_debug_level_by_env();
 	recovery_init();
-	cmd_boot(0, 0);
+	err = cmd_boot(0, 0);
+	if (err) {
+		sdm_encrypt_secdram();
+		dfd_set_dump_en_for_cacheop(0);
+		goto fastboot;
+	}
 	return;
+
+fastboot:
+	uart_log_mode = 1;
+#ifndef RAMDUMP_MODE_OFF
+	debug_store_ramdump();
+	start_usb_gadget();
+	return;
+#endif
 }
 
 #if 0
