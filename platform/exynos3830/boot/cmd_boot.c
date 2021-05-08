@@ -667,6 +667,7 @@ int load_boot_images(void)
 	char boot_part_name[16] = "";
 	unsigned int ab_support = 0;
 	unsigned int boot_val = 0;
+	int err;
 	struct boot_img_hdr *b_hdr = (struct boot_img_hdr *)BOOT_BASE;
 
 	ab_support = ab_update_support();
@@ -725,7 +726,9 @@ int load_boot_images(void)
 	else
 		argv[6].u =0x0;
 
-	cmd_scatter_load_boot(6, argv);
+	err = cmd_scatter_load_boot(6, argv);
+	if (err)
+		return err;
 
 	if (b_hdr->header_version == 3) {
 		argv1[1].u = VENDOR_BOOT_BASE;
@@ -759,6 +762,7 @@ int cmd_boot(int argc, const cmd_args *argv)
 	int gpio = 5;	/* Volume Up */
 #endif
 	unsigned int val;
+	int err;
 
 	fdt_dtb = (struct fdt_header *)DT_BASE;
 	dtbo_table = (struct dt_table_header *)DTBO_BASE;
@@ -795,7 +799,9 @@ int cmd_boot(int argc, const cmd_args *argv)
 	}
 #endif
 
-	load_boot_images();
+	err = load_boot_images();
+	if (err)
+		return err;
 
 	val = readl(EXYNOS3830_POWER_SYSIP_DAT0);
 	if (val == REBOOT_MODE_RECOVERY)
