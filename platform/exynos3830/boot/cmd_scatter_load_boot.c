@@ -34,12 +34,6 @@ int cmd_scatter_load_boot(int argc, const cmd_args *argv)
 
 	b_hdr = (boot_img_hdr *)boot_addr;
 
-	if (b_hdr->header_version > 2) {
-		printf("Error: Can't load boot.img with header version %d\n",
-			b_hdr->header_version);
-		return -1;
-	}
-
 	printf("page size: 0x%08x\n", b_hdr->page_size);
 	printf("kernel size: 0x%08x\n", b_hdr->kernel_size);
 	printf("ramdisk size: 0x%08x\n", b_hdr->ramdisk_size);
