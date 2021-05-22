@@ -193,6 +193,7 @@ int cmd_scatter_load_boot(int argc, const cmd_args *argv)
 	switch (b_hdr->header_version) {
 	case 1:
 	case 2:
+		argc--; /* do not pass VENDOR_BOOT_BASE to Android-Q */
 		return do_scatter_load_boot_v2(argc, argv);
 	case 3:
 		return do_scatter_load_boot_v3(argc, argv);
