@@ -18,6 +18,7 @@
 #include <platform/fdt.h>
 #include <platform/fastboot.h>
 #include <ufdt_overlay.h>
+#include <ctype.h>
 
 #define BUFFER_SIZE 4096
 #define MASK_4GB (0xFFFFFFFF)
@@ -176,6 +177,11 @@ int set_fdt_val(const char *path, const char *property, const char *value)
 
 	if (*np == '<') {
 		np++;
+		if (!isxdigit(*np)) {
+			printf("### %s: Error: Value is not a number: %s\n",
+				__func__, value);
+			return -1;
+		}
 		while (*np != '>') {
 			tp = np;
 			tmp = simple_strtoul(tp, (char **)&np, 0);
