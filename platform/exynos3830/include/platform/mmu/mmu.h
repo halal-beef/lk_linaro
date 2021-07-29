@@ -20,8 +20,8 @@
 #define MMU_H_
 
 #include "cpu_a.h"
-#define	CONFIG_TTBR_EL3_L1			0x80008000ULL
-#define	CONFIG_TTBR_EL3_L2			0x80010000ULL
+#define	CONFIG_TTBR_EL3_L1			0xF8008000ULL
+#define	CONFIG_TTBR_EL3_L2			0xF8010000ULL
 
 #define BLK_1G  1
 #define BLK_2M  2
