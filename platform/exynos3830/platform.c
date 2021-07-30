@@ -71,6 +71,19 @@ static void read_chip_id(void)
 	s5p_chip_id[1] = readl(EXYNOS3830_PRO_ID + CHIPID1_OFFSET) & 0xFFFF;
 }
 
+/*
+ * BL2 sets 0xabcdef value to 0x80000000. But that location might be used e.g.
+ * to keep kernel image. So this function copies BL2 tag value to BL2_TAG_ADDR
+ * to avoid possible collisions further.
+ */
+static void relocate_bl2_tag(void)
+{
+	unsigned int bl2_tag;
+
+	bl2_tag = readl(BL2_TAG_ORIG_ADDR);
+	writel(bl2_tag, BL2_TAG_ADDR);
+}
+
 static void display_rst_stat(u32 rst_stat)
 {
 	u32 temp = rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET | PIN_RESET | SWRESET);
@@ -254,6 +267,7 @@ void platform_early_init(void)
 	}
 #endif
 
+	relocate_bl2_tag();
 	read_chip_id();
 
 	xbootldo_gpio_init();
