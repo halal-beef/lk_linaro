@@ -21,7 +21,7 @@ static unsigned int get_boot_device_info(void)
 {
 	unsigned int boot_device_info;
 
-	if (*(unsigned int *)DRAM_BASE != 0xabcdef) {
+	if (*(unsigned int *)BL2_TAG_ADDR != BL2_TAG) {
 		/* Running on DRAM by TRACE32 */
 		boot_device_info = *(unsigned int *)BOOTDEVICE_ORDER_ADDR;
 	} else {

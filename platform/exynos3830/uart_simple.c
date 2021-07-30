@@ -113,7 +113,7 @@ void uart_test_function(void)
 	uart_simple_GPIOInit();
 #endif
 
-	if(*(unsigned int *)0x80000000 == 0xabcdef)
+	if(*(unsigned int *)BL2_TAG_ADDR == BL2_TAG)
 		uart_simple_UartInit(rUART_BASE, 200000000, 115200);
 	else
 		uart_simple_UartInit(rUART_BASE, 200000000, 115200);

@@ -192,7 +192,7 @@ static void print_el3_monitor_version(void)
 {
 	char el3_mon_ver[EL3_MON_VERSION_STR_SIZE] = { 0, };
 
-	if (*(unsigned int *)DRAM_BASE == 0xabcdef) {
+	if (*(unsigned int *)BL2_TAG_ADDR == BL2_TAG) {
 		/* This booting is from eMMC/UFS. not T32 */
 		get_el3_mon_version(el3_mon_ver, EL3_MON_VERSION_STR_SIZE);
 		printf("\nEL3 Monitor information: \n");
@@ -328,14 +328,14 @@ void platform_init(void)
 			bl_sys->bl1_info.epbl_start * (UFS_BSIZE / MMC_BSIZE));
 #endif
 
-	if (*(unsigned int *)DRAM_BASE == 0xabcdef) {
+	if (*(unsigned int *)BL2_TAG_ADDR == BL2_TAG) {
 		pmic_init();
 		read_pmic_info_s2mpu12();
 		s2mu106_charger_init();
 		fg_init_s2mu106();
 	}
 
-	if (*(unsigned int *)DRAM_BASE == 0xabcdef)
+	if (*(unsigned int *)BL2_TAG_ADDR == BL2_TAG)
 		check_charger_connect();
 
 	ret = get_board_rev();
@@ -343,12 +343,12 @@ void platform_init(void)
 
 	mmc_init();
 	part_init();
-	if (is_first_boot() && *(unsigned int *)DRAM_BASE == 0xabcdef)
+	if (is_first_boot() && *(unsigned int *)BL2_TAG_ADDR == BL2_TAG)
 		dbg_snapshot_fdt_init();
 
 #if defined(CONFIG_UART_LOG_MODE)
 	if (get_current_boot_device() != BOOT_USB &&
-		*(unsigned int *)DRAM_BASE == 0xabcdef) {
+		*(unsigned int *)BL2_TAG_ADDR == BL2_TAG) {
 		unsigned int env_val = 0;
 
 		if (sysparam_read("uart_log_enable", &env_val, sizeof(env_val)) > 0) {
@@ -367,7 +367,7 @@ void platform_init(void)
 	 */
 	print_lcd(FONT_RED, FONT_BLACK, "LK Display is enabled!");
 	ret = display_drv_init();
-	if (ret == 0 && is_first_boot() && *(unsigned int *)DRAM_BASE == 0xabcdef)
+	if (ret == 0 && is_first_boot() && *(unsigned int *)BL2_TAG_ADDR == BL2_TAG)
 		show_boot_logo();
 
 	/* If the display_drv_init function is called,
@@ -386,13 +386,13 @@ void platform_init(void)
 
 	/*
 	if ((get_current_boot_device() != BOOT_USB) &&
-		*(unsigned int *)DRAM_BASE == 0xabcdef)
+		*(unsigned int *)BL2_TAG_ADDR == BL2_TAG)
 		init_fastboot_variables();
 	if (is_xct_boot())
 		return;
 	*/
 
-	if (*(unsigned int *)DRAM_BASE == 0xabcdef) {
+	if (*(unsigned int *)BL2_TAG_ADDR == BL2_TAG) {
 		unsigned int dfd_en = readl(EXYNOS3830_POWER_RESET_SEQUENCER_CONFIGURATION);
 
 		if ((rst_stat & (WARM_RESET | LITTLE_WDT_RESET)) &&

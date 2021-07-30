@@ -76,6 +76,9 @@
 #define DRAM_BASE								0x80000000
 #define DRAM_BASE2								0x880000000
 
+#define BL2_TAG									0xabcdef
+#define BL2_TAG_ADDR								DRAM_BASE
+
 #define CFG_FASTBOOT_MMC_BUFFER							(0xC0000000)
 #define CONFIG_LK_TEXT_BASE							(0xFF000000)
 

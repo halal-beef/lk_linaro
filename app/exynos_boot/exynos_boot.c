@@ -67,7 +67,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 
 	print_lcd_update(FONT_WHITE, FONT_BLACK, "Board revision : 0x%X", board_rev);
 
-	if (*(unsigned int *)DRAM_BASE != 0xabcdef) {
+	if (*(unsigned int *)BL2_TAG_ADDR != BL2_TAG) {
 		printf("Running on DRAM by TRACE32: skip auto booting\n");
 
 #if 0
