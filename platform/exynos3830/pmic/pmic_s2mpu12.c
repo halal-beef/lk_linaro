@@ -46,7 +46,7 @@ void pmic_int_mask(unsigned int chan, unsigned int addr, unsigned int interrupt)
 	printf("interrupt(0x%x) : 0x%x\n", interrupt, reg);
 }
 
-void pmic_init (void)
+void pmic_init(unsigned int board_rev)
 {
 	unsigned char reg;
 
@@ -89,6 +89,22 @@ void pmic_init (void)
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO30_CTRL, &reg);
 	reg |= 0xC0;
 	i3c_write(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO30_CTRL, reg);
+
+	/* Enable LAN9514 power on RevC board (and later revisions) */
+	if (board_rev >= 0x2) {
+		/*
+		 * Calculation:
+		 *   - LDO24 V_min = 1800 mV
+		 *   - LDO24 V_step = 25 mV
+		 *   - Wanted V = 3300 mV
+		 *   - Reg val: (V - V_min) / V_step = 60 = 0x3C
+		 */
+		const unsigned char out = 0x3C; /* 3.3V */
+		const unsigned char en = 0xC0; /* Always on */
+
+		reg = en | out;
+		i3c_write(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO24_CTRL, reg);
+	}
 }
 
 int get_pmic_rtc_time(char *buf)
@@ -124,10 +140,11 @@ int get_pmic_rtc_time(char *buf)
 
 void read_pmic_info_s2mpu12 (void)
 {
-	unsigned char read_int1, read_int2, read_int;
-	unsigned char read_ldo2_ctrl, read_ldo11_ctrl, read_ldo23_ctrl;
-	unsigned char read_ldo27_ctrl, read_ldo28_ctrl, read_ldo30_ctrl;
-	unsigned char read_pwronsrc, read_offsrc, read_wtsr_smpl;
+	unsigned char read_int1, read_int2, read_int,
+		      read_ldo2_ctrl, read_ldo11_ctrl, read_ldo23_ctrl,
+		      read_ldo24_ctrl, read_ldo27_ctrl, read_ldo28_ctrl,
+		      read_ldo30_ctrl,
+		      read_pwronsrc, read_offsrc, read_wtsr_smpl;
 
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_INT1, &read_int1);
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_INT2, &read_int2);
@@ -141,6 +158,7 @@ void read_pmic_info_s2mpu12 (void)
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO2_CTRL, &read_ldo2_ctrl);
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO11_CTRL, &read_ldo11_ctrl);
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO23_CTRL, &read_ldo23_ctrl);
+	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO24_CTRL, &read_ldo24_ctrl);
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO27_CTRL, &read_ldo27_ctrl);
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO28_CTRL, &read_ldo28_ctrl);
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO30_CTRL, &read_ldo30_ctrl);
@@ -154,6 +172,7 @@ void read_pmic_info_s2mpu12 (void)
 	printf("S2MPU12_PM_LDO2_CTRL: 0x%x\n", read_ldo2_ctrl);
 	printf("S2MPU12_PM_LDO11_CTRL: 0x%x\n", read_ldo11_ctrl);
 	printf("S2MPU12_PM_LDO23_CTRL: 0x%x\n", read_ldo23_ctrl);
+	printf("S2MPU12_PM_LDO24_CTRL: 0x%x\n", read_ldo24_ctrl);
 	printf("S2MPU12_PM_LDO27_CTRL: 0x%x\n", read_ldo27_ctrl);
 	printf("S2MPU12_PM_LDO28_CTRL: 0x%x\n", read_ldo28_ctrl);
 	printf("S2MPU12_PM_LDO30_CTRL: 0x%x\n", read_ldo30_ctrl);

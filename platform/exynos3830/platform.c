@@ -342,18 +342,16 @@ void platform_init(void)
 			bl_sys->bl1_info.epbl_start * (UFS_BSIZE / MMC_BSIZE));
 #endif
 
+	ret = get_board_rev();
+	ret < 0 ? (board_rev = 0):(board_rev = ret);
+
 	if (*(unsigned int *)BL2_TAG_ADDR == BL2_TAG) {
-		pmic_init();
+		pmic_init(board_rev);
 		read_pmic_info_s2mpu12();
 		s2mu106_charger_init();
 		fg_init_s2mu106();
-	}
-
-	if (*(unsigned int *)BL2_TAG_ADDR == BL2_TAG)
 		check_charger_connect();
-
-	ret = get_board_rev();
-	ret < 0 ? (board_rev = 0):(board_rev = ret);
+	}
 
 	mmc_init();
 	part_init();
