@@ -2234,6 +2234,18 @@ void dsim_reg_preinit(u32 id)
 }
 #endif
 
+/*
+ * Only for exynos3830: HACK: to try and keep alive
+ */
+void dsim_reg_set_keep_alive(u32 id)
+{
+#define	DSIM_OPTION_SUITE_UPDT_KEEP_ALIVE_MASK			(0x1 << 4)
+
+	dsim_write_mask(id, DSIM_OPTION_SUITE, 1,
+			DSIM_OPTION_SUITE_UPDT_KEEP_ALIVE_MASK);
+
+}
+
 void dsim_reg_init(u32 id, struct exynos_panel_info *lcd_info, struct dsim_clks *clks,
 		bool panel_ctrl)
 {
@@ -2283,6 +2295,8 @@ void dsim_reg_init(u32 id, struct exynos_panel_info *lcd_info, struct dsim_clks 
 	dsim_reg_set_link_clock(id, 1);	/* Selection to word clock */
 
 	dsim_reg_set_config(id, lcd_info, clks);
+
+	dsim_reg_set_keep_alive(id); /* HACK for exynos3830: keep alive */
 
 #if defined(CONFIG_EXYNOS_PLL_SLEEP)
 	dsim_reg_set_pll_sleep_enable(id, true);	/* PHY pll sleep enable */
