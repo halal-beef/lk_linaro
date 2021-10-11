@@ -20,6 +20,22 @@
 static int chk_wtsr_smpl = 0;
 static int read_int_first = 0;
 
+static void pmic_disable_manual_reset(void)
+{
+	unsigned char reg;
+
+	/* Disable manual reset */
+	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_CTRL1, &reg);
+	reg &= ~MRSTB_EN;
+	i3c_write(0, S2MPU12_PM_ADDR, S2MPU12_PM_CTRL1, reg);
+
+	/* Enable warm reset */
+	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_CTRL3, &reg);
+	reg |= WRSTEN;
+	reg &= ~MRSEL;
+	i3c_write(0, S2MPU12_PM_ADDR, S2MPU12_PM_CTRL3, reg);
+}
+
 void pmic_enable_manual_reset(pmic_mrdt deb_time)
 {
 	unsigned char reg;
@@ -50,16 +66,7 @@ void pmic_init(unsigned int board_rev)
 {
 	unsigned char reg;
 
-	/* Disable manual reset */
-	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_CTRL1, &reg);
-	reg &= ~MRSTB_EN;
-	i3c_write(0, S2MPU12_PM_ADDR, S2MPU12_PM_CTRL1, reg);
-
-	/* Enable warm reset */
-	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_CTRL3, &reg);
-	reg |= WRSTEN;
-	reg &= ~MRSEL;
-	i3c_write(0, S2MPU12_PM_ADDR, S2MPU12_PM_CTRL3, reg);
+	pmic_disable_manual_reset();
 
 	/* Enable eMMC power */
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO2_CTRL, &reg);
