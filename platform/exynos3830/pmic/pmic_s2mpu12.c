@@ -97,12 +97,12 @@ void pmic_init(unsigned int board_rev)
 	reg |= 0xC0;
 	i3c_write(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO30_CTRL, reg);
 
-	/* Enable LAN9514 power on RevC board (and later revisions) */
+	/* Enable power for some features on RevC board (and later revisions) */
 	if (board_rev >= 0x2) {
 		/*
 		 * Calculation:
-		 *   - LDO24 V_min = 1800 mV
-		 *   - LDO24 V_step = 25 mV
+		 *   - LDO24 and LDO32: V_min = 1800 mV
+		 *   - LDO24 and LDO32: V_step = 25 mV
 		 *   - Wanted V = 3300 mV
 		 *   - Reg val: (V - V_min) / V_step = 60 = 0x3C
 		 */
@@ -110,7 +110,11 @@ void pmic_init(unsigned int board_rev)
 		const unsigned char en = 0xC0; /* Always on */
 
 		reg = en | out;
+
+		/* Enable LAN9514 power */
 		i3c_write(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO24_CTRL, reg);
+		/* Enable RPi Camera module power */
+		i3c_write(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO32_CTRL, reg);
 	}
 }
 
@@ -150,7 +154,7 @@ void read_pmic_info_s2mpu12 (void)
 	unsigned char read_int1, read_int2, read_int,
 		      read_ldo2_ctrl, read_ldo11_ctrl, read_ldo23_ctrl,
 		      read_ldo24_ctrl, read_ldo27_ctrl, read_ldo28_ctrl,
-		      read_ldo30_ctrl,
+		      read_ldo30_ctrl, read_ldo32_ctrl,
 		      read_pwronsrc, read_offsrc, read_wtsr_smpl;
 
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_INT1, &read_int1);
@@ -169,6 +173,7 @@ void read_pmic_info_s2mpu12 (void)
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO27_CTRL, &read_ldo27_ctrl);
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO28_CTRL, &read_ldo28_ctrl);
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO30_CTRL, &read_ldo30_ctrl);
+	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO32_CTRL, &read_ldo32_ctrl);
 	/* read PMIC RTC */
 	i3c_read(0, S2MPU12_RTC_ADDR, S2MPU12_RTC_WTSR_SMPL, &read_wtsr_smpl);
 
@@ -183,6 +188,7 @@ void read_pmic_info_s2mpu12 (void)
 	printf("S2MPU12_PM_LDO27_CTRL: 0x%x\n", read_ldo27_ctrl);
 	printf("S2MPU12_PM_LDO28_CTRL: 0x%x\n", read_ldo28_ctrl);
 	printf("S2MPU12_PM_LDO30_CTRL: 0x%x\n", read_ldo30_ctrl);
+	printf("S2MPU12_PM_LDO32_CTRL: 0x%x\n", read_ldo32_ctrl);
 	printf("S2MPU12_RTC_WTSR_SMPL : 0x%x\n", read_wtsr_smpl);
 
 	if ((read_pwronsrc & (1 << 7)) && (read_int2 & (1 << 5)) && !(read_int1 & (1 << 7))) {
