@@ -767,13 +767,13 @@ int cmd_boot(int argc, const cmd_args *argv)
 
 	int gpio = 5;	/* Volume Up */
 #endif
-	unsigned int val;
 	int err;
 
 	fdt_dtb = (struct fdt_header *)DT_BASE;
 	dtbo_table = (struct dt_table_header *)DTBO_BASE;
-	uint32_t recovery_mode = 0;
 #if defined(CONFIG_USE_AVB20)
+	unsigned int val;
+	uint32_t recovery_mode = 0;
 	int avb_ret = 0;
 	uint32_t lock_state;
 	char ab_suffix[8] = {'\0'};
@@ -809,11 +809,11 @@ int cmd_boot(int argc, const cmd_args *argv)
 	if (err)
 		return err;
 
+#if defined(CONFIG_USE_AVB20)
 	val = readl(EXYNOS3830_POWER_SYSIP_DAT0);
 	if (val == REBOOT_MODE_RECOVERY)
 		recovery_mode = 1;
 
-#if defined(CONFIG_USE_AVB20)
 	ab_ret = ab_current_slot();
 	if (ab_ret == AB_ERROR_NOT_SUPPORT)
 		avb_ret = avb_main("", cmdline, verifiedbootstate, recovery_mode);
