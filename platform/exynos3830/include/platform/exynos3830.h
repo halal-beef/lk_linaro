@@ -168,7 +168,7 @@
 #define REBOOT_MODE_FACTORY				0xFD
 #define REBOOT_MODE_RECOVERY				0xFF
 /* AVB2.0 */
-#define CONFIG_USE_AVB20
+/* #define CONFIG_USE_AVB20 */
 #if defined(CONFIG_USE_AVB20)
 #define CONFIG_AVB_HW_HASH
 #define CONFIG_AVB_ROT
