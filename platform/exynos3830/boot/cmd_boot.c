@@ -424,6 +424,8 @@ static void set_usb_serialno(void)
 static void configure_dtb(void)
 {
 	char str[BUFFER_SIZE];
+	int err;
+	bool is_upstream_dtb;
 
 	const char *np;
 	int len, noff;
@@ -440,6 +442,17 @@ static void configure_dtb(void)
 	unsigned long sec_pt_base = 0;
 	unsigned int sec_pt_size = 0;
 	unsigned long sec_pt_end = 0;
+
+	/* Figure out if upstream kernel's dtb is flashed */
+	err = get_fdt_val("/", "compatible", str);
+	is_upstream_dtb = !err && !strcmp(str, "winlink,e850-96");
+	printf("DTB type: %supstream\n", is_upstream_dtb ? "" : "not ");
+
+	/* Skip merging DTBO and memory node adding if it's upstream DTB */
+	if (is_upstream_dtb) {
+		resize_dt(SZ_4K);
+		goto ramdisk_setup;
+	}
 
 	/*
 	 * In this here, it is enabled cache. So you don't use blk read/write function
@@ -578,6 +591,7 @@ mem_node_out:
 	sprintf(str, "<0x%x>", ECT_SIZE);
 	set_fdt_val("/ect", "parameter_size", str);
 
+ramdisk_setup:
 	/* add initrd-start end value */
 	memset(str, 0, BUFFER_SIZE);
 	sprintf(str, "<0x%x>", RAMDISK_BASE);
