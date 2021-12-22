@@ -504,7 +504,7 @@ static void dwmci_prepare_data(struct dw_mci *host, struct mmc_data *data)
 	host->flush_end_addr = (void *)(++cur_idmac);
 	dwmci_cache_flush(host);
 	host->flush_start_addr = (void *)buffer_addr;
-	host->flush_end_addr = (void *)(buffer_addr + (u64)((i + 1) * 0x1000));
+	host->flush_end_addr = (void *)(buffer_addr + data_bytes - 1);
 	dwmci_cache_flush(host);
 
 	dwmci_writel(host, (unsigned int)((u64)idmac_desc & 0xFFFFFFFF), DWMCI_DBADDRL);
