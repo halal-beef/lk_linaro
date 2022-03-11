@@ -1180,6 +1180,14 @@ static u32 dsim_reg_get_display_mode(u32 id)
 	return DSIM_CONFIG_DISPLAY_MODE_GET(val);
 }
 
+static u32 dsim_reg_get_datalane_status(u32 id)
+{
+	u32 val;
+
+	val = dsim_read(id, DSIM_LINK_STATUS2);
+	return DSIM_LINK_STATUS2_DATALANE_STATUS_GET(val);
+}
+
 static void dsim_reg_enable_dsc(u32 id, u32 en)
 {
 	u32 val = en ? ~0 : 0;
@@ -2442,6 +2450,11 @@ u32 dsim_reg_payload_fifo_is_empty(u32 id)
 {
 
 	return dsim_read_mask(id, DSIM_FIFOCTRL, DSIM_FIFOCTRL_EMPTY_PL_SFR);
+}
+
+bool dsim_reg_datalane_is_stopstate(u32 id)
+{
+	return ((dsim_reg_get_datalane_status(id) == 0x0) ? true : false);
 }
 
 bool dsim_reg_is_writable_ph_fifo_state(u32 id)
