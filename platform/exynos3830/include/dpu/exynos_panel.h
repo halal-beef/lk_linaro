@@ -122,5 +122,6 @@ struct exynos_panel_info {
 	struct lcd_hdr_info hdr;
 	struct dsc_slice dsc_slice;
 	unsigned int bpc;
+	unsigned int wait_lp11;
 };
 #endif /* __EXYNOS_PANEL_H__ */
