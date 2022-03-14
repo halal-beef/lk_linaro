@@ -220,6 +220,8 @@ struct dsim_device {
 	//u32 reg_base;
 	enum board_gpio_type board_type;
 	struct exynos_display_config *config_ops;
+
+	bool wait_lp11;
 };
 
 /**
@@ -258,6 +260,7 @@ int dsim_wait_for_cmd_done(struct dsim_device *dsim);
 
 int dsim_reset_panel(struct dsim_device *dsim);
 int dsim_set_panel_power(struct dsim_device *dsim, u32 on);
+int dsim_set_wait_lp11_after_cmds(struct dsim_device *dsim, bool en);
 
 void dsim_to_regs_param(struct dsim_device *dsim, struct dsim_regs *regs);
 
