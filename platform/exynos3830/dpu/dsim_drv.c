@@ -109,6 +109,23 @@ static void dsim_long_data_wr(struct dsim_device *dsim, unsigned long d0, u32 d1
 	}
 }
 
+static bool __wait_send_cmds(struct dsim_device *dsim)
+{
+	bool empty = false;
+
+	if (dsim_reg_payload_fifo_is_empty(dsim->id) &&
+			dsim_reg_header_fifo_is_empty(dsim->id))
+		empty = true;
+
+	if (!empty)
+		return false;
+
+	if (dsim->wait_lp11 && !dsim_reg_datalane_is_stopstate(dsim->id))
+		return true;
+
+	return false;
+}
+
 int dsim_write_data(struct dsim_device *dsim, u32 id, unsigned long d0, u32 d1)
 {
 	int ret = 0;
@@ -177,8 +194,7 @@ int dsim_write_data(struct dsim_device *dsim, u32 id, unsigned long d0, u32 d1)
 	}
 
 	do {
-		if (dsim_reg_payload_fifo_is_empty(dsim->id) &&
-				dsim_reg_header_fifo_is_empty(dsim->id))
+		if (!__wait_send_cmds(dsim))
 			break;
 		udelay(10);
 	} while (cnt--);
@@ -424,6 +440,17 @@ struct exynos_panel_info *decon_get_lcd_info(void)
 
 	return dsim->panel_ops->get_lcd_info();
 }
+
+int dsim_set_wait_lp11_after_cmds(struct dsim_device *dsim, bool en)
+{
+	if (!dsim)
+		return -EINVAL;
+
+	dsim_info("DSIM wait LP11 after sending cmds(%d)\n", en);
+	dsim->wait_lp11 = en;
+	return 0;
+}
+
 #if 1
 void dsim_to_regs_param(struct dsim_device *dsim, struct dsim_regs *regs)
 {
@@ -506,6 +533,7 @@ int dsim_probe(u32 dev_id)
 		goto err_dt;
 	}
 
+	dsim_set_wait_lp11_after_cmds(dsim, dsim->lcd_info->wait_lp11);
 	dsim->state = DSIM_STATE_INIT;
 	dsim_enable(dsim);
 
@@ -525,6 +553,7 @@ int dsim_probe(u32 dev_id)
 	}
 	dsim_disable(dsim);
 
+	dsim_set_wait_lp11_after_cmds(dsim, dsim->lcd_info->wait_lp11);
 	dsim->lcd_info = decon_get_lcd_info();
 	dsim_enable(dsim);
 #if defined(CONFIG_EXYNOS_DSIM_BIST)
