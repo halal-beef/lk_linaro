@@ -293,6 +293,7 @@ void *usb3_dev_trb_prepare(USB3_DEV_TRB_HANDLER hTRB, u8 bCacheOp,
 		if (bCacheOp || bCircular) {
 			u32 uTRBCnt;
 			USB3_DEV_TRB_p trb;
+			u64 addr;
 
 			hTRB->m_bCachedXfer = 1;
 			for (uTRBCnt = 0; uTRBCnt < p_oCurrent->input_cnt;
@@ -318,14 +319,16 @@ void *usb3_dev_trb_prepare(USB3_DEV_TRB_HANDLER hTRB, u8 bCacheOp,
 				} else {
 					U3DBG_CACHE("DATA BUFFER INVALID\n");
 				}
-				U3DBG_CACHE("ADDR : 0x%x Size : %d\n",
-					    trb->buf_ptr_l,
-					    trb->status.b.buf_siz);
+
+				addr = ((u64)(trb->buf_ptr_h) << 32llu) | (u64)(trb->buf_ptr_l);
+
+				U3DBG_CACHE("ADDR : 0x%p Size : %d\n",
+					    (void *)addr, trb->status.b.buf_siz);
 				if (eEpDir == USBDIR_IN) {
-					CoCleanDCache(trb->buf_ptr_l,
+					CoCleanDCache(addr,
 						      trb->status.b.buf_siz);
 				} else {
-					InvalidateDCache(trb->buf_ptr_l,
+					InvalidateDCache(addr,
 							 trb->status.b.buf_siz);
 				}
 			}
