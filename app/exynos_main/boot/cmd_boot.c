@@ -691,7 +691,7 @@ int cmd_scatter_load_boot(int argc, const cmd_args *argv);
  */
 int load_boot_images(void)
 {
-	cmd_args argv[7];
+	cmd_args argv[8];
 	void *part;
 	char boot_part_name[16] = "";
 	unsigned int ab_support = 0;
@@ -741,7 +741,19 @@ int load_boot_images(void)
 
 	part_read(part, (void *)BOOT_BASE);
 
-	if (b_hdr->header_version >= 3) {
+	switch (b_hdr->header_version) {
+	case 4:
+		argv[7].u = INIT_BOOT_BASE;
+		sprintf(boot_part_name, "init_boot");
+		part = part_get_ab(boot_part_name);
+		if (part == 0) {
+			printf("Partition '%s' does not exit, skip %s loading",
+							boot_part_name, boot_part_name);
+			argv[7].u = 0;
+			break;
+		}
+		part_read(part, (void *)INIT_BOOT_BASE);
+	case 3:
 		argv[6].u = VENDOR_BOOT_BASE;
 		sprintf(boot_part_name, "vendor_boot");
 		part = part_get_ab(boot_part_name);
@@ -750,11 +762,13 @@ int load_boot_images(void)
 			return -1;
 		}
 		part_read(part, (void *)VENDOR_BOOT_BASE);
-	}
-	else
+		break;
+	default:
 		argv[6].u =0x0;
 
-	cmd_scatter_load_boot(6, argv);
+	}
+
+	cmd_scatter_load_boot(7, argv);
 
 	return 0;
 }

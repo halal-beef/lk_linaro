@@ -47,11 +47,17 @@ static uint64_t ramdisk_base;
 								_dest, \
 								_size)
 
+#define COPY_INIT_BOOT(_name, _offset, _dest, _size)	copy_binary(_name, \
+								INIT_BOOT_BASE, \
+								_offset, \
+								_dest, \
+								_size)
+
 void copy_binary(const char *name, u64 src, u64 offset, u64 dest, u32 size)
 {
-	memcpy((void *)dest, (const void *)(src + offset), (size_t)size);
 	printf("Load %-16s From: 0x%-16llX To: 0x%-16llX size: 0x%-16X\n",
 						name, src + offset, dest, size);
+	memcpy((void *)dest, (const void *)(src + offset), (size_t)size);
 }
 
 static const char android_bootargs_keyword[] = "androidboot.";
@@ -256,10 +262,17 @@ int load_bootconfig_v4(void)
 	return 0;
 }
 
-static void boot_hdr_dump_v4(struct boot_img_hdr_v4 *b_hdr)
+static void boot_hdr_dump_v4(struct boot_img_hdr_v4 *b_hdr,
+					struct boot_img_hdr_v4 *ib_hdr)
 {
 	if (!b_hdr)
 		return;
+
+	if (ib_hdr) {
+		printf("\n------------------------------------\n");
+		printf("\n  ## Init Boot Header Info ##\n");
+		printf("%-14s: 0x%X\n", "ram_size", ib_hdr->ramdisk_size);
+	}
 
 	printf("\n------------------------------------\n");
 	printf("\n  ## Boot Header Info ##\n");
@@ -414,8 +427,9 @@ int do_scatter_load_boot_v3(int argc,const cmd_args *argv)
 
 int do_scatter_load_boot_v4(int argc,const cmd_args *argv)
 {
-	unsigned long long boot_addr, vendor_boot_addr, kernel_addr, dtb_addr; /*recovery_dtbo_addr*/
-	struct boot_img_hdr_v4 *b_hdr;
+	unsigned long long boot_addr, vendor_boot_addr,
+					kernel_addr, dtb_addr, init_boot_addr; /*recovery_dtbo_addr*/
+	struct boot_img_hdr_v4 *b_hdr, *ib_hdr;
 	struct vendor_boot_img_hdr_v4 *vb_hdr;
 	char initrd_size[32];
 	unsigned int ramdisk_idx = 0;
@@ -428,10 +442,12 @@ int do_scatter_load_boot_v4(int argc,const cmd_args *argv)
 	ramdisk_base = argv[3].u;
 	ramdisk_addr = ramdisk_base;
 	dtb_addr = argv[4].u;
+	init_boot_addr = argv[7].u;
 	//recovery_dtbo_addr = argv[5].u;
 
 	b_hdr = (struct boot_img_hdr_v4 *)boot_addr;
 	vb_hdr = (struct vendor_boot_img_hdr_v4 *)vendor_boot_addr;
+	ib_hdr = (struct boot_img_hdr_v4 *)init_boot_addr;
 
 	if (vb_hdr->header_version != 4) {
 		printf("\nerror: Unknown Android vendor bootimage (ver:%d)\n", vb_hdr->header_version);
@@ -478,7 +494,11 @@ int do_scatter_load_boot_v4(int argc,const cmd_args *argv)
 			ramdisk_addr += entry[ramdisk_idx].ramdisk_size;
 		}
 	}
-
+	if (init_boot_addr) {
+		ramdisk_offset = BOOT_ALIGN(ib_hdr->header_size) + BOOT_ALIGN(ib_hdr->kernel_size);
+		COPY_INIT_BOOT("ramdisk", ramdisk_offset, ramdisk_addr, ib_hdr->ramdisk_size);
+		ramdisk_addr += ib_hdr->ramdisk_size;
+	}
 	ramdisk_offset = BOOT_ALIGN(b_hdr->header_size) + BOOT_ALIGN(b_hdr->kernel_size);
 	COPY_BOOT("ramdisk", ramdisk_offset, ramdisk_addr, b_hdr->ramdisk_size);
 	ramdisk_addr += b_hdr->ramdisk_size;
@@ -498,7 +518,7 @@ int do_scatter_load_boot_v4(int argc,const cmd_args *argv)
 	sprintf(initrd_size, "0x%x", b_hdr->ramdisk_size + vb_hdr->vendor_ramdisk_size);
 	//setenv("rootfslen", initrd_size);
 
-	boot_hdr_dump_v4(b_hdr);
+	boot_hdr_dump_v4(b_hdr, ib_hdr);
 	vendor_boot_hdr_dump_v4(vb_hdr);
 	return 0;
 }
@@ -552,7 +572,7 @@ int cmd_scatter_load_boot(int argc, const cmd_args *argv)
 	unsigned long long boot_addr;
 	struct boot_img_hdr *b_hdr;
 	printf("argc: %d\n",argc);
-	if (argc != 6) {
+	if (argc != 7) {
 		goto usage;
 	}
 
