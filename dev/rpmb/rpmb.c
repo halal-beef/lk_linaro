@@ -72,6 +72,8 @@ uint32_t table_init_state;
 struct boot_header bootHeader;
 struct persist_data persistentData[PERSIST_DATA_CNT];
 static u8 nonce[NONCE_SIZE];
+static uint32_t rpmb_block_partition_size;
+static uint32_t rpmb_max_partition_size;
 
 static void dump_packet(u8 * data, u32 len)
 {
@@ -282,7 +284,7 @@ uint32_t set_RPMB_provision(uint64_t state)
 	uint64_t r3 = 0;
 	uint32_t ret = RV_SUCCESS;
 
-	r0 = SMC_AARCH64_PREFIX | SMC_SRPMB_PROVISION;
+	r0 = SMC_AARCH64_PREFIX | SMC_SRPMB_SET_PROVISION;
 	r1 = state == 0?0:1;
 
 	ret = exynos_smc(r0, r1, r2, r3);
@@ -293,6 +295,36 @@ uint32_t set_RPMB_provision(uint64_t state)
 	}
 #ifdef RPMB_DEBUG
 	dprintf(INFO, "RPMB: successfully set provision state\n");
+#endif
+	return ret;
+}
+
+uint32_t get_RPMB_partition_info(uint32_t *rpmb_max_partition, uint32_t *rpmb_partition_per_block)
+{
+	uint64_t r0 = SMC_AARCH64_PREFIX | SMC_SRPMB_GET_PARTITION_INFO;
+	uint64_t r1 = (uint64_t) rpmb_max_partition;
+	uint64_t r2 = (uint64_t) rpmb_partition_per_block;
+	uint64_t r3 = 0;
+	uint32_t ret = RV_SUCCESS;
+
+#ifdef CACHE_ENABLED
+	CACHE_INVALIDATE(rpmb_max_partition, sizeof(uint32_t));
+	CACHE_INVALIDATE(rpmb_partition_per_block, sizeof(uint32_t));
+#endif
+
+	ret = exynos_smc(r0, r1, r2, r3);
+	if (ret != RV_SUCCESS) {
+		printf("RPMB: failed to get partition info: 0x%X\n", ret);
+		return ret;
+	}
+#ifdef CACHE_ENABLED
+	CACHE_INVALIDATE(rpmb_max_partition, sizeof(uint32_t));
+	CACHE_INVALIDATE(rpmb_partition_per_block, sizeof(uint32_t));
+#endif
+
+#ifdef RPMB_DEBUG
+	dprintf(INFO, "RPMB: %s: Max_partition %d, Partition per Block %d\n", __func__,
+			*rpmb_max_partition, *rpmb_partition_per_block);
 #endif
 	return ret;
 }
@@ -1541,9 +1573,18 @@ void rpmb_key_programming(void)
 	else
 		dprintf(INFO, "RPMB: key blocking: success\n");
 
+	//RPMB Get Partition Info by SMC Call
+	ret = get_RPMB_partition_info(&rpmb_max_partition_size, &rpmb_block_partition_size);
+	if (ret != RV_SUCCESS) {
+		printf("RPMB: get partition param from ldfw: failed: 0x%X\n", ret);
+		rpmb_max_partition_size = RPMB_DEFAULT_MAX_PARTITION;
+		rpmb_block_partition_size = RPMB_DEFAULT_MAX_BLOCK_PER_PARTITION;
+	} else
+		dprintf(INFO, "RPMB: get partition param from ldfw: success\n");
+
 #ifdef LK_RPMB_MAGIC_TEST
 	//RPMB write & read test
-	addr = RPMB_BLOCK_PER_PARTITION * (RPMB_BL_PARTITION - 1) + RPMB_MAGIC_BLK;
+	addr = rpmb_block_partition_size * (RPMB_BL_PARTITION - 1) + RPMB_MAGIC_BLK;
 	magic = RPMB_TEST_MAGIC;
 	memset((void *)buf, 0, RPMB_BLOCK_SIZE);
 	memcpy(buf, &magic, sizeof(uint64_t));
@@ -1765,7 +1806,7 @@ static int rpmb_init_table(void)
 	hblock->lock = 1;
 	lock_state = 1;
 
-	addr_base = RPMB_BLOCK_PER_PARTITION * (BOOT_RI_PARTITION - 1);
+	addr_base = rpmb_block_partition_size * (BOOT_RI_PARTITION - 1);
 
 	packet_result = 0x0;
 	ret = rpmb_write_block(addr_base, 1, buf, &packet_result);
@@ -1815,7 +1856,7 @@ static int rpmb_ri_check_magic(void)
 	struct boot_header *header;
 	struct header_block *hblock;
 
-	addr = RPMB_BLOCK_PER_PARTITION * (BOOT_RI_PARTITION - 1);
+	addr = rpmb_block_partition_size * (BOOT_RI_PARTITION - 1);
 
 	packet_result = 0x0;
 	ret = rpmb_read_block(addr, 1, buf, &packet_result);
@@ -1891,7 +1932,7 @@ static int rpmb_update_table_block(uint32_t block, u8 *buf)
 	if (!table_init_state)
 		return RV_RPMB_RI_TABLE_NOT_INITIALIZED;
 
-	addr = RPMB_BLOCK_PER_PARTITION * (BOOT_RI_PARTITION - 1);
+	addr = rpmb_block_partition_size * (BOOT_RI_PARTITION - 1);
 	addr = addr + block;
 	packet_result = 0x0;
 	ret = rpmb_write_block(addr, 1, buf, &packet_result);
@@ -1912,7 +1953,7 @@ static int rpmb_load_rollback_index(void)
 	u16 packet_result;
 	u8 *buf;
 
-	addr = RPMB_BLOCK_PER_PARTITION * (BOOT_RI_PARTITION - 1);
+	addr = rpmb_block_partition_size * (BOOT_RI_PARTITION - 1);
 	addr = addr + BOOT_RI_TABLE_BLOCK;
 
 	for (i = 0 ; i < BOOT_RI_TABLE_BLOCK_CNT ; i++) {
@@ -1939,7 +1980,7 @@ static int rpmb_load_persistent_data(void)
 	u32 addr;
 	u8 *buf;
 
-	addr = RPMB_BLOCK_PER_PARTITION * (BOOT_RI_PARTITION - 1);
+	addr = rpmb_block_partition_size * (BOOT_RI_PARTITION - 1);
 	addr = addr + PERSIST_DATA_BLOCK;
 
 	for (i = 0 ; i < PERSIST_DATA_BLOCK_CNT ; i++) {

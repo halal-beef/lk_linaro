@@ -26,7 +26,8 @@
 #define ENABLE_CM_NONCE
 #define SMC_CM_RPMB				0x1018
 #define SMC_CM_DRBG				0x1019
-#define SMC_SRPMB_PROVISION			0x3818
+#define SMC_SRPMB_SET_PROVISION			0x3818
+#define SMC_SRPMB_GET_PARTITION_INFO		0x3823
 
 /* key and hmac length definition */
 #define RPMB_KEY_LEN				32
@@ -66,6 +67,11 @@
 
 #define RPMB_AUTHEN_KEY_MISMATCH		0x02
 #define RPMB_AUTHEN_KEY_NOT_PGAM		0x07
+
+/* RPMB PARTITION PARAMETER */
+#define RPMB_DEFAULT_MAX_PARTITION		32
+#define RPMB_DEFAULT_MAX_BLOCK_PER_PARTITION	1024
+
 /*
  * if the caller of this fucntion is executed on the cache enabled memory area
  * below definitions and macros should be defined
@@ -139,6 +145,7 @@ int rpmb_write_persistent_value(const char *name,
 		const uint8_t *value);
 int rpmb_get_lock_state(uint32_t *state);
 int rpmb_set_lock_state(uint32_t state);
+uint32_t get_RPMB_partition_info(uint32_t *rpmb_max_partition, uint32_t *rpmb_partition_per_block);
 static int rpmb_read_block(int addr, int blkcnt, u8 *buf, u16 *result);
 static int rpmb_write_block(int addr, int blkcnt, u8 *buf, u16 *result);
 
