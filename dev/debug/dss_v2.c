@@ -27,36 +27,35 @@
 extern int load_boot_images(void);
 
 struct reserve_mem {
-	unsigned int paddr;
-	unsigned int size;
+	unsigned long long paddr;
+	unsigned long long size;
 };
 
 struct dss_item {
 	char name[16];
 	struct reserve_mem rmem;
-	int enabled;
 };
 
 struct dss_bl {
-	unsigned int magic1;
-	unsigned int magic2;
+	unsigned int magic;
 	unsigned int item_count;
-	unsigned int reserved;
-	struct dss_item item[16];
+	struct dss_item item[24];
+	unsigned int checksum;
 };
 
 struct dss_bl static_dss_bl = {
+	.item_count = 10,
 	.item = {
-		{"header",		{0, 0}, 0},
-		{"log_kernel",		{0, 0}, 0},
-		{"log_platform",	{0, 0}, 0},
-		{"log_sfr",		{0, 0}, 0},
-		{"log_s2d",		{0, 0}, 0},
-		{"log_arrdumpreset",	{0, 0}, 0},
-		{"log_arrdumppanic",	{0, 0}, 0},
-		{"log_dbgc",		{0, 0}, 0},
-		{"log_kevents",		{0, 0}, 0},
-		{"log_fatal",		{0, 0}, 0},
+		{"header",		{0, 0}},
+		{"log_kernel",		{0, 0}},
+		{"log_platform",	{0, 0}},
+		{"log_sfr",		{0, 0}},
+		{"log_s2d",		{0, 0}},
+		{"log_arrdumpreset",	{0, 0}},
+		{"log_arrdumppanic",	{0, 0}},
+		{"log_dbgc",		{0, 0}},
+		{"log_kevents",		{0, 0}},
+		{"log_fatal",		{0, 0}},
 	},
 };
 
@@ -87,14 +86,13 @@ static void dss_get_items(void)
 	u32 ret[8];
 	u32 i;
 
-	if (!(rst_stat & PIN_RESET) && (readl(CONFIG_RAMDUMP_DSS_ITEM_INFO) == 0x01234567
-	    && readl(CONFIG_RAMDUMP_DSS_ITEM_INFO + 0x4) == 0x89ABCDEF)) {
+	if (!(rst_stat & PIN_RESET) && (readl(CONFIG_RAMDUMP_DSS_ITEM_INFO) == 0x1234ABCD)) {
 		dss_bl_p = (struct dss_bl *)CONFIG_RAMDUMP_DSS_ITEM_INFO;
 	} else {
 		load_boot_images();
 		fdt_dtb = (struct fdt_header *)DT_BASE;
 
-		for (i = 0; i < ARRAY_SIZE(static_dss_bl.item); i++) {
+		for (i = 0; i < static_dss_bl.item_count; i++) {
 			if (!strlen(static_dss_bl.item[i].name))
 				continue;
 
@@ -108,9 +106,8 @@ static void dss_get_items(void)
 			if (!get_fdt_val(path, "reg", (char *)ret)) {
 				static_dss_bl.item[i].rmem.paddr |= be32_to_cpu(ret[1]);
 				static_dss_bl.item[i].rmem.size = be32_to_cpu(ret[2]);
-				static_dss_bl.item[i].enabled = 1;
 			} else {
-				static_dss_bl.item[i].enabled = 0;
+				static_dss_bl.item[i].rmem.size = 0;
 			}
 		}
 
@@ -118,12 +115,11 @@ static void dss_get_items(void)
 	}
 
 	printf("debug-snapshot kernel physical memory layout:(MAGIC:0x%lx)\n",
-	       (unsigned long)readl(CONFIG_RAMDUMP_DSS_ITEM_INFO) << 32L |
-	       (unsigned long)readl(CONFIG_RAMDUMP_DSS_ITEM_INFO + 0x4));
+	       (unsigned long)readl(CONFIG_RAMDUMP_DSS_ITEM_INFO));
 
-	for (i = 0; i < ARRAY_SIZE(dss_bl_p->item); i++) {
-		if (dss_bl_p->item[i].enabled) {
-			printf("%-15s: phys:0x%x / size:0x%x\n",
+	for (i = 0; i < dss_bl_p->item_count; i++) {
+		if (dss_bl_p->item[i].rmem.size) {
+			printf("%-15s: phys:0x%llx / size:0x%llx\n",
 			       dss_bl_p->item[i].name,
 			       dss_bl_p->item[i].rmem.paddr,
 			       dss_bl_p->item[i].rmem.size);
@@ -133,16 +129,16 @@ static void dss_get_items(void)
 
 unsigned long dss_get_item_count(void)
 {
-	return ARRAY_SIZE(dss_bl_p->item);
+	return dss_bl_p->item_count;
 }
 
 struct dss_item *dss_get_item(const char *name)
 {
 	unsigned int i;
 
-	for (i = 0; i < ARRAY_SIZE(dss_bl_p->item); i++) {
+	for (i = 0; i < dss_bl_p->item_count; i++) {
 		if (!strncmp(dss_bl_p->item[i].name, name, strlen(dss_bl_p->item[i].name))
-		    && dss_bl_p->item[i].enabled)
+						&& dss_bl_p->item[i].rmem.size)
 			return &dss_bl_p->item[i];
 	}
 
@@ -153,8 +149,9 @@ unsigned long dss_get_item_paddr(const char *name)
 {
 	unsigned int i;
 
-	for (i = 0; i < ARRAY_SIZE(dss_bl_p->item); i++) {
-		if (!strncmp(dss_bl_p->item[i].name, name, strlen(name)))
+	for (i = 0; i < dss_bl_p->item_count; i++) {
+		if (!strncmp(dss_bl_p->item[i].name, name, strlen(name))
+						&& dss_bl_p->item[i].rmem.size)
 			return dss_bl_p->item[i].rmem.paddr;
 	}
 
@@ -165,8 +162,9 @@ unsigned long dss_get_item_size(const char *name)
 {
 	unsigned int i;
 
-	for (i = 0; i < ARRAY_SIZE(dss_bl_p->item); i++) {
-		if (!strncmp(dss_bl_p->item[i].name, name, strlen(name)))
+	for (i = 0; i < dss_bl_p->item_count; i++) {
+		if (!strncmp(dss_bl_p->item[i].name, name, strlen(name))
+						&& dss_bl_p->item[i].rmem.size)
 			return dss_bl_p->item[i].rmem.size;
 	}
 
@@ -197,7 +195,7 @@ int dss_getvar_item(const char *name, char *response)
 		if (!item)
 			return -1;
 
-		sprintf(response, "%X, %X, %X", item->rmem.paddr, item->rmem.size,
+		sprintf(response, "%llX, %llX, %llX", item->rmem.paddr, item->rmem.size,
 		        item->rmem.paddr + item->rmem.size - 1);
 
 		return 0;
@@ -208,7 +206,7 @@ int dss_getvar_item(const char *name, char *response)
 	if (!item)
 		return -1;
 
-	sprintf(response, "%X, %X, %X", item->rmem.paddr, item->rmem.size,
+	sprintf(response, "%llX, %llX, %llX", item->rmem.paddr, item->rmem.size,
 	        item->rmem.paddr + item->rmem.size - 1);
 	return 0;
 }
