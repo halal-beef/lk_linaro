@@ -212,3 +212,19 @@ int dss_getvar_item(const char *name, char *response)
 	        item->rmem.paddr + item->rmem.size - 1);
 	return 0;
 }
+
+int dss_getvar_item_with_index(unsigned int index, char *response)
+{
+	struct dss_item *item;
+
+	if (index >= ARRAY_SIZE(dss_bl_p->item))
+		return -1;
+
+	item = &dss_bl_p->item[index];
+	if (item->enabled) {
+		sprintf(response, "%s: %X, %X, %X", item->name, item->rmem.paddr, item->rmem.size,
+			item->rmem.paddr + item->rmem.size - 1);
+	}
+
+	return 0;
+}
