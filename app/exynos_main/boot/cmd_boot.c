@@ -55,6 +55,12 @@
 
 void configure_ddi_id(void);
 void arm_generic_timer_disable(void);
+#ifdef CONFIG_BOOT_IMAGE_SUPPORT
+int load_bootconfig_v4(void);
+unsigned int get_ramdisk_size_v4(void);
+#endif
+void get_bootargs_from_boot(char *bootargs, struct boot_img_hdr_v4 *b_hdr,
+					struct vendor_boot_img_hdr_v4 *vb_hdr);
 
 #if defined(CONFIG_USE_AVB20)
 static char cmdline[AVB_CMD_MAX_SIZE];
@@ -311,6 +317,7 @@ static int bootargs_process(void)
 	/* reason */
 	memset(buf, 0, sizeof(buf));
 	update_boot_reason(buf);
+
 	if (add_val("androidboot.bootreason", buf)) {
 		printf("Add bootreason failed\n");
 		return -1;
@@ -428,9 +435,14 @@ static void set_usb_serialno(void)
 static void configure_dtb(void)
 {
 	const char *np;
-	char str[BUFFER_SIZE];
+	char str[BUFFER_SIZE], buffer[BUFFER_SIZE];
 	int len, noff;
-	struct boot_img_hdr *b_hdr = (boot_img_hdr *)BOOT_BASE;
+	struct boot_img_hdr *b_hdr = (struct boot_img_hdr *)BOOT_BASE;
+	struct boot_img_hdr_v2 *b_hdr_v2 = (struct boot_img_hdr_v2 *)BOOT_BASE;
+	struct boot_img_hdr_v3 *b_hdr_v3 = (struct boot_img_hdr_v3 *)BOOT_BASE;
+	struct boot_img_hdr_v4 *b_hdr_v4 = (struct boot_img_hdr_v4 *)BOOT_BASE;
+	struct vendor_boot_img_hdr_v3 *vb_hdr_v3 = (struct vendor_boot_img_hdr_v3 *)VENDOR_BOOT_BASE;
+	struct vendor_boot_img_hdr_v4 *vb_hdr_v4 = (struct vendor_boot_img_hdr_v4 *)VENDOR_BOOT_BASE;
 	u32 soc_ver = 0;
 	u64 dram_size = *(u64 *)BL_SYS_INFO_DRAM_SIZE;
 	unsigned long sec_dram_base = 0;
@@ -582,7 +594,12 @@ mem_node_out:
 	printf("initrd-start: %s\n", str);
 
 	memset(str, 0, BUFFER_SIZE);
-	sprintf(str, "<0x%x>", RAMDISK_BASE + b_hdr->ramdisk_size);
+	if(b_hdr->header_version == 3)
+		sprintf(str, "<0x%x>", RAMDISK_BASE + vb_hdr_v3->vendor_ramdisk_size + b_hdr_v3->ramdisk_size);
+	else if (b_hdr->header_version == 4)
+		sprintf(str, "<0x%x>", RAMDISK_BASE + get_ramdisk_size_v4());
+	else
+		sprintf(str, "<0x%x>", RAMDISK_BASE + b_hdr_v2->ramdisk_size);
 	set_fdt_val("/chosen", "linux,initrd-end", str);
 	printf("initrd-end: %s\n", str);
 
@@ -605,11 +622,21 @@ mem_node_out:
 	}
 	set_usb_serialno();
 
-	if (b_hdr->cmdline[0] && (!b_hdr->cmdline[BOOT_ARGS_SIZE - 1])) {
-		noff = fdt_path_offset (fdt_dtb, "/chosen");
-		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
-		snprintf(str, BUFFER_SIZE, "%s %s", np, b_hdr->cmdline);
-		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
+	if (b_hdr->header_version == 3) {
+		if (b_hdr_v3->cmdline[0] && (!b_hdr_v3->cmdline[BOOT_ARGS_SIZE - 1])) {
+			noff = fdt_path_offset(fdt_dtb, "/chosen");
+			np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
+			snprintf(str, BUFFER_SIZE, "%s %s", np, b_hdr_v3->cmdline);
+			fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
+		}
+	}
+	else{
+		if (b_hdr_v2->cmdline[0] && (!b_hdr_v2->cmdline[BOOT_ARGS_SIZE - 1])) {
+			noff = fdt_path_offset(fdt_dtb, "/chosen");
+			np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
+			snprintf(str, BUFFER_SIZE, "%s %s", np, b_hdr_v2->cmdline);
+			fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
+		}
 	}
 
 	noff = fdt_path_offset (fdt_dtb, "/chosen");
@@ -618,6 +645,16 @@ mem_node_out:
 
 	set_bootargs();
 
+	if(b_hdr_v4->header_version == 4) {
+		memset(str, 0, BUFFER_SIZE);
+		memset(buffer, 0, BUFFER_SIZE);
+		get_bootargs_from_boot(buffer, b_hdr_v4, vb_hdr_v4);
+
+		noff = fdt_path_offset (fdt_dtb, "/chosen");
+		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
+		snprintf(str, BUFFER_SIZE, "%s %s", np, buffer);
+		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
+	}
 #if defined(CONFIG_USE_AVB20)
 	/* set AVB args */
 	noff = fdt_path_offset (fdt_dtb, "/chosen");
@@ -626,11 +663,15 @@ mem_node_out:
 	fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
 	printf("\nupdated avb bootargs: %s\n", np);
 #endif
-
+#ifdef CONFIG_BOOT_IMAGE_SUPPORT
+	if(b_hdr_v4->header_version == 4)
+		load_bootconfig_v4();
+#endif
 	resize_dt(0);
 }
 
 int cmd_scatter_load_boot(int argc, const cmd_args *argv);
+int do_load_dtb_from_vendor_boot(int argc, const cmd_args *argv);
 
 /*
  * load images from boot.img / recovery.img / dtbo.img partition
@@ -648,11 +689,12 @@ int cmd_scatter_load_boot(int argc, const cmd_args *argv);
  */
 int load_boot_images(void)
 {
-	cmd_args argv[6];
+	cmd_args argv[7],argv1[3];
 	void *part;
 	char boot_part_name[16] = "";
 	unsigned int ab_support = 0;
 	unsigned int boot_val = 0;
+	struct boot_img_hdr *b_hdr = (struct boot_img_hdr *)BOOT_BASE;
 
 	ab_support = ab_update_support();
 	boot_val = readl(EXYNOS_POWER_SYSIP_DAT0);
@@ -697,7 +739,27 @@ int load_boot_images(void)
 
 	part_read(part, (void *)BOOT_BASE);
 
-	cmd_scatter_load_boot(5, argv);
+	if (b_hdr->header_version == 3) {
+		argv[6].u = VENDOR_BOOT_BASE;
+		sprintf(boot_part_name, "vendor_boot");
+		part = part_get_ab(boot_part_name);
+		if (part == 0) {
+			printf("Partition '%s' does not exist\n", boot_part_name);
+			return -1;
+		}
+		part_read(part, (void *)VENDOR_BOOT_BASE);
+	}
+	else
+		argv[6].u =0x0;
+
+	cmd_scatter_load_boot(6, argv);
+
+	if (b_hdr->header_version >= 3) {
+		argv1[1].u = VENDOR_BOOT_BASE;
+		argv1[2].u = DT_BASE;
+
+		do_load_dtb_from_vendor_boot(3,argv1);
+	}
 
 	return 0;
 }

@@ -21,8 +21,47 @@ typedef struct boot_img_hdr boot_img_hdr;
 #define BOOT_ARGS_SIZE 512
 #define BOOT_EXTRA_ARGS_SIZE 1024
 
-#ifdef BOOT_IMG_HDR_V2
-struct boot_img_hdr
+#define VENDOR_BOOT_MAGIC "VNDRBOOT"
+#define VENDOR_BOOT_MAGIC_SIZE 8
+#define VENDOR_BOOT_ARGS_SIZE 2048
+#define VENDOR_BOOT_NAME_SIZE 16
+
+#define BOOT_IMAGE_HEADER_V3_PAGESIZE	4096
+#define BOOT_IMAGE_HEADER_V4_PAGESIZE	4096
+
+#define VENDOR_RAMDISK_TYPE_NONE			0
+#define VENDOR_RAMDISK_TYPE_PLATFORM			1
+#define VENDOR_RAMDISK_TYPE_RECOVERY			2
+#define VENDOR_RAMDISK_TYPE_DLKM			3
+
+#define VENDOR_RAMDISK_NAME_SIZE			32
+#define VENDOR_RAMDISK_TABLE_ENTRY_BOARD_ID_SIZE	16
+
+#define RECOVERY_MAGIC			"ANDROID!"
+#define RECOVERY_MAGIC_SIZE		8
+#define RECOVERY_NAME_SIZE		16
+#define RECOVERY_ARGS_SIZE		512
+#define RECOVERY_EXTRA_ARGS_SIZE	1024
+
+struct version {
+	uint32_t month : 4;
+	uint32_t year : 7;
+	uint32_t security_patch_level : 21;
+} __attribute__((__packed__));
+
+union os_version {
+	uint32_t value;
+	struct version detail;
+};
+
+struct boot_img_hdr {
+	uint8_t magic[BOOT_MAGIC_SIZE];
+	uint32_t reserved[8];
+	uint32_t header_version;
+}  __attribute__((packed));
+
+#if (BOOT_IMG_HDR_V2 == 1)
+struct boot_img_hdr_v2
 {
 	uint8_t magic[BOOT_MAGIC_SIZE];
 	uint32_t kernel_size;  /* size in bytes */
@@ -49,7 +88,7 @@ struct boot_img_hdr
 	uint64_t dtb_addr; /* physical load address */
 } __attribute__((packed));
 #else
-struct boot_img_hdr
+struct boot_img_hdr_v2
 {
     uint8_t magic[BOOT_MAGIC_SIZE];
 
@@ -87,6 +126,137 @@ struct boot_img_hdr
 	unsigned long long recovery_dtbo_offset;
 	unsigned header_size;
 } __attribute__((packed));
-#endif /* BOOT_IMG_HDR_V2 */
+#endif
+struct boot_img_hdr_v3 {
+    // Must be BOOT_MAGIC.
+    uint8_t magic[BOOT_MAGIC_SIZE];
+
+    uint32_t kernel_size; /* size in bytes */
+    uint32_t ramdisk_size; /* size in bytes */
+
+    // Operating system version and security patch level.
+    // For version "A.B.C" and patch level "Y-M-D":
+    //   (7 bits for each of A, B, C; 7 bits for (Y-2000), 4 bits for M)
+    //   os_version = A[31:25] B[24:18] C[17:11] (Y-2000)[10:4] M[3:0]
+    uint32_t os_version;
+
+    uint32_t header_size;
+
+    uint32_t reserved[4];
+
+    // Version of the boot image header.
+    uint32_t header_version;
+
+    uint8_t cmdline[BOOT_ARGS_SIZE + BOOT_EXTRA_ARGS_SIZE];
+} __attribute__((packed));
+
+struct vendor_boot_img_hdr_v3 {
+    // Must be VENDOR_BOOT_MAGIC.
+    uint8_t magic[VENDOR_BOOT_MAGIC_SIZE];
+
+    // Version of the vendor boot image header.
+    uint32_t header_version;
+
+    uint32_t page_size; /* flash page size we assume */
+
+    uint32_t kernel_addr; /* physical load addr */
+    uint32_t ramdisk_addr; /* physical load addr */
+
+    uint32_t vendor_ramdisk_size; /* size in bytes */
+
+    uint8_t cmdline[VENDOR_BOOT_ARGS_SIZE];
+
+    uint32_t tags_addr; /* physical addr for kernel tags */
+    uint8_t name[VENDOR_BOOT_NAME_SIZE]; /* asciiz product name */
+
+    uint32_t header_size;
+
+    uint32_t dtb_size; /* size in bytes for DTB image */
+    uint64_t dtb_addr; /* physical load address for DTB image */
+} __attribute__((packed));
+
+struct boot_img_hdr_v4 {
+	uint8_t magic[BOOT_MAGIC_SIZE];
+	uint32_t kernel_size;		/* size in bytes */
+	uint32_t ramdisk_size;		/* size in bytes */
+
+	union os_version os_version;
+
+	uint32_t header_size;		/* size of boot header (bytes) */
+	uint32_t reserved[4];
+	uint32_t header_version;	/* offset remains constant */
+
+	uint8_t cmdline[BOOT_ARGS_SIZE + BOOT_EXTRA_ARGS_SIZE];
+} __attribute__((__packed__));
+
+struct vendor_boot_img_hdr_v4 {
+	uint8_t magic[VENDOR_BOOT_MAGIC_SIZE];
+	uint32_t header_version;
+	uint32_t page_size;		/* flash page size we assume */
+	uint32_t kernel_addr;		/* physical load addr */
+	uint32_t ramdisk_addr;		/* physical load addr */
+
+	uint32_t vendor_ramdisk_size;	/* size in bytes */
+
+	uint8_t cmdline[VENDOR_BOOT_ARGS_SIZE];
+
+	uint32_t tags_addr;		/* physical addr for kernel tags */
+	uint8_t name[VENDOR_BOOT_NAME_SIZE];	/* asciiz product name */
+
+	uint32_t header_size;		/* size of vendor boot header (bytes) */
+
+	uint32_t dtb_size;		/* size of dtb image */
+	uint64_t dtb_addr;		/* physical load address */
+
+	uint32_t vendor_ramdisk_table_size;
+	uint32_t vendor_ramdisk_table_entry_num;
+	uint32_t vendor_ramdisk_table_entry_size;
+
+	uint32_t bootconfig_size;
+} __attribute__((__packed__));
+
+struct vendor_ramdisk_table_v4 {
+	uint32_t ramdisk_size;
+	uint32_t ramdisk_offset;
+	uint32_t ramdisk_type;
+
+	uint8_t ramdisk_name[VENDOR_RAMDISK_NAME_SIZE];			/* asciiz ramdisk name */
+
+	uint32_t board_id[VENDOR_RAMDISK_TABLE_ENTRY_BOARD_ID_SIZE];	/* HW ID of Board, SOC, Platform for ramdisk */
+} __attribute__((__packed__));
+
+struct recovery_img_hdr {
+	uint8_t magic[RECOVERY_MAGIC_SIZE];
+	uint32_t kernel_size;		/* Not used in v4 */
+	uint32_t kernel_addr;		/* Not used in v4 */
+
+	uint32_t ramdisk_size;		/* size in bytes */
+	uint32_t ramdisk_addr;		/* physical load addr */
+
+	uint32_t second_size;		/* Not used in v4 */
+	uint32_t second_addr;		/* Not used in v4 */
+
+	uint32_t tags_addr;		/* Not used in v4 */
+	uint32_t page_size;		/* flash page size we assume */
+	uint32_t header_version;
+
+	union os_version os_version;
+
+	uint8_t name[RECOVERY_NAME_SIZE];	/* asciiz product name */
+	uint8_t cmdline[RECOVERY_ARGS_SIZE];
+	uint32_t id[8];			/* timestamp / checksum / sha1 / etc */
+	uint8_t extra_cmdline[RECOVERY_EXTRA_ARGS_SIZE];
+
+	uint32_t recovery_dtbo_size;	/* size of recovery dtbo image */
+	uint64_t recovery_dtbo_offset;	/* offset in boot image */
+
+	uint32_t header_size;		/* size of boot image header in bytes */
+
+	uint32_t dtb_size;		/* size of dtb image */
+	uint64_t dtb_addr;		/* physical load address */
+} __attribute__((__packed__));
+
+void copy_binary(const char *name, u64 src, u64 offset, u64 dest, u32 size);
+
 #endif /* _BOOT_IMAGE_H_ */
 
