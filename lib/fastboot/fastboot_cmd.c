@@ -641,13 +641,15 @@ int fb_do_ramdump(const char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
+	char temp_buf[9] = {0, };
 
 	TRACE_ENTRY;
 
 	print_lcd_update(FONT_GREEN, FONT_BLACK, "Got ramdump command.");
 	is_ramdump = 1;
 	/* Get download size */
-	download_size = (unsigned int)strtol(cmd_buffer + 8, NULL, 16);
+	strncpy(temp_buf, cmd_buffer + 8, 8);
+	download_size = (unsigned int)strtol(temp_buf, NULL, 16);
 	downloaded_data_size = 0;
 
 	LTRACEF_LEVEL(INFO, "Downloaing. Download size is %d bytes\n", download_size);
