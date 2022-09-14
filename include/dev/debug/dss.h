@@ -25,6 +25,7 @@ extern int debug_level;
 void set_debug_level(const char *buf);
 void dss_fdt_init(void);
 int dss_getvar_item(const char *name, char *response);
+int dss_getvar_item_with_index(unsigned int index, char *response);
 unsigned long dss_get_item_paddr(const char *name);
 unsigned long dss_get_item_size(const char *name);
 void dss_boot_cnt(void);
