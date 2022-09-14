@@ -11,6 +11,16 @@
 #ifndef __BOARD_INFO_H__
 #define __BOARD_INFO_H__
 
+#define CONFIG_ERD3830
 #define CONFIG_BOARD_ID 0x0
+
+#define CONFIG_GET_B_REV_FROM_ADC
+
+#define VOLDOWN_GPIOCON EXYNOS3830_GPA1CON
+#define VOLDOWN_BIT	0
+
+#define CONFIG_USE_RPMB
+#define USE_MMC0
+#define RPMB_BLOCK_PER_PARTITION       512
 
 #endif /*__BOARD_INFO_H__ */
