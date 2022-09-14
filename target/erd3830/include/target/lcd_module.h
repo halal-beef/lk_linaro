@@ -30,4 +30,16 @@ struct dsim_lcd_driver *cm_get_panel_info(struct dsim_device *dsim);
 struct lcd_driver *get_lcd_drv_ops(void);
 struct exynos_panel_info *common_get_lcd_info(void);
 
+extern struct dsim_lcd_driver s6e3fa0_mipi_lcd_driver;
+extern struct dsim_lcd_driver nt36672a_mipi_lcd_driver;
+extern struct dsim_lcd_driver s6e3ha8_mipi_lcd_driver;
+extern struct dsim_lcd_driver s6e3ha9_mipi_lcd_driver;
+
+
+extern struct exynos_panel_info s6e3fa0_lcd_info;
+extern struct exynos_panel_info nt36672a_lcd_info;
+extern struct exynos_panel_info s6e3ha8_lcd_info;
+extern struct exynos_panel_info s6e3ha9_lcd_info;
+
+
 #endif /*__LCD_MODULE_H__ */
