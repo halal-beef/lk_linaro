@@ -1,12 +1,12 @@
 /* Copyright (c) 2018 Samsung Electronics Co, Ltd.
-
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
-
+ *
  * Copyright@ Samsung Electronics Co. LTD
  * Manseok Kim <manseoks.kim@samsung.com>
-
+ *
  * Alternatively, Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,11 +25,8 @@
 #include <platform/sfr.h>
 #include <platform/delay.h>
 #include <target/dpu_io_ctrl.h>
+#include <target/dpu_gpio.h>
 
-void display_te_init(void);
-void display_panel_reset(void);
-void display_panel_release(void);
-void display_panel_power(void);
 /*
  * ########## Machine dependency ##########
  */
@@ -70,35 +67,26 @@ static void set_gpio_hw_te(void)
  */
 
 /* Configure and set a GPIO for LCD_RESET */
-static void set_gpio_lcd_reset(enum board_gpio_type gpio_type)
+static void set_gpio_lcd_reset(u32 onoff)
 {
-	switch (gpio_type) {
-	case BOARD_ESPRESSO:
-		printf("%s: ESPRESSO\n", __func__);
-		return;
-	case BOARD_BTYPE:
-		/* GPIO: LCD RESET */
-		printf("%s: BTYPE\n", __func__);
-		break;
-	case BOARD_BTYPE_REV01:
-		/* GPIO: LCD RESET */
-		printf("%s: BTYPE_REV01\n", __func__);
-		break;
-	default:
-		printf("%s: Does not support it!!\n", __func__);
-		return;
-	}
-
+	//
+	// TODO: 1: reset, 0: release
+	//
 	/* RESET: "0" -> "1" */
+	printf("OLED RST(0)\n");
 	display_panel_reset();
-	mdelay(5);
+	mdelay(100);
+	printf("OLED RST(1)\n");
 	display_panel_release();
-	mdelay(10);
+	mdelay(100);
 }
 
 /* Configure and set a GPIO for LCD_POWER_ON */
-static void set_gpio_lcd_power(enum board_gpio_type gpio_type)
+static void set_gpio_lcd_power(enum board_gpio_type gpio_type, u32 onoff)
 {
+	//
+	// TODO: 1: Enable, 0: Disable
+	//
 	/* Enable Power */
 	printf("%s: +\n", __func__);
 	display_panel_power();

@@ -1,12 +1,12 @@
 /* Copyright (c) 2018 Samsung Electronics Co, Ltd.
-
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
-
+ *
  * Copyright@ Samsung Electronics Co. LTD
  * Manseok Kim <manseoks.kim@samsung.com>
-
+ *
  * Alternatively, Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -58,8 +58,6 @@ struct exynos_panel_info common_lcd_info = {
 	.height = 121,
 
 	.fps = 60,
-//	.mic_enabled = 0,
-//	.mic_ver = 0,
 
 	.dsc = {0, 0, 0, 40, 720, 240},
 //	.dsc_enabled = 1,
@@ -73,11 +71,6 @@ struct exynos_panel_info *common_get_lcd_info(void)
 {
 	return &common_lcd_info;
 }
-
-extern struct dsim_lcd_driver s6e3fa0_mipi_lcd_driver;
-extern struct dsim_lcd_driver nt36672a_mipi_lcd_driver;
-extern struct dsim_lcd_driver s6e3ha8_mipi_lcd_driver;
-extern struct dsim_lcd_driver s6e3ha9_mipi_lcd_driver;
 
 struct dsim_lcd_driver *panel_list[NUM_OF_VERIFIED_PANEL] = {
 	&s6e3fa0_mipi_lcd_driver,
@@ -115,23 +108,23 @@ int cm_read_id(struct dsim_device *dsim)
 	if (err < 0) {
 		printf("Failed to read panel id!\n");
 		return -EINVAL;
-	} else {
-		for (i = 0; i < DSIM_DDI_ID_LEN; i++) {
-			//id |= buf[i] << (24 - i * 8);	/* LSB is left */
-			id |= buf[i] << (i * 8);	/* LSB is right */
-			printf("id : 0x%06x\n", id);
-		}
-
-		/*
-		 * [ HACK : 2019-06-08 ]
-		 * use same value with PANEL_ID of [s6e3ha8_mipi_lcd.c]
-		 * remove following constant id value if value is confirmed
-		 */
-		//id = 0x430491;
-
-		printf("Suceeded to read panel id : 0x%06x\n", id);
-		ddi_id = id;
 	}
+
+	for (i = 0; i < DSIM_DDI_ID_LEN; i++) {
+		//id |= buf[i] << (24 - i * 8);	/* LSB is left */
+		id |= buf[i] << (i * 8);	/* LSB is right */
+		printf("id : 0x%06x\n", id);
+	}
+
+	/*
+	 * [ HACK : 2019-06-08 ]
+	 * use same value with PANEL_ID of [s6e3ha8_mipi_lcd.c]
+	 * remove following constant id value if value is confirmed
+	 */
+	//id = 0x430491;
+
+	printf("Suceeded to read panel id : 0x%06x\n", id);
+	ddi_id = id;
 
 	return dsim->cm_panel_ops->id = id;
 }
@@ -149,11 +142,10 @@ struct dsim_lcd_driver *cm_get_panel_info(struct dsim_device *dsim)
 	for (i = 0; i < NUM_OF_VERIFIED_PANEL; i++) {
 		if (dsim->cm_panel_ops->panel_ids[i] == 0)
 			break;
-		else {
-			pre_defined_id = dsim->cm_panel_ops->panel_ids[i] & 0xff00ff;
-			if (pre_defined_id == read_id)
-				return panel_list[i];
-		}
+
+		pre_defined_id = dsim->cm_panel_ops->panel_ids[i] & 0xff00ff;
+		if (pre_defined_id == read_id)
+			return panel_list[i];
 	}
 
 	return NULL;

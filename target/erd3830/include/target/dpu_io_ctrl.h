@@ -1,12 +1,12 @@
 /* Copyright (c) 2018 Samsung Electronics Co, Ltd.
-
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
-
+ *
  * Copyright@ Samsung Electronics Co. LTD
  * Manseok Kim <manseoks.kim@samsung.com>
-
+ *
  * Alternatively, Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -36,10 +36,10 @@ enum board_gpio_type {
 };
 
 struct exynos_display_config {
-	void (*set_mipi_phy)(unsigned int enable);
+	void (*set_mipi_phy)(u32 enable);
 	void (*set_gpio_hw_te)(void);
-	void (*set_gpio_lcd_reset)(enum board_gpio_type board_type);
-	void (*set_gpio_lcd_power)(enum board_gpio_type board_type);
+	void (*set_gpio_lcd_reset)(u32 onoff);
+	void (*set_gpio_lcd_power)(enum board_gpio_type gpio_type, u32 onoff);
 };
 
 extern enum board_gpio_type get_exynos_board_type(void);

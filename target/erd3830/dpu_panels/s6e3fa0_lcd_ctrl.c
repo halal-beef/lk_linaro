@@ -1,12 +1,12 @@
 /* Copyright (c) 2018 Samsung Electronics Co, Ltd.
-
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
-
+ *
  * Copyright@ Samsung Electronics Co. LTD
  * Manseok Kim <manseoks.kim@samsung.com>
-
+ *
  * Alternatively, Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -98,13 +98,6 @@ struct exynos_panel_info s6e3fa0_lcd_info = {
 	.data_lane = 4,
 };
 
-#if 0
-struct exynos_panel_info *decon_get_lcd_info(void)
-{
-	return &s6e3fa0_lcd_info;
-}
-#endif
-
 void s6e3fa0_lcd_init(unsigned int id, struct exynos_panel_info *lcd)
 {
 	if (dsim_wr_data(id, MIPI_DSI_DCS_LONG_WRITE,
@@ -151,7 +144,7 @@ void s6e3fa0_lcd_init(unsigned int id, struct exynos_panel_info *lcd)
 				(unsigned long)SEQ_TEST_KEY_ON_E7,
 				ARRAY_SIZE(SEQ_TEST_KEY_ON_E7)) < 0)
 			dsim_err("fail to send SEQ_TEST_KEY_ON_E7 command.\n");
-		mdelay( 120);
+		mdelay(120);
 	}
 
 	if (dsim_wr_data(id, MIPI_DSI_DCS_SHORT_WRITE,
@@ -164,7 +157,7 @@ void s6e3fa0_lcd_init(unsigned int id, struct exynos_panel_info *lcd)
 					SEQ_TEST_KEY_ON_F2[0],
 					SEQ_TEST_KEY_ON_F2[1]) < 0)
 			dsim_err("fail to send SEQ_TEST_KEY_ON_F2 command.\n");
-		mdelay( 12);
+		mdelay(12);
 	}
 
 	if (dsim_wr_data(id, MIPI_DSI_DCS_LONG_WRITE,
@@ -183,26 +176,26 @@ void s6e3fa0_lcd_init(unsigned int id, struct exynos_panel_info *lcd)
 				SEQ_BCTRL_ON[0],
 				SEQ_BCTRL_ON[1]) < 0)
 		dsim_err("fail to send SEQ_BCTRL_ON command.\n");
-	mdelay( 12);
+	mdelay(12);
 
 	if (dsim_wr_data(id, MIPI_DSI_DCS_SHORT_WRITE_PARAM,
 				SEQ_DFT_BRIGHTNESS[0],
 				SEQ_DFT_BRIGHTNESS[1]) < 0)
 		dsim_err("fail to send SEQ_DFT_BRIGHTNESS command.\n");
-	mdelay( 12);
+	mdelay(12);
 
 
 	if (dsim_wr_data(id, MIPI_DSI_DCS_SHORT_WRITE_PARAM,
 				SEQ_EOT_PARAM_IDX_JUMP[0],
 				SEQ_EOT_PARAM_IDX_JUMP[1]) < 0)
 		dsim_err("fail to send SEQ_CTRL_ON command.\n");
-	mdelay( 12);
+	mdelay(12);
 
 	if (dsim_wr_data(id, MIPI_DSI_DCS_SHORT_WRITE_PARAM,
 				SEQ_EOT_IG_EOT_ERR[0],
 				SEQ_EOT_IG_EOT_ERR[1]) < 0)
 		dsim_err("fail to send SEQ_CTRL_ON command.\n");
-	mdelay( 12);
+	mdelay(12);
 
 	if (lcd->mode == DECON_MIPI_COMMAND_MODE) {
 		if (dsim_wr_data(id, MIPI_DSI_DCS_SHORT_WRITE,
