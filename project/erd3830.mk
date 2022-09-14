@@ -5,6 +5,8 @@ TARGET := erd3830
 WITH_KERNEL_VM := 0
 WITH_LINKER_GC := 1
 
+CONFIG_EXYNOS_DSS_VERSION := 2
+
 MODULES += \
 	app/exynos_main \
 	dev/acpm_ipc \
