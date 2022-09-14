@@ -8,7 +8,7 @@ MEMSIZE := 0x01800000
 
 MODULE_SRCS += \
 	$(LOCAL_DIR)/target.c \
-	$(LOCAL_DIR)/dpu_io/dpu_gpio.S \
+	$(LOCAL_DIR)/dpu_io/dpu_gpio.c \
 	$(LOCAL_DIR)/dpu_io/dpu_io_ctrl.c \
 	$(LOCAL_DIR)/dpu_panels/s6e3fa0_lcd_ctrl.c \
 	$(LOCAL_DIR)/dpu_panels/s6e3fa0_mipi_lcd.c \
@@ -19,5 +19,7 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/dpu_panels/s6e3ha9_lcd_ctrl.c \
 	$(LOCAL_DIR)/dpu_panels/s6e3ha9_mipi_lcd.c \
 	$(LOCAL_DIR)/dpu_panels/lcd_module.c \
+	$(LOCAL_DIR)/pmic/pmic.c \
+	$(LOCAL_DIR)/gpio/exynos_key.c \
 
 include make/module.mk
