@@ -29,8 +29,8 @@
 #include <errno.h>
 #include <platform/delay.h>
 
-#include <dev/dpu/exynos_panel.h>
-#include <dev/dpu/mipi_dsi_cmd.h>
+#include <dpu/exynos_panel.h>
+#include <dpu/mipi_dsi_cmd.h>
 #include <platform/sfr.h>
 #include <platform/display_sfr.h>
 #include <platform/dpu_cal/regs-dsim.h>

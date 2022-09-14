@@ -1,12 +1,12 @@
 /* Copyright (c) 2018 Samsung Electronics Co, Ltd.
-
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
-
+ *
  * Copyright@ Samsung Electronics Co. LTD
  * Manseok Kim <manseoks.kim@samsung.com>
-
+ *
  * Alternatively, Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -69,14 +69,6 @@ struct exynos_panel_info nt36672a_lcd_info = {
 //	.dsc_slice_h = 40,
 	.data_lane = 4,
 };
-
-#if 0
-struct exynos_panel_info *decon_get_lcd_info(void)
-{
-	return &nt36672a_lcd_info;
-}
-#endif
-
 
 /*
  * NT36672A lcd init sequence

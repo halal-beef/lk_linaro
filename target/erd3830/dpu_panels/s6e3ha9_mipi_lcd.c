@@ -12,6 +12,7 @@
 #include <dpu/lcd_ctrl.h>
 #include <dpu/exynos_panel.h>
 #include <dpu/dsim.h>
+#include <target/lcd_module.h>
 
 #define MAX_BRIGHTNESS 255
 #define MIN_BRIGHTNESS 0
@@ -19,7 +20,6 @@
 
 /* PANEL_ID : ID3[23:16]-ID2[15:8]-ID1[7:0] */
 #define PANEL_ID       0x1310a1 /* value was confirmed when bringup */
-extern struct exynos_panel_info s6e3ha9_lcd_info;
 
 static int s6e3ha9_get_id(struct dsim_device *dsim)
 {
@@ -62,11 +62,3 @@ struct dsim_lcd_driver s6e3ha9_mipi_lcd_driver = {
 	.suspend	= s6e3ha9_suspend,
 	.resume		= s6e3ha9_resume,
 };
-
-#if 0
-struct dsim_lcd_driver *decon_get_panel_info(void)
-{
-	return &s6e3fa0_mipi_lcd_driver;
-}
-#endif
-

@@ -1,12 +1,12 @@
 /* Copyright (c) 2018 Samsung Electronics Co, Ltd.
-
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
-
+ *
  * Copyright@ Samsung Electronics Co. LTD
  * Manseok Kim <manseoks.kim@samsung.com>
-
+ *
  * Alternatively, Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,12 +23,11 @@
 #include <dpu/lcd_ctrl.h>
 #include <dpu/exynos_panel.h>
 #include <dpu/dsim.h>
+#include <target/lcd_module.h>
 
 #define MAX_BRIGHTNESS 255
 #define MIN_BRIGHTNESS 0
 #define DEFAULT_BRIGHTNESS 0
-
-extern struct exynos_panel_info nt36672a_lcd_info;
 
 static int nt36672a_get_id(struct dsim_device *dsim)
 {
@@ -37,7 +36,7 @@ static int nt36672a_get_id(struct dsim_device *dsim)
 
 static struct exynos_panel_info *nt36672a_get_lcd_info(void)
 {
-	dsim_info("%s\n", __func__);
+	dsim_info("%s +\n", __func__);
 	return &nt36672a_lcd_info;
 }
 
@@ -73,10 +72,3 @@ struct dsim_lcd_driver nt36672a_mipi_lcd_driver = {
 	.suspend	= nt36672a_suspend,
 	.resume		= nt36672a_resume,
 };
-
-#if 0
-struct dsim_lcd_driver *decon_get_panel_info(void)
-{
-	return &nt36672a_mipi_lcd_driver;
-}
-#endif
