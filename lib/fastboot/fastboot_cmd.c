@@ -393,6 +393,21 @@ int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 			strcpy(response + 4,"Done!");
 		}
 	}
+	else if (!memcmp(cmd_buffer + 7, "dss-item-all", strlen("dss-item-all")))
+	{
+		unsigned int index = 0;
+
+		do {
+			strcpy(response, "INFOdss-item-all:");
+			if (dss_getvar_item_with_index(index, response + strlen("INFOdss-item-all:")) < 0)
+				break;
+
+			fastboot_send_info(response, strlen(response));
+			index++;
+		} while (1);
+
+		strcpy(response,"OKAYDone!");
+	}
 	else
 	{
 		LTRACEF("fast cmd:vendor\n");
