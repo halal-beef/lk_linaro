@@ -12,6 +12,7 @@ endif
 
 MODULE_SRCS += \
 	$(LOCAL_DIR)/dfd.c \
-	$(LOCAL_DIR)/dss_store_ramdump.c
+	$(LOCAL_DIR)/dss_store_ramdump.c \
+	$(LOCAL_DIR)/itmon.c
 
 include make/module.mk
