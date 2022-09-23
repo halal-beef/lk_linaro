@@ -2303,7 +2303,12 @@ void dsim_reg_init(u32 id, struct exynos_panel_info *lcd_info, struct dsim_clks 
 void dsim_reg_start(u32 id)
 {
 	dsim_reg_set_hs_clock(id, 1);
-	dsim_reg_set_int(id, 1);
+	/* Disable the dsim interrupts,
+	 * otherwise there could be interrupt storm
+	 * in the kernel when interrupts are registered
+	 * especially in video mode (fb handover)
+	 */
+	dsim_reg_set_int(id, 0);
 }
 
 /* Unset clocks and lanes and stop_state */
