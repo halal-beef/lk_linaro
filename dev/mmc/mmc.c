@@ -114,7 +114,7 @@ static unsigned int mmc_extract_bits_reverse(unsigned int start, unsigned int en
 	unsigned int offset = start % 32;
 	unsigned int ret = change_endian(value[idx1]) >> offset;
 	unsigned int idx2 = (size - 1) - (end / 32);
-	unsigned int mask = (1 << (end - start + 1)) - 1;
+	unsigned int mask = ((unsigned long long)1 << (end - start + 1)) - 1;
 
 	if (idx2 > idx1)
 		ret |= (change_endian(value[idx2]) << (32 - offset));
@@ -132,7 +132,7 @@ static unsigned int mmc_extract_bits(unsigned int start, unsigned int end,
 	unsigned int offset = start % 32;
 	unsigned int ret = value[idx1] >> offset;
 	unsigned int idx2 = end / 32;
-	unsigned int mask = (1 << (end - start + 1)) - 1;
+	unsigned int mask = ((unsigned long long)1 << (end - start + 1)) - 1;
 
 	if (idx2 > idx1)
 		ret |= (value[idx2] << (32 - offset));
