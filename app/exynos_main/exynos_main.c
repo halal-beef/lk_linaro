@@ -110,6 +110,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	if (chk_wtsr_smpl == PMIC_DETECT_WTSR) {
 		print_lcd_update(FONT_RED, FONT_BLACK, "WTSR DETECTED");
 		printf("WTSR detected\n");
+		goto fastboot;
 #ifdef S2MPU10_PM_IGNORE_WTSR_DETECT
 		print_lcd_update(FONT_RED, FONT_BLACK, ",But Ignore WTSR DETECTION");
 		printf(", but ignored by build config\n");
@@ -118,6 +119,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	} else if (chk_wtsr_smpl == PMIC_DETECT_SMPL) {
 		print_lcd_update(FONT_RED, FONT_BLACK, "SMPL DETECTED");
 		printf("SMPL detected\n");
+		goto fastboot;
 #ifdef S2MPU10_PM_IGNORE_SMPL_DETECT
 		print_lcd_update(FONT_RED, FONT_BLACK, ",But Ignore SMPL DETECTION");
 		printf(", but ignored by build config\n");
