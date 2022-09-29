@@ -83,8 +83,13 @@
 /* TODO : divide platform info and target info */
 //#define NUM_OF_DPP   4
 #define MAX_DPP_CNT	4
-#define LOGO_DPP	2
-#define FONT_DPP	1
+#if defined(CONFIG_DISPLAY_DRAWLOGO)
+#define LOGO_DPP	0 /* DO NOT CHANGE */
+#define FONT_DPP	1 /* DO NOT CHANGE */
+#else
+#define LOGO_DPP	1 /* DO NOT CHANGE */
+#define FONT_DPP	0 /* DO NOT CHANGE */
+#endif
 #define DFT_DSIM	0
 #define DFT_DECON	0
 
