@@ -109,6 +109,7 @@ uint32_t avb_set_root_of_trust(
 	struct boot_img_hdr *b_hdr = (struct boot_img_hdr *)BOOT_BASE;
 	struct boot_img_hdr_v2 *b_hdr_v2 = (struct boot_img_hdr_v2 *)BOOT_BASE;
 	struct boot_img_hdr_v3 *b_hdr_v3 = (struct boot_img_hdr_v3 *)BOOT_BASE;
+	struct boot_img_hdr_v4 *b_hdr_v4 = (struct boot_img_hdr_v4 *)BOOT_BASE;
 
 	if (ctx_ptr == NULL) {
 		printf("[AVB] ctx_ptr is Null\n");
@@ -152,7 +153,9 @@ uint32_t avb_set_root_of_trust(
 		printf("[AVB] hash final fail [0x%X]\n", ret);
 		goto out;
 	}
-	if(b_hdr->header_version == 3)
+	if(b_hdr->header_version == 4)
+		os_version = (b_hdr_v4->os_version.value & 0xFFFFF800) >> 11;
+	else if(b_hdr->header_version == 3)
 		os_version = (b_hdr_v3->os_version & 0xFFFFF800) >> 11;
 	else
 		os_version = (b_hdr_v2->os_version & 0xFFFFF800) >>11;
@@ -297,7 +300,7 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate, ui
 	uint32_t ret = 0;
 	uint32_t boot_state;
 	struct AvbOps *ops;
-	const char *partition_boot[3] = {"boot", "dtbo", NULL};
+	const char *partition_boot[4] = {"boot", "vendor_boot","dtbo", NULL};
 	const char *partition_recovery[2] = {"recovery", NULL};
 	char buf[100];
 	char color[AVB_COLOR_MAX_SIZE];
