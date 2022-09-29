@@ -528,7 +528,7 @@ int do_load_dtb_from_vendor_boot(int argc, const cmd_args *argv)
 		return -1;
 	}*/
 
-	if (vb_hdr->header_version != 3) {
+	if (vb_hdr->header_version < 3) {
 		printf("\nerror: Unknown Android vendor bootimage (ver:%d)\n", vb_hdr->header_version);
 		return -1;
 	}
