@@ -22,6 +22,7 @@
 #include <platform/mmu/mmu_func.h>
 #include <platform/mmu/barrier.h>
 #include <dev/debug/dss_store_ramdump.h>
+#include <target/bootinfo.h>
 
 #ifdef CONFIG_OFFLINE_RAMDUMP
 static int g_is_enabled = 1;
@@ -149,7 +150,7 @@ static int debug_store_ramdump_to_storage(void)
 #endif
 
 	/* Reset device for normal booting */
-	writel(0, CONFIG_RAMDUMP_SCRATCH);
+	set_ramdump_scratch(0);
 	writel(0x2, EXYNOS_POWER_SYSTEM_CONFIGURATION);
 
 	/* Do not run this code */

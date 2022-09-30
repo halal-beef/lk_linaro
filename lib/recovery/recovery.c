@@ -32,7 +32,7 @@
 #include <reg.h>
 #include <part.h>
 #include <platform/sfr.h>
-
+#include <target/bootinfo.h>
 #include "recovery.h"
 
 #undef RECOVERY_DBG
@@ -132,7 +132,7 @@ void set_recovery_boot(int force)
 	printf("%s: set bootval [0x%02X]\n", __func__, boot_val);
 	if (force) {
 		printf("- force set bootval to RECOVERY\n");
-		writel(REBOOT_MODE_RECOVERY, EXYNOS_POWER_SYSIP_DAT0);
+		set_reboot_mode(REBOOT_MODE_RECOVERY);
 	} else {
 		printf("- leave it to preset value\n");
 	}

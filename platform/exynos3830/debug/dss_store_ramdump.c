@@ -163,7 +163,7 @@ int debug_store_ramdump(void)
 #endif
 
 	/* Reset device for normal booting */
-	writel(0, CONFIG_RAMDUMP_SCRATCH);
+	set_ramdump_scratch(0);
 	writel(readl(EXYNOS3830_SYSTEM_CONFIGURATION) | 0x2, EXYNOS3830_SYSTEM_CONFIGURATION);
 
 	/* Do not run this code */

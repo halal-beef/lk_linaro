@@ -38,6 +38,7 @@
 #include <dev/scsi.h>
 #include <dev/debug/dss.h>
 #include <arch/arch_ops.h>
+#include <target/bootinfo.h>
 
 /* Memory node */
 #define SIZE_2GB 	(0x80000000)
@@ -324,7 +325,7 @@ static int bootargs_process(void)
 	}
 
 	/* mode: Factory mode */
-	if (readl(EXYNOS_POWER_SYSIP_DAT0) == REBOOT_MODE_FACTORY) {
+	if (get_reboot_mode() == REBOOT_MODE_FACTORY) {
 		if (add_val("androidboot.mode", "sfactory")) {
 			printf("bootmode set sfactory failed\n");
 			return -1;
@@ -334,7 +335,7 @@ static int bootargs_process(void)
 	}
 
 	/* mode: Charger mode - decision : Pin reset && ACOK && !Factory mode */
-	if (get_charger_mode() && readl(EXYNOS_POWER_SYSIP_DAT0) != REBOOT_MODE_FACTORY) {
+	if (get_charger_mode() && get_reboot_mode() != REBOOT_MODE_FACTORY) {
 		if (add_val("androidboot.mode", "charger")) {
 			printf("bootmode set charger failed\n");
 			return -1;
@@ -365,8 +366,8 @@ static int bootargs_process(void)
 	}
 
 	/* Recovery */
-	if ((readl(EXYNOS_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY) ||
-		   (readl(EXYNOS_POWER_SYSIP_DAT0) == REBOOT_MODE_FASTBOOT_USER)) {
+	if ((get_reboot_mode() == REBOOT_MODE_RECOVERY) ||
+		   (get_reboot_mode() == REBOOT_MODE_FASTBOOT_USER)) {
 		/* remove some bootargs to Set recovery boot mode */
 		if(remove_val("skip_initramfs", NULL))
 			printf("bootargs cannot delete, checkit: skip_initramfs\n");
@@ -697,7 +698,7 @@ int load_boot_images(void)
 	struct boot_img_hdr *b_hdr = (struct boot_img_hdr *)BOOT_BASE;
 
 	ab_support = ab_update_support();
-	boot_val = readl(EXYNOS_POWER_SYSIP_DAT0);
+	boot_val = get_reboot_mode();
 	printf("%s: AB[%d], boot_val[0x%02X]\n", __func__, ab_support, boot_val);
 	if (ab_support)
 		print_lcd_update(FONT_WHITE, FONT_BLACK, "AB Update support");
@@ -784,7 +785,7 @@ int cmd_boot(int argc, const cmd_args *argv)
 #if defined(CONFIG_FACTORY_MODE)
 	val = exynos_gpio_get_value(bank, gpio);
 	if (!val) {
-		writel(REBOOT_MODE_FACTORY, EXYNOS9630_POWER_SYSIP_DAT0);
+		set_reboot_mode(REBOOT_MODE_FACTORY);
 		printf("Pressed key combination to enter samsung factory mode!\n");
 		print_lcd_update(FONT_GREEN, FONT_BLACK,
 			"Pressed key combination to enter samsung factory mode!");
@@ -804,7 +805,7 @@ int cmd_boot(int argc, const cmd_args *argv)
 
 	load_boot_images();
 
-	val = readl(EXYNOS_POWER_SYSIP_DAT0);
+	val = get_reboot_mode();
 	if ((val == REBOOT_MODE_RECOVERY) || (val == REBOOT_MODE_FASTBOOT_USER))
 		recovery_mode = 1;
 
@@ -840,7 +841,7 @@ int cmd_boot(int argc, const cmd_args *argv)
 	configure_dtb();
 	configure_ddi_id();
 
-	if (readl(EXYNOS_POWER_SYSIP_DAT0) == REBOOT_MODE_FASTBOOT_USER) {
+	if (get_reboot_mode() == REBOOT_MODE_FASTBOOT_USER) {
 		void *part;
 		char command[32];
 

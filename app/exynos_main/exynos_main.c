@@ -32,6 +32,7 @@
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
 #include <target/exynos_key.h>
+#include <target/bootinfo.h>
 
 #define CONFIG_PIT_IMAMGE_BASE 0x80100000
 #define CONFIG_FWBL1_IMAMGE_BASE 0x80200000
@@ -114,7 +115,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 #ifdef S2MPU10_PM_IGNORE_WTSR_DETECT
 		print_lcd_update(FONT_RED, FONT_BLACK, ",But Ignore WTSR DETECTION");
 		printf(", but ignored by build config\n");
-		writel(0, CONFIG_RAMDUMP_SCRATCH);
+		set_ramdump_scratch(0);
 #endif
 	} else if (chk_wtsr_smpl == PMIC_DETECT_SMPL) {
 		print_lcd_update(FONT_RED, FONT_BLACK, "SMPL DETECTED");
@@ -123,7 +124,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 #ifdef S2MPU10_PM_IGNORE_SMPL_DETECT
 		print_lcd_update(FONT_RED, FONT_BLACK, ",But Ignore SMPL DETECTION");
 		printf(", but ignored by build config\n");
-		writel(0, CONFIG_RAMDUMP_SCRATCH);
+		set_ramdump_scratch(0);
 #endif
 	}
 
@@ -137,12 +138,12 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		sdm_encrypt_secdram();
 		dfd_set_dump_en(0);
 		goto fastboot;
-	} else if (readl(EXYNOS_POWER_SYSIP_DAT0) == REBOOT_MODE_FASTBOOT) {
+	} else if (get_reboot_mode() == REBOOT_MODE_FASTBOOT) {
 		printf("Entering fastboot: reboot bootloader command\n");
-		writel(0, CONFIG_RAMDUMP_SCRATCH);
-		writel(0, EXYNOS_POWER_SYSIP_DAT0);
+		set_ramdump_scratch(0);
+		set_reboot_mode(0);
 		goto download;
-	} else if ((readl(CONFIG_RAMDUMP_SCRATCH) == CONFIG_RAMDUMP_MODE) && get_charger_mode() == 0) {
+	} else if (get_ramdump_scratch() && get_charger_mode() == 0) {
 		printf("Entering fastboot: Ramdump_Scratch & Charger\n");
 		sdm_encrypt_secdram();
 		goto fastboot;
