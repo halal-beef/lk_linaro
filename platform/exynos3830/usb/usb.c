@@ -342,10 +342,10 @@ void platform_prepare_reboot(void)
 void platform_do_reboot(const char *cmd_buf)
 {
 	if(!memcmp(cmd_buf, "reboot-bootloader", strlen("reboot-bootloader"))) {
-		writel(REBOOT_MODE_FASTBOOT, EXYNOS3830_POWER_SYSIP_DAT0);
+		set_reboot_mode(REBOOT_MODE_FASTBOOT);
 	} else {
-		writel(0, EXYNOS3830_POWER_SYSIP_DAT0);
-		writel(0, CONFIG_RAMDUMP_SCRATCH);
+		set_reboot_mode(0);
+		set_ramdump_scratch(0);
 	}
 
 	writel(readl(EXYNOS3830_SYSTEM_CONFIGURATION) | 0x2, EXYNOS3830_SYSTEM_CONFIGURATION);

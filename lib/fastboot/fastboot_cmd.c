@@ -37,6 +37,7 @@
 #include <dev/rpmb.h>
 #include <dev/scsi.h>
 #include <dev/pmucal_local.h>
+#include <target/bootinfo.h>
 
 #include "usb-def.h"
 
@@ -48,7 +49,6 @@ extern void fasboot_set_rx_sz(unsigned int prot_req_sz);
 extern void fastboot_tx_event_init(void);
 
 #define FB_RESPONSE_BUFFER_SIZE 128
-#define REBOOT_MODE_RECOVERY	0xFF
 #define LOCAL_TRACE 0
 
 unsigned int download_size;
@@ -570,17 +570,17 @@ int fb_do_reboot(const char *cmd_buffer, unsigned int rx_sz)
 	//platform_do_reboot(cmd_buffer); // NEUS branch
 
 	if (!memcmp(cmd_buffer, "reboot-bootloader", strlen("reboot-bootloader"))) {
-		writel(CONFIG_RAMDUMP_MODE, CONFIG_RAMDUMP_SCRATCH);
+		set_ramdump_scratch(1);
 	}
 	else if (!memcmp(cmd_buffer, "reboot-fastboot", strlen("reboot-fastboot"))) {
-		writel(REBOOT_MODE_FASTBOOT_USER, EXYNOS_POWER_SYSIP_DAT0);
-		writel(0, CONFIG_RAMDUMP_SCRATCH);
+		set_reboot_mode(REBOOT_MODE_FASTBOOT_USER);
+		set_ramdump_scratch(0);
 	}
 	else if (!memcmp(cmd_buffer, "reboot-recovery", strlen("reboot-recovery"))) {
-		writel(REBOOT_MODE_RECOVERY, EXYNOS_POWER_SYSIP_DAT0);
-		writel(0, CONFIG_RAMDUMP_SCRATCH);
+		set_reboot_mode(REBOOT_MODE_RECOVERY);
+		set_ramdump_scratch(0);
 	} else {
-		writel(0, CONFIG_RAMDUMP_SCRATCH);
+		set_ramdump_scratch(0);
 	}
 
 	/* write reboot reasen (bootloader reboot) */

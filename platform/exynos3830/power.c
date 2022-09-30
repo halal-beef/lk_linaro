@@ -12,7 +12,7 @@
 #include <kernel/thread.h>
 #include <stdio.h>
 #include <lib/console.h>
-
+#include <target/bootinfo.h>
 #include "platform/sfr.h"
 
 extern int start_usb_gadget(void);
@@ -31,7 +31,7 @@ void platform_halt(platform_halt_action suggested_action,
 
 #endif  // ENABLE_PANIC_SHELL
 	if (suggested_action == HALT_ACTION_REBOOT) {
-		writel(0, CONFIG_RAMDUMP_SCRATCH);
+		set_ramdump_scratch(0);
 
 		writel(readl(EXYNOS3830_SYSTEM_CONFIGURATION) | 0x2, EXYNOS3830_SYSTEM_CONFIGURATION);
 	}
