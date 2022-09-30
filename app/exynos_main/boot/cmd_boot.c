@@ -672,7 +672,6 @@ mem_node_out:
 }
 
 int cmd_scatter_load_boot(int argc, const cmd_args *argv);
-int do_load_dtb_from_vendor_boot(int argc, const cmd_args *argv);
 
 /*
  * load images from boot.img / recovery.img / dtbo.img partition
@@ -690,7 +689,7 @@ int do_load_dtb_from_vendor_boot(int argc, const cmd_args *argv);
  */
 int load_boot_images(void)
 {
-	cmd_args argv[7],argv1[3];
+	cmd_args argv[7];
 	void *part;
 	char boot_part_name[16] = "";
 	unsigned int ab_support = 0;
@@ -754,13 +753,6 @@ int load_boot_images(void)
 		argv[6].u =0x0;
 
 	cmd_scatter_load_boot(6, argv);
-
-	if (b_hdr->header_version >= 3) {
-		argv1[1].u = VENDOR_BOOT_BASE;
-		argv1[2].u = DT_BASE;
-
-		do_load_dtb_from_vendor_boot(3,argv1);
-	}
 
 	return 0;
 }
