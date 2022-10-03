@@ -101,7 +101,7 @@ static int bootargs_init(void)
 	u32 cur = 0;
 	u32 cnt = 0;
 	u32 is_val = 0;
-	char bootargs[BUFFER_SIZE];
+	char bootargs[BUFFER_SIZE] = {0, };
 	int len2;
 	const char *np;
 	int noff;
