@@ -120,6 +120,8 @@ static void read_dram_info(void)
 		break;
 	default:
 		printf("Type None!\n");
+		strcpy(type, "Unknown");
+		break;
 	}
 
 	printf("%s %d\n", __func__, __LINE__);
@@ -137,6 +139,8 @@ static void read_dram_info(void)
 		break;
 	default:
 		printf("Rank_num None!\n");
+		strcpy(rank_num, "Unknown");
+		break;
 	}
 
 	printf("%s %d\n", __func__, __LINE__);
@@ -160,6 +164,8 @@ static void read_dram_info(void)
 		break;
 	default:
 		printf("Manufacturer None!\n");
+		strcpy(manufacturer, "Unknown");
+		break;
 	}
 
 	printf("%s %d\n", __func__, __LINE__);
