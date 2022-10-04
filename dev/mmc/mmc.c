@@ -2091,6 +2091,9 @@ static int mmc_mmc_register(mmc_device_t *mdev, struct mmc *mmc, unsigned int pa
 		strcpy(name, "mmcrpmb");
 		mdev->partition = MMC_PARTITION_MMC_RPMB;
 		mdev->block_cnt = mmc->rpmb_size * 128 * 1024 / mdev->block_size;
+	} else {
+		printf("Error about register an undefined mmc partition. : %d\n",partition);
+		return ERR_GENERIC;
 	}
 
 	block_size = mdev->block_size;
