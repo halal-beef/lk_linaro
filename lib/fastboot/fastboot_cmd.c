@@ -354,7 +354,7 @@ int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 								0x00, 0x00, 0x00, 0x00,	\
 								0x00, 0x00, 0x00, 0x00,	\
 								0x00, 0x00, 0x00, 0x00};
-		int chip_id[2];
+		int chip_id[2] = {0};
 
 		get_serialno(chip_id);
 		p = (uint32_t *)&uid_buf[0];
