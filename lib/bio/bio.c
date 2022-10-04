@@ -52,6 +52,11 @@ static ssize_t bio_default_read(struct bdev *dev, void *_buf, off_t offset, size
     ssize_t err = 0;
     STACKBUF_DMA_ALIGN(temp, dev->block_size); // temporary buffer for partial block transfers
 
+    if (!dev->block_size) {
+	    err = ERR_IO;
+	    goto err;
+    }
+
     /* find the starting block */
     block = offset / dev->block_size;
 
@@ -148,6 +153,11 @@ static ssize_t bio_default_write(struct bdev *dev, const void *_buf, off_t offse
     bnum_t block;
     ssize_t err = 0;
     STACKBUF_DMA_ALIGN(temp, dev->block_size); // temporary buffer for partial block transfers
+
+    if (!dev->block_size) {
+	    err = ERR_IO;
+	    goto err;
+    }
 
     /* find the starting block */
     block = offset / dev->block_size;
