@@ -582,6 +582,11 @@ static void configure_dtb(void)
 		add_dt_memory_node(DRAM_BASE2 + i, SIZE_500MB);
 	}
 
+#ifdef CONFIG_BOOT_IMAGE_SUPPORT
+	if(b_hdr_v4->header_version == 4)
+		load_bootconfig_v4();
+#endif
+
 mem_node_out:
 	sprintf(str, "<0x%x>", ECT_BASE);
 	set_fdt_val("/ect", "parameter_address", str);
@@ -664,10 +669,7 @@ mem_node_out:
 	fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
 	printf("\nupdated avb bootargs: %s\n", np);
 #endif
-#ifdef CONFIG_BOOT_IMAGE_SUPPORT
-	if(b_hdr_v4->header_version == 4)
-		load_bootconfig_v4();
-#endif
+
 	resize_dt(0);
 }
 
