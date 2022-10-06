@@ -62,19 +62,21 @@ static char bootconfig[4096];
 static int cmd_ptr;
 static int bootconfig_ptr;
 static char bootargs_from_boot[MAX_BOOTARGS_SIZE] = {0};
+static int bootargs_idx = 0;
 
 void get_bootargs_from_boot(char *bootargs, struct boot_img_hdr_v4 *b_hdr,
 							struct vendor_boot_img_hdr_v4 *vb_hdr)
 {
-	printf("%s: setup bootargs !!!!\n", __func__);
 	if (b_hdr->cmdline[0]) {
 		if (!b_hdr->cmdline[BOOT_ARGS_SIZE + BOOT_EXTRA_ARGS_SIZE - 1])
-			sprintf(bootargs_from_boot, "%s %s", bootargs_from_boot, b_hdr->cmdline);
+			bootargs_idx += snprintf(bootargs_from_boot + bootargs_idx,
+							MAX_BOOTARGS_SIZE - bootargs_idx, " %s", b_hdr->cmdline);
 	}
 
 	if (vb_hdr->cmdline[0]) {
 		if (!vb_hdr->cmdline[VENDOR_BOOT_ARGS_SIZE - 1])
-			sprintf(bootargs_from_boot, "%s %s", bootargs_from_boot, vb_hdr->cmdline);
+			bootargs_idx += snprintf(bootargs_from_boot + bootargs_idx,
+							MAX_BOOTARGS_SIZE - bootargs_idx, " %s", vb_hdr->cmdline);
 	}
 
 	if (vb_hdr->bootconfig_size) {
@@ -93,7 +95,8 @@ void get_bootargs_from_boot(char *bootargs, struct boot_img_hdr_v4 *b_hdr,
 			if (buffer[idx] == 0xA)
 				buffer[idx] = ' ';
 		}
-		sprintf(bootargs_from_boot, "%s %s", bootargs_from_boot, buffer);
+		bootargs_idx += snprintf(bootargs_from_boot + bootargs_idx,
+							MAX_BOOTARGS_SIZE - bootargs_idx, " %s", buffer);
 		free(buffer);
 	}
 
