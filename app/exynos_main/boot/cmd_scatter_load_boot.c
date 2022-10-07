@@ -235,7 +235,7 @@ static void append_bootconfig_to_ramdisk(void)
 	ramdisk_addr += 4;
 
 	/* Bootconfig Parameters checksum */
-	writel(get_checksum((void *)bootconfig_base, bootconfig_ptr), ramdisk_addr);
+	writel(get_checksum((void *)bootconfig_base, bootconfig_size), ramdisk_addr);
 	ramdisk_addr += 4;
 
 	/* Bootconfig Magic String */
