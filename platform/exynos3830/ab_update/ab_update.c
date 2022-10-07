@@ -366,8 +366,12 @@ int ab_set_active(int slot)
 
 int ab_current_slot(void)
 {
+#ifdef CONFIG_USE_ANDROID_BOOT_HAL
+	return AB_SLOT_A;
+#else
 	printf("%s: NO AB update support\n", __func__);
 	return AB_ERROR_NOT_SUPPORT;
+#endif
 }
 
 int ab_slot_successful(int slot)
@@ -389,6 +393,10 @@ int ab_slot_retry_count(int slot)
 }
 int ab_update_support(void)
 {
+#ifdef CONFIG_USE_ANDROID_BOOT_HAL
+	return 1;
+#else
 	return 0;
+#endif
 }
 #endif

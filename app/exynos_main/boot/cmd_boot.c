@@ -324,6 +324,28 @@ static int bootargs_process(void)
 		return -1;
 	}
 
+	/* Recovery */
+	if (is_recovery_reboot_mode() || is_fastbootd_reboot_mode()) {
+#ifdef SYSTEM_AS_ROOT
+		/* remove some bootargs to Set recovery boot mode */
+		if(remove_val("skip_initramfs", NULL))
+			printf("bootargs cannot delete, checkit: skip_initramfs\n");
+		if(remove_val("ro", NULL))
+			printf("bootargs cannot delete, checkit: ro\n");
+		if(remove_val("init", "/init"))
+			printf("bootargs cannot delete, checkit: init\n");
+
+		/* set root to ramdisk */
+		if (add_val("root", "/dev/ram0")) {
+			printf("reocvery ramdisk set failed\n");
+			return -1;
+		}
+#endif
+		add_val("androidboot.force_normal_boot", "0");
+	} else {
+		add_val("androidboot.force_normal_boot", "1");
+	}
+
 	/* mode: Factory mode */
 	if (get_reboot_mode() == REBOOT_MODE_FACTORY) {
 		if (add_val("androidboot.mode", "sfactory")) {
@@ -799,17 +821,6 @@ int cmd_boot(int argc, const cmd_args *argv)
 			"Pressed key combination to enter samsung factory mode!");
 	}
 #endif
-
-	ab_ret = ab_update_slot_info();
-	if ((ab_ret < 0) && (ab_ret != AB_ERROR_NOT_SUPPORT)) {
-		printf("AB update error! Error code: %d\n", ab_ret);
-		print_lcd_update(FONT_RED, FONT_WHITE,
-			"AB Update fail(%d), Entering fastboot...", ab_ret);
-		start_usb_gadget();
-		do {
-			asm volatile("wfi");
-		} while(1);
-	}
 
 	load_boot_images();
 
