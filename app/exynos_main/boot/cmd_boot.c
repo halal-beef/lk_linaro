@@ -425,12 +425,6 @@ static void set_usb_serialno(void)
 	} else {
 		printf("already have serial prop: ret = %s\n", ret);
 	}
-
-	noff = fdt_path_offset (fdt_dtb, "/chosen");
-	np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
-	snprintf(str, BUFFER_SIZE, "%s androidboot.serialno=%016lx",
-						np, tmp_serial_id);
-	fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
 }
 
 static void configure_dtb(void)
@@ -582,32 +576,14 @@ static void configure_dtb(void)
 		add_dt_memory_node(DRAM_BASE2 + i, SIZE_500MB);
 	}
 
-#ifdef CONFIG_BOOT_IMAGE_SUPPORT
-	if(b_hdr_v4->header_version == 4)
-		load_bootconfig_v4();
-#endif
-
 mem_node_out:
+	memset(str, 0, BUFFER_SIZE);
 	sprintf(str, "<0x%x>", ECT_BASE);
 	set_fdt_val("/ect", "parameter_address", str);
 
+	memset(str, 0, BUFFER_SIZE);
 	sprintf(str, "<0x%x>", ECT_SIZE);
 	set_fdt_val("/ect", "parameter_size", str);
-
-	memset(str, 0, BUFFER_SIZE);
-	sprintf(str, "<0x%x>", RAMDISK_BASE);
-	set_fdt_val("/chosen", "linux,initrd-start", str);
-	printf("initrd-start: %s\n", str);
-
-	memset(str, 0, BUFFER_SIZE);
-	if(b_hdr->header_version == 3)
-		sprintf(str, "<0x%x>", RAMDISK_BASE + vb_hdr_v3->vendor_ramdisk_size + b_hdr_v3->ramdisk_size);
-	else if (b_hdr->header_version == 4)
-		sprintf(str, "<0x%x>", RAMDISK_BASE + get_ramdisk_size_v4());
-	else
-		sprintf(str, "<0x%x>", RAMDISK_BASE + b_hdr_v2->ramdisk_size);
-	set_fdt_val("/chosen", "linux,initrd-end", str);
-	printf("initrd-end: %s\n", str);
 
 	noff = fdt_path_offset(fdt_dtb, "/reserved-memory/cp_rmem");
 	if (noff >= 0) {
@@ -645,12 +621,6 @@ mem_node_out:
 		}
 	}
 
-	noff = fdt_path_offset (fdt_dtb, "/chosen");
-	np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
-	printf("\nbootargs: %s\n", np);
-
-	set_bootargs();
-
 	if(b_hdr_v4->header_version == 4) {
 		memset(str, 0, BUFFER_SIZE);
 		memset(buffer, 0, BUFFER_SIZE);
@@ -661,14 +631,44 @@ mem_node_out:
 		snprintf(str, BUFFER_SIZE, "%s %s", np, buffer);
 		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
 	}
+
+	noff = fdt_path_offset (fdt_dtb, "/chosen");
+	np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
+	printf("\nbootargs: %s\n", np);
+
+	set_bootargs();
+
 #if defined(CONFIG_USE_AVB20)
 	/* set AVB args */
+	memset(str, 0, BUFFER_SIZE);
+	memset(buffer, 0, BUFFER_SIZE);
 	noff = fdt_path_offset (fdt_dtb, "/chosen");
 	np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
 	snprintf(str, BUFFER_SIZE, "%s %s %s", np, cmdline, verifiedbootstate);
 	fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
 	printf("\nupdated avb bootargs: %s\n", np);
 #endif
+
+#ifdef CONFIG_BOOT_IMAGE_SUPPORT
+	if(b_hdr_v4->header_version == 4)
+		load_bootconfig_v4();
+#endif
+
+	memset(str, 0, BUFFER_SIZE);
+	sprintf(str, "<0x%x>", RAMDISK_BASE);
+	set_fdt_val("/chosen", "linux,initrd-start", str);
+	printf("initrd-start: %s\n", str);
+
+	memset(str, 0, BUFFER_SIZE);
+
+	if(b_hdr->header_version == 3)
+		sprintf(str, "<0x%x>", RAMDISK_BASE + vb_hdr_v3->vendor_ramdisk_size + b_hdr_v3->ramdisk_size);
+	else if (b_hdr->header_version == 4)
+		sprintf(str, "<0x%x>", RAMDISK_BASE + get_ramdisk_size_v4());
+	else
+		sprintf(str, "<0x%x>", RAMDISK_BASE + b_hdr_v2->ramdisk_size);
+	set_fdt_val("/chosen", "linux,initrd-end", str);
+	printf("initrd-end: %s\n", str);
 
 	resize_dt(0);
 }
