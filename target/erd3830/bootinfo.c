@@ -52,3 +52,27 @@ unsigned int get_ramdump_scratch(void)
 	bootinfo_handle.reg = readl(EXYNOS_POWER_SYSIP_DAT0);
 	return bootinfo_handle.field.ramdump_scratch;
 }
+
+/*
+ * API for reboot mode
+ */
+
+unsigned int is_fastbootd_reboot_mode(void)
+{
+	return (get_reboot_mode() == REBOOT_MODE_FASTBOOT_USER);
+}
+
+unsigned int is_fastboot_reboot_mode(void)
+{
+	return (get_reboot_mode() == REBOOT_MODE_FASTBOOT);
+}
+
+unsigned int is_factory_reboot_mode(void)
+{
+	return (get_reboot_mode() == REBOOT_MODE_FACTORY);
+}
+
+unsigned int is_recovery_reboot_mode(void)
+{
+	return (get_reboot_mode() == REBOOT_MODE_RECOVERY);
+}
