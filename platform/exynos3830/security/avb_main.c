@@ -427,6 +427,6 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate, ui
 	}
 #endif
 
-	return 0;
+	return ret;
 }
 #endif
