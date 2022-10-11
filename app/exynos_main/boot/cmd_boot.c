@@ -634,16 +634,7 @@ mem_node_out:
 			fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
 		}
 	}
-	else{
-		if (b_hdr_v2->cmdline[0] && (!b_hdr_v2->cmdline[BOOT_ARGS_SIZE - 1])) {
-			noff = fdt_path_offset(fdt_dtb, "/chosen");
-			np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
-			snprintf(str, BUFFER_SIZE, "%s %s", np, b_hdr_v2->cmdline);
-			fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
-		}
-	}
-
-	if(b_hdr_v4->header_version == 4) {
+	else if (b_hdr->header_version == 4) {
 		memset(str, 0, BUFFER_SIZE);
 		memset(buffer, 0, BUFFER_SIZE);
 		get_bootargs_from_boot(buffer, b_hdr_v4, vb_hdr_v4);
@@ -652,6 +643,14 @@ mem_node_out:
 		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
 		snprintf(str, BUFFER_SIZE, "%s %s", np, buffer);
 		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
+	}
+	else {
+		if (b_hdr_v2->cmdline[0] && (!b_hdr_v2->cmdline[BOOT_ARGS_SIZE - 1])) {
+			noff = fdt_path_offset(fdt_dtb, "/chosen");
+			np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
+			snprintf(str, BUFFER_SIZE, "%s %s", np, b_hdr_v2->cmdline);
+			fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
+		}
 	}
 
 	noff = fdt_path_offset (fdt_dtb, "/chosen");
