@@ -580,6 +580,7 @@ int fb_do_reboot(const char *cmd_buffer, unsigned int rx_sz)
 		set_reboot_mode(REBOOT_MODE_RECOVERY);
 		set_ramdump_scratch(0);
 	} else {
+		set_reboot_mode(0);
 		set_ramdump_scratch(0);
 	}
 
