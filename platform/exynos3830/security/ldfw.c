@@ -112,9 +112,9 @@ static int load_partition(u64 addr, u64 ch, u64 *size)
 	}
 
 	if (ch == LDFW_PART) {
-		part = part_get_ab("ldfw");
+		part = part_get("ldfw");
 	} else if (ch == KEYSTORAGE_PART) {
-		part = part_get_ab("keystorage");
+		part = part_get("keystorage");
 	} else if (ch == TZSW_PART) {
 		part = part_get("tzsw");
 	} else if (ch == SSP_PART) {
