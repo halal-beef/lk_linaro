@@ -730,14 +730,11 @@ int load_boot_images(void)
 	argv[3].u = RAMDISK_BASE;
 	argv[4].u = DT_BASE;
 
-	if (boot_val == REBOOT_MODE_RECOVERY ||
+	if ((boot_val == REBOOT_MODE_RECOVERY ||
 		boot_val == REBOOT_MODE_FACTORY ||
-		boot_val == REBOOT_MODE_FASTBOOT_USER) {
+		boot_val == REBOOT_MODE_FASTBOOT_USER) && !ab_support) {
 		argv[5].u = DTBO_BASE;
-		if (!ab_support)
-			sprintf(boot_part_name, "recovery");
-		else
-			sprintf(boot_part_name, "boot");
+		sprintf(boot_part_name, "recovery");
 	} else {
 		argv[5].u = 0x0;
 		part = part_get_ab("dtbo");
