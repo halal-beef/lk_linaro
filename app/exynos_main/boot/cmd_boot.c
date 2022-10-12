@@ -866,7 +866,7 @@ int cmd_boot(int argc, const cmd_args *argv)
 			return -1;
 		}
 
-		memcpy(command, "boot-fastboot", 15);
+		memcpy(command, "boot-fastboot", 14);
 		part_write(part, (void *)command);
 	}
 
