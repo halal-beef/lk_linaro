@@ -565,8 +565,10 @@ u32 pattern_data[] = {
 void dpp_reg_configure_params(u32 id, struct dpp_params_info *p,
 		const unsigned long attr)
 {
+#if 0
 	if (test_bit(DPP_ATTR_CSC, &attr) && test_bit(DPP_ATTR_DPP, &attr))
 		dpp_reg_set_csc_params(id, p->eq_mode);
+#endif
 
 	if (test_bit(DPP_ATTR_SCALE, &attr)) {
 		dpp_err(" %s : scaling is not supported\n", __func__);
