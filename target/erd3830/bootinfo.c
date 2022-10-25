@@ -27,6 +27,12 @@ unsigned int get_reboot_mode(void)
 	return bootinfo_handle.field.reboot_mode;
 }
 
+unsigned int check_dram_init_flag(void)
+{
+	bootinfo_handle.reg = readl(EXYNOS_POWER_SYSIP_DAT0);
+	return (unsigned int)(bootinfo_handle.field.dram_init_flag == 0);
+}
+
 void set_dump_en(void)
 {
 	bootinfo_handle.reg = readl(EXYNOS_POWER_SYSIP_DAT0);
@@ -75,4 +81,13 @@ unsigned int is_factory_reboot_mode(void)
 unsigned int is_recovery_reboot_mode(void)
 {
 	return (get_reboot_mode() == REBOOT_MODE_RECOVERY);
+}
+
+/*
+ * API for ramdump mode
+ */
+
+unsigned int is_ramdump_mode(void)
+{
+	return get_ramdump_scratch();
 }

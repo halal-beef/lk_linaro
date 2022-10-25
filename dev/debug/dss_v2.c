@@ -20,7 +20,10 @@
 #include <dev/debug/dss.h>
 #include <platform/sfr.h>
 #include <platform/sizes.h>
+#include <platform/dfd.h>
+#include <lib/linux_debug.h>
 #include <platform/mmu/barrier.h>
+#include <target/bootinfo.h>
 
 #define DSS_RESERVE_PATH	"/reserved-memory/debug_snapshot"
 
@@ -31,6 +34,133 @@ struct reserve_mem {
 	unsigned long long size;
 };
 
+typedef struct {
+	uint64_t r[31]; // X0-X30
+	uint64_t sp;
+	uint64_t pc;
+	uint64_t pstate;
+	uint64_t pcsr;
+	uint64_t power_state;
+} pt_regs_t;
+
+#define UNWIND_DEPTH	6
+#define SIZE_2GB	0x80000000ULL
+
+static int dss_display_backtrace(int panic_cpu) {
+
+	for (int cpu = 0; cpu < NR_CPUS; ++cpu) {
+		pt_regs_t *regs = (pt_regs_t *)((void *)(CONFIG_RAMDUMP_COREREG) + 0x200 * cpu);
+
+		/* skip restoring callstack of panic cpu */
+		if (panic_cpu == cpu)
+			continue;
+
+		printf("Backtrace Core %d", cpu);
+		linux_debug_unwind_backtrace(regs->r[29], regs->pc, regs->sp, UNWIND_DEPTH);
+		printf("\n");
+	}
+
+	return 0;
+}
+
+static linux_mem_region_t dss_memory_regions[] = {
+	{ DRAM_BASE, SIZE_2GB },
+	{ DRAM_BASE2, 0 },
+};
+
+static linux_mem_map_t dss_linux_mem_map = {
+	.regions = (const linux_mem_region_t *)dss_memory_regions,
+	.count = ARRAY_SIZE(dss_memory_regions),
+};
+
+static void reset_mem_map(u64 dram_size) {
+	if (dram_size <= SIZE_2GB) {
+		dss_memory_regions[0].size = (size_t)dram_size;
+		dss_linux_mem_map.count = 1;
+	} else {
+		dss_memory_regions[1].size = (size_t)(dram_size - SIZE_2GB);
+	}
+}
+
+
+int is_async_rst(unsigned int rst_stat)
+{
+	return rst_stat & (WARM_RESET | LITTLE_WDT_RESET | APM_WDT_RESET);
+}
+
+int is_abnormal_rst(unsigned int rst_stat)
+{
+	return is_ramdump_mode() || is_async_rst(rst_stat);
+}
+
+static int dss_get_panic_cpu(void)
+{
+	int panic_cpu = -1;
+	unsigned int magic = readl((CONFIG_RAMDUMP_BACKTRACE_MAGIC));
+
+	if (magic == 0x0DB90DB9)
+		panic_cpu = (int)readl((CONFIG_RAMDUMP_BACKTRACE_CPU));
+
+	return panic_cpu;
+}
+
+static void clear_backtrace_magic(void)
+{
+	writel(0, (CONFIG_RAMDUMP_BACKTRACE_MAGIC));
+}
+
+static void dss_print_and_clear_saved_backtrace(void)
+{
+	unsigned int magic = readl((CONFIG_RAMDUMP_BACKTRACE_MAGIC));
+
+	if (magic == 0x0DB90DB9) {
+		char *str;
+		u64 size;
+
+		clear_backtrace_magic();
+
+		printf("Kernel panic or exception happened\n");
+		str = (char *)(readq((CONFIG_RAMDUMP_BACKTRACE_PADDR)));
+		size = (u64)readq((CONFIG_RAMDUMP_BACKTRACE_SIZE));
+		str[size - 1] = 0;
+		printf("%s", str);
+	}
+}
+
+void dss_kinfo_init(uint level) {
+	unsigned int rst_stat = readl((EXYNOS_POWER_RST_STAT));
+
+	if (check_dram_init_flag() && is_abnormal_rst(rst_stat)) {
+		u64 dram_size = *(u64 *)(BL_SYS_INFO_DRAM_SIZE);
+
+		reset_mem_map(dram_size);
+		linux_debug_init((CONFIG_RAMDUMP_DEBUG_KINFO_BASE), 0x1000,
+				(const linux_mem_map_t *)&dss_linux_mem_map);
+	}
+}
+LK_INIT_HOOK(dss_kinfo_init, dss_kinfo_init, DSS_KINFO_INIT_LEVEL);
+
+#ifndef DSS_SKIP_PRINT_BACKTRACE
+void dss_print_backtrace(uint level) {
+	unsigned int rst_stat = readl((EXYNOS_POWER_RST_STAT));
+
+	if (check_dram_init_flag() && is_abnormal_rst(rst_stat)) {
+		int panic_cpu;
+
+		panic_cpu = dss_get_panic_cpu();
+		dss_print_and_clear_saved_backtrace();
+
+		if (linux_debug_is_valid()) {
+			printf("aosp version: %s\n", linux_debug_get_version());
+			printf("vendor version: %s\n", linux_debug_get_vendor_version());
+			printf("build info: %s\n", linux_debug_get_build_info());
+			if (is_async_rst(rst_stat))
+				dss_display_backtrace(panic_cpu);
+		}
+	}
+}
+LK_INIT_HOOK(dss_print_backtrace, dss_print_backtrace, DSS_PRINT_BACKTRACE_INIT_LEVEL);
+#endif /* DSS_SKIP_PRINT_BACKTRACE */
 struct dss_item {
 	char name[16];
 	struct reserve_mem rmem;
