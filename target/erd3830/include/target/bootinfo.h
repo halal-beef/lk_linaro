@@ -31,6 +31,7 @@ void set_reboot_mode(unsigned int);
 unsigned int get_reboot_mode(void);
 void set_bl2_footprint(void);
 unsigned int get_bl2_footprint(void);
+unsigned int check_dram_init_flag(void);
 void set_dump_en(void);
 unsigned int get_dump_en(void);
 unsigned int get_ramdump_scratch(void);
@@ -40,5 +41,6 @@ unsigned int is_fastbootd_reboot_mode(void);
 unsigned int is_fastboot_reboot_mode(void);
 unsigned int is_factory_reboot_mode(void);
 unsigned int is_recovery_reboot_mode(void);
+unsigned int is_ramdump_mode(void);
 
 #endif /*__BL2_BOOTINFO_H__*/
