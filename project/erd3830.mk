@@ -22,6 +22,7 @@ MODULE_DEPS += \
 	lib/lock \
 	lib/fastboot \
 	lib/fdtapi \
+	lib/linux_debug \
 	dev/rpmb \
 	external/lib/fdt \
 	external/lib/ufdt \
