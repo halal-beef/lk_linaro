@@ -25,7 +25,10 @@
 
 #define CMD_STRING_MAX_SIZE 60
 
-static uint32_t avbkey_is_trusted;
+#define IMAGE_LOAD_FAIL (-1)
+#define IMAGE_LOAD_SUCCESS      (0)
+
+static uint32_t avb_key_type = INVALID_KEY;
 static struct AvbOps ops;
 static KST_PUBKEY_ST ctx __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_64)));
 
@@ -57,6 +60,19 @@ uint32_t sb_get_avb_key(uint8_t *avb_pubkey, uint64_t pubkey_size,
 	INV_DCACHE_RANGE(avb_pubkey, pubkey_size);
 
 	return ret;
+}
+
+static int load_image(const char *name, u64 addr)
+{
+	void *part = part_get(name);
+
+	if (part == 0) {
+		printf("Partition '%s' does not exist\n", name);
+		return IMAGE_LOAD_FAIL;
+	}
+	part_read(part, (void *)addr);
+	printf("Load %-16s From: %-18s To: 0x%-16llX\n", name, "GPT", addr);
+	return IMAGE_LOAD_SUCCESS;
 }
 
 static AvbIOResult exynos_read_is_device_unlocked(AvbOps *ops, bool *out_is_unlocked)
@@ -321,10 +337,11 @@ static AvbIOResult exynos_validate_vbmeta_public_key(AvbOps *ops,
 {
 	AvbIOResult ret = AVB_IO_RESULT_OK;
 	uint8_t avb_pubkey[SB_MAX_PUBKEY_LEN] __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
+	uint8_t *custom_key = (uint8_t *)AVB_PRELOAD_BASE;
 
 	ret = sb_get_avb_key(avb_pubkey, public_key_length, "vbmeta");
 	if (ret) {
-		*out_is_trusted = false;
+		goto keystorage_fail;
 	}
 
 	*out_is_trusted = !memcmp(avb_pubkey, public_key_data, public_key_length);
@@ -341,11 +358,42 @@ static AvbIOResult exynos_validate_vbmeta_public_key(AvbOps *ops,
 			printf("%02X ", public_key_data[i]);
 		printf("\n");
 #endif
-		goto out;
+		goto keystorage_fail;
 	}
 
-out:
-	avbkey_is_trusted = *out_is_trusted;
+	printf("[AVB 2.0] keystorage key is used\n");
+	avb_key_type = VALID_AVB_KEYSTORAGE_KEY;
+	return ret;
+
+keystorage_fail:
+	ret = load_image("avb_custom_key", (uint64_t)custom_key);
+	if (ret)
+		goto custom_key_fail;
+	*out_is_trusted = !memcmp(custom_key, public_key_data, public_key_length);
+	if (*out_is_trusted == false) {
+#if defined(CONFIG_AVB_DEBUG)
+		uint32_t i;
+
+		printf("[AVB 2.0 warning] AVB custom key is not matched with vbmeta\n");
+		printf("Custom key dump\n");
+		for (i = 0; i < public_key_length; i++)
+			printf("%02X ", custom_key[i]);
+		printf("\n");
+		printf("Vbmeta key dump\n");
+		for (i = 0; i < public_key_length; i++)
+			printf("%02X ", public_key_data[i]);
+		printf("\n");
+#endif
+		goto custom_key_fail;
+	}
+
+	printf("[AVB 2.0] custom key is used\n");
+	avb_key_type = VALID_AVB_CUSTOM_KEY;
+	return ret;
+
+custom_key_fail:
+	printf("[AVB 2.0 warning] All keys are invalid\n");
+	avb_key_type = INVALID_KEY;
 	return ret;
 }
 
@@ -502,7 +550,7 @@ uint32_t get_ops_addr(struct AvbOps **ops_addr)
 	return 0;
 }
 
-uint32_t get_avbkey_trust(void)
+uint32_t get_avb_key_type(void)
 {
-	return avbkey_is_trusted;
+	return avb_key_type;
 }
