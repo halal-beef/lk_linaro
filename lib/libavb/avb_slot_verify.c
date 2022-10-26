@@ -615,7 +615,7 @@ static AvbSlotVerifyResult load_and_verify_vbmeta(
    * vbmeta struct.
    */
   is_main_vbmeta = (rollback_index_location == 0);
-  is_vbmeta_partition = (avb_strcmp(partition_name, "vbmeta") == 0);
+  is_vbmeta_partition = (avb_strncmp(partition_name, "vbmeta", avb_strlen("vbmeta")) == 0);
 
   if (!avb_validate_utf8((const uint8_t*)partition_name, partition_name_len)) {
     avb_error("Partition name is not valid UTF-8.\n");
