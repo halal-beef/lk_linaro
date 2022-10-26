@@ -329,17 +329,23 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate, ui
 				&ctx_ptr);
 
 	/* get color */
+	uint32_t avb_key_type = get_avb_key_type();
+
 	if (unlock) {
 		strncpy(color, "orange", AVB_COLOR_MAX_SIZE);
 	} else {
-		if (ret == AVB_SLOT_VERIFY_RESULT_ERROR_PUBLIC_KEY_REJECTED) {
-			strncpy(color, "yellow", AVB_COLOR_MAX_SIZE);
-		} else if (ret) {
+		if (ret) {
 			strncpy(color, "red", AVB_COLOR_MAX_SIZE);
 		} else {
-			strncpy(color, "green", AVB_COLOR_MAX_SIZE);
+			if (avb_key_type == VALID_AVB_KEYSTORAGE_KEY)
+				strncpy(color, "green", AVB_COLOR_MAX_SIZE);
+			else if (avb_key_type == VALID_AVB_CUSTOM_KEY)
+				strncpy(color, "yellow", AVB_COLOR_MAX_SIZE);
+			else
+				strncpy(color, "red", AVB_COLOR_MAX_SIZE);
 		}
 	}
+
 	if (ret) {
 		if (unlock && ret == AVB_SLOT_VERIFY_RESULT_ERROR_VERIFICATION)
 			snprintf(buf, 100, "[AVB 2.0 warning] authentication fail [ret: 0x%X] (%s) "

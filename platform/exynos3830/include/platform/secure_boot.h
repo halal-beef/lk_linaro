@@ -200,13 +200,19 @@ uint32_t cm_verify_signature_using_image(
  *****************************************************************************
  * Android verified boot
  ******************************************************************************/
+enum {
+	VALID_AVB_KEYSTORAGE_KEY,
+	VALID_AVB_CUSTOM_KEY,
+	INVALID_KEY,
+};
+
 void set_avbops(void);
 
 uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate, uint32_t recovery_mode);
 
 uint32_t get_ops_addr(struct AvbOps **ops_addr);
 
-uint32_t get_avbkey_trust(void);
+uint32_t get_avb_key_type(void);
 
 uint32_t avb_set_patch_level(char *key, char *value, uint64_t value_num_bytes);
 
