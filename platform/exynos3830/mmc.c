@@ -170,7 +170,7 @@ void mmc_clock_set(unsigned int channel, unsigned int enable)
 
 			reg = *(volatile u32 *)CLK_CON_MUX_CLK_CMU_HSI_MMC_CARD;
 			reg &= ~0x7;
-			reg |= 0x1;
+			reg |= 0x5;
 			*(volatile u32 *)CLK_CON_MUX_CLK_CMU_HSI_MMC_CARD = reg;
 			return;
 		case 3:
