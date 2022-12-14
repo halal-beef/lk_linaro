@@ -27,9 +27,9 @@
 static const uint64_t kRollbackIndexNotUsed = 0;
 static uint8_t avb_pubkey[SB_MAX_PUBKEY_LEN] __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
 static uint32_t os_version = 0;
-static uint32_t os_patch_level = 0;
-static uint32_t vendor_patch_level = 0;
-static uint32_t boot_patch_level = 0;
+static uint32_t os_patch_level = 0x20200101;
+static uint32_t vendor_patch_level = 0x20200101;
+static uint32_t boot_patch_level = 0x20200101;
 
 #if !defined(CONFIG_AVB_LCD_LOG)
 void avb_print_lcd(const char *str, uint32_t boot_state) {};
