@@ -280,9 +280,11 @@ static AvbIOResult exynos_get_preloaded_partition(AvbOps *ops,
 	void *part;
 	bool unlock;
 
-	if (!strcmp(partition, "boot")) {
+	if (!strncmp(partition, "boot", strlen("boot"))) {
 		*out_pointer = (uint8_t *)BOOT_BASE;
-	} else if (!strcmp(partition, "dtbo")) {
+	} else if (!strncmp(partition, "vendor_boot", strlen("vendor_boot"))) {
+		*out_pointer = (uint8_t *)VENDOR_BOOT_BASE;
+	} else if (!strncmp(partition, "dtbo", strlen("dtbo"))) {
 		*out_pointer = (uint8_t *)DTBO_BASE;
 	} else {
 		if (!(part = part_get(partition))) {
