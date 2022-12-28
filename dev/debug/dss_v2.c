@@ -28,6 +28,7 @@
 #define DSS_RESERVE_PATH	"/reserved-memory/debug_snapshot"
 
 extern int load_boot_images(void);
+extern void load_dtb(void);
 
 struct reserve_mem {
 	unsigned long long paddr;
@@ -219,7 +220,8 @@ static void dss_get_items(void)
 	if (!(rst_stat & PIN_RESET) && (readl(CONFIG_RAMDUMP_DSS_ITEM_INFO) == 0x1234ABCD)) {
 		dss_bl_p = (struct dss_bl *)CONFIG_RAMDUMP_DSS_ITEM_INFO;
 	} else {
-		load_boot_images();
+		load_dtb();
+
 		fdt_dtb = (struct fdt_header *)DT_BASE;
 
 		for (i = 0; i < static_dss_bl.item_count; i++) {

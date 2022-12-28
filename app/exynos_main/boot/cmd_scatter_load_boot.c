@@ -18,6 +18,7 @@
 #include <libfdt.h>
 #include <platform/fdt.h>
 #include <reg.h>
+#include <part.h>
 
 #define TAG		"BHDR_V4"
 
@@ -424,6 +425,31 @@ int do_scatter_load_boot_v3(int argc,const cmd_args *argv)
 
 	return 0;
 }
+
+void load_dtb(void)
+{
+	void *vendor_boot_part;
+	unsigned long long vendor_offset = 0;
+	struct vendor_boot_img_hdr_v4 *vb_hdr;
+
+	vb_hdr = (struct vendor_boot_img_hdr_v4 *)VENDOR_BOOT_BASE;
+	vendor_boot_part = part_get_ab("vendor_boot");
+
+	if (vendor_boot_part == 0) {
+		printf("Fail to find vendor_boot partition!\n");
+		return;
+	}
+
+	part_read_partial(vendor_boot_part, (void *)VENDOR_BOOT_BASE, 0, 4096);
+
+	vendor_offset = VND_BOOT_ALIGN(vb_hdr->header_size)
+						+ VND_BOOT_ALIGN(vb_hdr->vendor_ramdisk_size);
+
+	part_read_partial(vendor_boot_part, (void *)DT_BASE, vendor_offset,
+							vb_hdr->dtb_size);
+
+}
+
 
 int do_scatter_load_boot_v4(int argc,const cmd_args *argv)
 {
