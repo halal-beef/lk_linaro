@@ -29,6 +29,7 @@
 #include <platform/ab_update.h>
 #include <platform/secure_boot.h>
 #include <platform/sizes.h>
+#include <platform/fdt_reconfiguration.h>
 #include <lib/fastboot.h>
 #include <platform/bootimg.h>
 #include <lib/fdtapi.h>
@@ -691,6 +692,7 @@ mem_node_out:
 	set_fdt_val("/chosen", "linux,initrd-end", str);
 	printf("initrd-end: %s\n", str);
 
+	reconfigure_fdt();
 	resize_dt(0);
 }
 
