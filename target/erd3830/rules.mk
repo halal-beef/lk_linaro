@@ -22,5 +22,6 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/pmic/pmic.c \
 	$(LOCAL_DIR)/gpio/exynos_key.c \
 	$(LOCAL_DIR)/bootinfo.c \
+	$(LOCAL_DIR)/dss_reconfig.c \
 
 include make/module.mk
