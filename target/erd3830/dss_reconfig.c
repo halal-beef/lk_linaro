@@ -20,6 +20,7 @@ enum debug_feature_id {
 	eDSS_FIRST_ID,
 	eDSS_KEVENT_ID,
 	eDSS_KEVENT_SMALL_ID,
+	eDSS_BCM_ID,
 };
 
 static struct fdt_reconfiguration_data debug_dt_items[] = {
@@ -37,6 +38,9 @@ static struct fdt_reconfiguration_data debug_dt_items[] = {
 				NULL, eFDT_RECONFIGURE_NONE, {0}},
 	[eDSS_KEVENT_SMALL_ID] = {LIST_INITIAL_CLEARED_VALUE,
 				"/reserved-memory/debug_snapshot/log_kevents_small",
+				NULL, eFDT_RECONFIGURE_NONE, {0}},
+	[eDSS_BCM_ID] = {LIST_INITIAL_CLEARED_VALUE,
+				"/reserved-memory/log_bcm",
 				NULL, eFDT_RECONFIGURE_NONE, {0}},
 };
 
@@ -84,4 +88,5 @@ void set_dss_debug_level_high(void)
 	set_dss_item_status(eDSS_FIRST_ID, true);
 	set_dss_item_status(eDSS_KEVENT_ID, true);
 	set_dss_item_status(eDSS_KEVENT_SMALL_ID, false);
+	set_dss_item_size(eDSS_BCM_ID, 0x400000);
 }
