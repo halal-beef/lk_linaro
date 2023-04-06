@@ -247,9 +247,8 @@ reboot:
 	recovery_init();
 	err = cmd_boot(0, 0);
 	if (err) {
-		sdm_encrypt_secdram();
-		dfd_set_dump_en_for_cacheop(0);
-		goto fastboot;
+		start_usb_gadget();
+		return;
 	}
 
 	return;

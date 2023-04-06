@@ -580,6 +580,22 @@ int fb_do_continue(const char *cmd_buffer, unsigned int rx_sz)
 	return 0;
 }
 
+extern int boot_fb_boot(unsigned long buf_addr, size_t size);
+int fb_do_boot(const char *cmd_buffer, unsigned int rx_sz)
+{
+	char buf[FB_RESPONSE_BUFFER_SIZE];
+	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
+
+	thread_sleep(USB_RX_MAGIC_DELAY);
+
+	sprintf(response, "OKAY");
+	fastboot_send_status(response, strlen(response), FASTBOOT_TX_SYNC);
+
+	boot_fb_boot(CFG_FASTBOOT_TRANSFER_BUFFER, download_size);
+
+	return 0;
+}
+
 extern void fastboot_rx_datapayload(int dir, const unsigned char *addr, unsigned int len);
 
 int fb_do_reboot(const char *cmd_buffer, unsigned int rx_sz)
@@ -1029,6 +1045,7 @@ struct cmd_fastboot cmd_list[] = {
 	{"reboot", fb_do_reboot},
 	{"flash:", fb_do_flash},
 	{"continue", fb_do_continue},
+	{"boot", fb_do_boot},
 	{"erase:", fb_do_erase},
 	{"download:", fb_do_download},
 	{"ramdump:", fb_do_ramdump},

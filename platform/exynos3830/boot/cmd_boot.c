@@ -947,6 +947,68 @@ int boot_fb_continue(void)
 	return ret;
 }
 
+int boot_fb_boot(unsigned long buf_addr, size_t size)
+{
+	struct boot_img_hdr *b_hdr;
+	cmd_args argv[7];
+	int ret = 0;
+
+	memset((void *)BOOT_BASE, 0, SZ_64M);
+	memcpy((void *)BOOT_BASE, (void *)buf_addr, size);
+	b_hdr = (struct boot_img_hdr *)BOOT_BASE;
+
+	stop_usb_gadget();
+
+	fdt_dtb = (struct fdt_header *)DT_BASE;
+	dtbo_table = (struct dt_table_header *)DTBO_BASE;
+
+	printf("%s: loading from fastboot buffer\n", __func__);
+	if (b_hdr->header_version != 2) {
+		printf("Error: Only boot images v2, but v%u is provided\n",
+				b_hdr->header_version);
+		ret = -1;
+		goto err;
+	}
+
+	/* ensure ramdisk image loaded in 0 initialized area */
+	memset((void *)RAMDISK_BASE, 0, 0x200000);
+
+	argv[1].u = BOOT_BASE;
+	argv[2].u = KERNEL_BASE;
+	argv[3].u = RAMDISK_BASE;
+	argv[4].u = DT_BASE;
+	argv[5].u = 0x0;
+	argv[6].u = 0x0;
+
+	ret = cmd_scatter_load_boot(6, argv);
+	if (ret)
+		goto err;
+
+	configure_dtb();
+	configure_ddi_id();
+
+	/* notify EL3 Monitor end of bootloader */
+	exynos_smc(SMC_CMD_END_OF_BOOTLOADER, 0, 0, 0);
+
+	/* before jumping to kernel. disble arch_timer */
+	arm_generic_timer_disable();
+
+#if defined(CONFIG_MMU_ENABLE)
+	clean_invalidate_dcache_all();
+	disable_mmu_dcache();
+#endif
+	decon_stop();
+	void (*kernel_entry)(int r0, int r1, int r2, int r3);
+
+	kernel_entry = (void (*)(int, int, int, int))KERNEL_BASE;
+	kernel_entry(DT_BASE, 0, 0, 0);
+
+err:
+	printf("Resuming fastboot mode\n");
+	start_usb_gadget();
+	return ret;
+}
+
 STATIC_COMMAND_START
 STATIC_COMMAND("boot", "start kernel booting", &cmd_boot)
 STATIC_COMMAND_END(boot);
