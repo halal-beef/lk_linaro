@@ -17,6 +17,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <err.h>
+#include <kernel/thread.h>
 #include <lib/console.h>
 #include <lib/sysparam.h>
 #include <lib/font_display.h>
@@ -36,6 +37,14 @@
 #include <dev/scsi.h>
 
 #include "usb-def.h"
+
+/*
+ * For unknown reasons, when running cmd_boot() from wait_rx_done() handler
+ * (i.e. from fastboot mode), some delay must be done before running cmd_boot().
+ * Otherwise the kernel will stuck on the early startup stage. This constant
+ * is delay time, in msec.
+ */
+#define USB_RX_MAGIC_DELAY	50
 
 extern void fastboot_send_info(char *response, unsigned int len);
 extern void fastboot_send_payload(void *buf, unsigned int len);
@@ -555,6 +564,22 @@ int fb_do_flash(const char *cmd_buffer, unsigned int rx_sz)
 	return 0;
 }
 
+extern int boot_fb_continue(void);
+int fb_do_continue(const char *cmd_buffer, unsigned int rx_sz)
+{
+	char buf[FB_RESPONSE_BUFFER_SIZE];
+	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
+
+	thread_sleep(USB_RX_MAGIC_DELAY);
+
+	sprintf(response, "OKAY");
+	fastboot_send_status(response, strlen(response), FASTBOOT_TX_SYNC);
+
+	boot_fb_continue();
+
+	return 0;
+}
+
 extern void fastboot_rx_datapayload(int dir, const unsigned char *addr, unsigned int len);
 
 int fb_do_reboot(const char *cmd_buffer, unsigned int rx_sz)
@@ -1003,6 +1028,7 @@ int fb_do_diskdump(const char *cmd_buffer, unsigned int rx_sz)
 struct cmd_fastboot cmd_list[] = {
 	{"reboot", fb_do_reboot},
 	{"flash:", fb_do_flash},
+	{"continue", fb_do_continue},
 	{"erase:", fb_do_erase},
 	{"download:", fb_do_download},
 	{"ramdump:", fb_do_ramdump},
