@@ -292,7 +292,7 @@ static void remove_string_from_bootargs(const char *str)
 	fdt_setprop(fdt_dtb, noff, "bootargs", bootargs, strlen(bootargs) + 1);
 }
 
-static int bootargs_process(void)
+static int bootargs_process(bool mount_super)
 {
 	char buf[16];
 	int ret = 0;
@@ -303,6 +303,18 @@ static int bootargs_process(void)
 
 	/* Add devkmsg */
 	add_val("printk.devkmsg", "on");
+
+	if (mount_super) {
+		if (add_val("root", "/dev/mmcblk0p12")) {
+			printf("Add root failed\n");
+			return -1;
+		}
+
+		if (add_val("rootwait", NULL)) {
+			printf("Add rootwait failed\n");
+			return -1;
+		}
+	}
 
 	/* reason */
 	memset(buf, 0, sizeof(buf));
@@ -374,12 +386,12 @@ static int bootargs_process(void)
 	return 0;
 }
 
-static void set_bootargs(void)
+static void set_bootargs(bool mount_super)
 {
 	bootargs_init();
 
 	/* add bootargs for bootmode reason, etc */
-	if (bootargs_process()) {
+	if (bootargs_process(mount_super)) {
 		printf("ERR: bootargs process failed!");
 	}
 
@@ -425,6 +437,7 @@ static void configure_dtb(void)
 {
 	char str[BUFFER_SIZE];
 	int err;
+	uint32_t rd_size;
 	bool is_upstream_dtb;
 
 	const char *np;
@@ -443,15 +456,32 @@ static void configure_dtb(void)
 	unsigned int sec_pt_size = 0;
 	unsigned long sec_pt_end = 0;
 
+	if (b_hdr->header_version == 3)
+		rd_size = b_hdr_v3->ramdisk_size;
+	else
+		rd_size = b_hdr_v2->ramdisk_size;
+
 	/* Figure out if upstream kernel's dtb is flashed */
 	err = get_fdt_val("/", "compatible", str);
 	is_upstream_dtb = !err && !strcmp(str, "winlink,e850-96");
 	printf("DTB type: %supstream\n", is_upstream_dtb ? "" : "not ");
+	printf("ramdisk is %spresent\n", rd_size ? "" : "not ");
 
-	/* Skip merging DTBO and memory node adding if it's upstream DTB */
+	/*
+	 * Handle case when DTB is upstream one:
+	 *   - skip merging DTBO
+	 *   - skip adding DRAM nodes
+	 *   - if ramdisk is not present: skip setting initrd* in /chosen
+	 */
 	if (is_upstream_dtb) {
 		resize_dt(SZ_4K);
-		goto ramdisk_setup;
+		if (rd_size > 0) {
+			printf("RootFS: Using ramdisk from boot part\n");
+			goto ramdisk_setup;
+		} else {
+			printf("RootFS: Mounting rootfs from super part\n");
+			goto rmem_setup;
+		}
 	}
 
 	/*
@@ -584,7 +614,6 @@ static void configure_dtb(void)
 	}
 
 mem_node_out:
-
 	sprintf(str, "<0x%x>", ECT_BASE);
 	set_fdt_val("/ect", "parameter_address", str);
 
@@ -607,6 +636,7 @@ ramdisk_setup:
 	set_fdt_val("/chosen", "linux,initrd-end", str);
 	printf("initrd-end: %s\n", str);
 
+rmem_setup:
 	noff = fdt_path_offset(fdt_dtb, "/reserved-memory/cp_rmem");
 	if (noff >= 0) {
 		np = fdt_getprop(fdt_dtb, noff, "reg", &len);
@@ -651,7 +681,7 @@ ramdisk_setup:
 	np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
 	printf("\nbootargs: %s\n", np);
 
-	set_bootargs();
+	set_bootargs(is_upstream_dtb);
 	set_usb_serialno();
 
 #if defined(CONFIG_USE_AVB20)
