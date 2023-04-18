@@ -30,7 +30,6 @@ MODULE_DEPS += \
 	dev/debug \
 	dev/power/pmic/s2mpu12 \
 	dev/power/pmic/s2mu106 \
-	dev/backlight_ic \
 	dev/i2c \
 
 GLOBAL_DEFINES += \
