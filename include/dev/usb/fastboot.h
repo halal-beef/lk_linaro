@@ -43,7 +43,7 @@ struct cmd_fastboot_variable {
 #define CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE 2048
 #endif
 
-#define FASTBOOT_VERSION_BOOTLOADER	"EXYNOS9630-LK-20190509-1"
+#define FASTBOOT_VERSION_BOOTLOADER	"EXYNOS3830-LK-20190509-1"
 
 struct cmd_fastboot_interface
 {

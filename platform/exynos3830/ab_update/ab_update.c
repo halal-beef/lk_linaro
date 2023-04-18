@@ -66,7 +66,7 @@ int ab_update_slot_info(void)
 						mdelay(500);
 						free(buf);
 						/* reset */
-						writel(readl(EXYNOS9630_SYSTEM_CONFIGURATION) | 0x2, EXYNOS9630_SYSTEM_CONFIGURATION);
+						writel(readl(EXYNOS3830_SYSTEM_CONFIGURATION) | 0x2, EXYNOS3830_SYSTEM_CONFIGURATION);
 						do {
 							asm volatile("wfi");
 						} while(1);
@@ -97,7 +97,7 @@ int ab_update_slot_info(void)
 						mdelay(500);
 						free(buf);
 						/* reset */
-						writel(readl(EXYNOS9630_SYSTEM_CONFIGURATION) | 0x2, EXYNOS9630_SYSTEM_CONFIGURATION);
+						writel(readl(EXYNOS3830_SYSTEM_CONFIGURATION) | 0x2, EXYNOS3830_SYSTEM_CONFIGURATION);
 						do {
 							asm volatile("wfi");
 						} while(1);
