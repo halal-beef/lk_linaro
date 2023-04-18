@@ -40,19 +40,8 @@
 	 */
 get_cpu_id:
 	mrs     x0, mpidr_el1
-#if defined(CONFIG_SOC_S5E9810) || defined(CONFIG_SOC_S5E9820) ||	\
-    defined(CONFIG_SOC_S5E9830) || defined(CONFIG_SOC_S5E9809)
-	and	x1, x0, #MPIDR_MT_MASK
-	mov	x2, #8
-	tst	x1, #MPIDR_MT_MASK
-	csel	x1, x2, xzr, ne
-	lsr	x0, x0, x1
 	and     x0, x0,#0x3
 	mov     w0, w0		// Caller expects a 32-bit value, not a 64-bit
-#else
-	and     x0, x0,#0x3
-	mov     w0, w0		// Caller expects a 32-bit value, not a 64-bit
-#endif
 	ret
 
 	/**
@@ -61,14 +50,6 @@ get_cpu_id:
 	 */
 get_cluster_id:
 	mrs     x0, mpidr_el1
-#if defined(CONFIG_SOC_S5E9810) || defined(CONFIG_SOC_S5E9820) ||	\
-    defined(CONFIG_SOC_S5E9830) || defined(CONFIG_SOC_S5E9809)
-	and	x1, x0, #MPIDR_MT_MASK
-	mov	x2, #8
-	tst	x1, #MPIDR_MT_MASK
-	csel	x1, x2, xzr, ne
-	lsr	x0, x0, x1
-#endif
 	lsr	x0, x0, #8
 	and     x0, x0, #0xff
 	mov     w0, w0		// Caller expects a 32-bit value, not a 64-bit
@@ -95,109 +76,15 @@ get_cpu_implementer:
 // returns the aff0 field from the midr_el1
 // unsigned int get_cpu_num(void)
 
-#if defined(CONFIG_SOC_S5E7872_K2) || defined(CONFIG_SOC_S5E7885)	/* three-clusters */
-
-get_cpu_num:
-	mrs     x0, MPIDR_EL1		// Read Multiprocessor Affinity Register
-	and	x1, x0, #3		// Get CPU ID
-	lsr     x0, x0, #0x8
-	and	x0, x0, #0xff		// Get Cluster ID
-	cmp     x0, #0
-	beq	cpucl0_cpu_num
-	cmp     x0, #1
-	beq	cpucl1_cpu_num
-	cmp     x0, #2
-	beq	cpucl2_cpu_num
-	ret
-cpucl2_cpu_num:
-	add	x0, x1, #6		// Cluster 2 -> core4,5 (logical)
-	mov	w0, w0			// caller expects a 32-bit value, not a 64-bit
-	ret
-cpucl1_cpu_num:
-	add	x0, x1, #0		// Cluster 1 -> core0,1,2,3 (logical)
-	mov	w0, w0			// caller expects a 32-bit value, not a 64-bit
-	ret
-cpucl0_cpu_num:
-	add	x0, x1, #4		// Cluster 0 -> core6,7 (logical)
-	mov	w0, w0			// caller expects a 32-bit value, not a 64-bit
-	ret
-
-#elif defined(CONFIG_SOC_S5E9810) || defined(CONFIG_SOC_S5E9820) ||	\
-      defined(CONFIG_SOC_S5AHR80) || defined(CONFIG_SOC_S5E9830) ||	\
-      defined(CONFIG_SOC_S5E9809)
-
-	// S5E9810, S5E9809:
-	//	core name	 MPIDR		core_num
-	//	Ananke     core0 0x8100_0000	0
-	//	Ananke     core1 0x8100_0100	1
-	//	Ananke     core2 0x8100_0200	2
-	//	Ananke     core3 0x8100_0300	3
-	//	Meerkat    core0 0x8000_0100	4
-	//	Meerkat    core1 0x8000_0101	5
-	//	Meerkat    core2 0x8000_0102	6
-	//	Meerkat    core3 0x8000_0103	7
-	// S5E9820:
-	//	core name	 MPIDR		core_num
-	//	Ananke     core0 0x8100_0000	0
-	//	Ananke     core1 0x8100_0100	1
-	//	Ananke     core2 0x8100_0200	2
-	//	Ananke     core3 0x8100_0300	3
-	//	Prometheus core0 0x8100_0400	4
-	//	Prometheus core1 0x8100_0500	5
-	//	Cheetah    core0 0x8000_0100	6
-	//	Cheetah    core1 0x8000_0101	7
-	// S5AHR80:
-	//	core name	 MPIDR		core_num
-	//	Enyo       core0 0x8100_0000	0
-	//	Enyo       core1 0x8100_0100	1
-	//	Enyo       core2 0x8100_0200	2
-	//	Enyo       core3 0x8100_0300	3
-	//	Enyo       core0 0x8101_0000	4
-	//	Enyo       core1 0x8101_0100	5
-	//	Enyo       core2 0x8101_0200	6
-	//	Enyo       core3 0x8101_0300	7
-
-get_cpu_num:
-	mrs	x0, mpidr_el1
-	and	x1, x0, #MPIDR_MT_MASK	// extract MT bit
-	mov	x2, #8			// shift value for ananke (armv8.2)
-	tst	x1, #MPIDR_MT_MASK	// check MT bit
-	csel	x1, x2, xzr, ne
-	lsr	x0, x0, x1
-	and	x1, x0, #0xff		// x1: cpu_id in cluster
-	and	x2, x0, #(0xff << 8)	// x0: cluster_id
-
-    #if defined(CONFIG_SOC_S5E9820) || defined(CONFIG_SOC_S5E9830)	/* three-clusters */
-	mov	x0, x1
-	cmp	x2, #0
-	b.eq	1f
-	add	x0, x0, #6
-1:
-    #else
-	add	x0, x1, x2, lsr #6	// x0: cpu_num
-    #endif
-
-	ret
-
-#else
-
 get_cpu_num:
 	mrs     x0, mpidr_el1		// read multiprocessor affinity register
 	and	x1, x0, #0x3		// get cpu id
 	lsr     x0, x0, #0x8
 	and	x0, x0, #0xff		// get cluster id
-#if !defined(CONFIG_SOC_S5E7870) && !defined(CONFIG_SOC_S5E7880) && \
-    !defined(CONFIG_SOC_S5E7570) && !defined(CONFIG_SOC_S5E7872) && \
-    !defined(CONFIG_SOC_S5E9110)
-	cmp     x0, #0
-	cset    x0, eq
-#endif
 	lsl     x0, x0, #0x2
 	orr     x0, x0, x1
 	mov     w0, w0			// caller expects a 32-bit value, not a 64-bit
 	ret
-
-#endif /* CONFIG_SOC_S5E7872_K2 */
 
 get_current_el:
 	mrs     x0, CurrentEL

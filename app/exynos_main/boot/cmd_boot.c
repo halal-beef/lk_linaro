@@ -795,10 +795,6 @@ int load_boot_images(void)
 
 int cmd_boot(int argc, const cmd_args *argv)
 {
-#if defined(CONFIG_FACTORY_MODE)
-	struct exynos_gpio_bank *bank = (struct exynos_gpio_bank *)EXYNOS9630_GPA1CON;
-	int gpio = 5;	/* Volume Up */
-#endif
 	unsigned int val;
 	uint32_t recovery_mode = 0;
 #if defined(CONFIG_USE_AVB20)
@@ -810,15 +806,6 @@ int cmd_boot(int argc, const cmd_args *argv)
 
 	fdt_dtb = (struct fdt_header *)DT_BASE;
 	dtbo_table = (struct dt_table_header *)DTBO_BASE;
-#if defined(CONFIG_FACTORY_MODE)
-	val = exynos_gpio_get_value(bank, gpio);
-	if (!val) {
-		set_reboot_mode(REBOOT_MODE_FACTORY);
-		printf("Pressed key combination to enter samsung factory mode!\n");
-		print_lcd_update(FONT_GREEN, FONT_BLACK,
-			"Pressed key combination to enter samsung factory mode!");
-	}
-#endif
 
 	load_boot_images();
 

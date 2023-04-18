@@ -119,7 +119,6 @@ const char *fastboot_get_serialno_string(void)
 	return make_serial_string();
 }
 
-//#define FASTBOOT_VERSION_BOOTLOADER	"EXYNOS9630-LK-20190509-1"
 
 static struct cmd_fastboot_variable fastboot_var_list[CMD_FASTBOOT_MAX_VAR_NR];
 static int fastboot_var_nr = 0;

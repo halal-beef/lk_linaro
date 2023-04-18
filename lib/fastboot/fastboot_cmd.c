@@ -879,9 +879,6 @@ int fb_do_diskdump(const char *cmd_buffer, unsigned int rx_sz)
 	fastboot_send_info(response, strlen(response));
 
 	mdelay(200);
-#if defined(CONFIG_BOARD_UNIVERSAL9630)
-	muic_sw_usb();
-#endif
 
 	if (res == 0) {
 		done = start_diskdump((void *)CFG_FASTBOOT_TRANSFER_BUFFER, start_in_secs, size_in_secs * PART_SECTOR_SIZE);

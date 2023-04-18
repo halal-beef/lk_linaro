@@ -11,6 +11,6 @@
 #ifndef __UFS_CAL_H__
 #define __UFS_CAL_H__
 
-#include "ufs-cal-9630.h"
+#include "ufs-cal-3830.h"
 
 #endif	/* __UFS_CAL_H__ */

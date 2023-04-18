@@ -646,25 +646,3 @@ void set_charger_mode(int mode)
 }
 
 #define CHARGER_GPIO_INT_NUM	(17 + 32)
-#if 0
-static enum handler_return charger_gpio_interrupt(void *arg)
-{
-	printf("EXYNOS9610_WEINT_GPA2_PEND: %x\n", readl(EXYNOS9610_WEINT_GPA2_PEND));
-	writel(readl(EXYNOS9610_WEINT_GPA2_PEND) | (1 << 1), EXYNOS9610_WEINT_GPA2_PEND);
-	muic_interrupt_handler();
-	return INT_NO_RESCHEDULE;
-}
-
-void init_muic_interrupt(void)
-{
-	exynos_gpio_cfg_pin((struct exynos_gpio_bank *)EXYNOS9610_GPA2CON, 1, 0xF);
-	writel(readl(EXYNOS9610_GPA2PUD) & ~(0xF0), EXYNOS9610_GPA2PUD);
-	writel(readl(EXYNOS9610_WEINT_GPA2_PEND) | (1 << 1), EXYNOS9610_WEINT_GPA2_PEND);
-	writel(readl(EXYNOS9610_WEINT_GPA2_MASK) & ~(1 << 1), EXYNOS9610_WEINT_GPA2_MASK);
-	writel((readl(EXYNOS9610_WEINT_GPA2_CON) & ~(0x7 << (4 * 1))) | (0x2 << (4 * 1)), EXYNOS9610_WEINT_GPA2_CON);
-	printf("Enable charger GPIO interrupt!!!\n");
-	register_int_handler(CHARGER_GPIO_INT_NUM, &charger_gpio_interrupt, NULL);
-	unmask_interrupt(CHARGER_GPIO_INT_NUM);
-	muic_interrupt_handler();
-}
-#endif

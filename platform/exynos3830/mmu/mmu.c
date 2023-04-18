@@ -366,7 +366,7 @@ void set_mmu_base_default(CPU_EL_LEVEL el)
 }
 
 
-static void s5e9630_mmu_table_init(void)
+static void s5e3830_mmu_table_init(void)
 {
 	u32 i;
 	//u64 *ll_ttb_l1, *ll_ttb_l2;
@@ -418,7 +418,7 @@ void cpu_common_init(void)
 {
 	CPU_EL_LEVEL cur_el = get_current_el();
 
-	s5e9630_mmu_table_init();
+	s5e3830_mmu_table_init();
 
 	set_mmu_base_default(cur_el);
 	invalidate_tlb_all(cur_el);

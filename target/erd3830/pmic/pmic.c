@@ -46,13 +46,6 @@ void pmic_init (void)
 	reg |= 0xC0;
 	i3c_write(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO11_CTRL, reg);
 
-#if defined(CONFIG_UNIVERSAL3830)
-	/* Enable LCD power */
-	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO26_CTRL, &reg);
-	reg |= 0xC0;
-	i3c_write(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO26_CTRL, reg);
-#endif
-
 	/* Enable LCD power */
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO28_CTRL, &reg);
 	reg |= 0xC0;
