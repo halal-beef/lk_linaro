@@ -53,5 +53,6 @@ unsigned long long strtoull(const char *cp, char **endp, unsigned int base)
 	}
 	if (endp)
 		*endp = (char *) cp;
-		return result;
+
+	return result;
 }

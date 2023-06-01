@@ -299,6 +299,8 @@ static int i2c_nextbyte(struct i2c_info *i2c, unsigned int i2cstat)
 		if (i2c->state == STATE_READ)
 			goto prepare_read;
 
+		/* Fall through */
+
 	case STATE_WRITE:
 		i2c_dbg("i2c %08x: %s: state - write\n", i2c->base, __func__);
 

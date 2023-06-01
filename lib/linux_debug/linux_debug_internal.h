@@ -86,7 +86,7 @@ typedef struct {
 	uint32_t magic_number;
 	uint32_t combined_checksum;
 	kernel_info_t info;
-} __PACKED kernel_all_info_t;
+} kernel_all_info_t;
 
 typedef struct {
 	/* For linux banner */
@@ -97,7 +97,7 @@ typedef struct {
 	uint32_t magic_number;
 	uint32_t combined_checksum;
 	vendor_kernel_info_t info;
-} __PACKED vendor_kernel_all_info_t;
+} vendor_kernel_all_info_t;
 
 typedef struct {
 	uint8_t  dtype;

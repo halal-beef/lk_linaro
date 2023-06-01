@@ -773,6 +773,7 @@ int load_boot_images(void)
 			break;
 		}
 		part_read(part, (void *)INIT_BOOT_BASE);
+		/* Fall through */
 	case 3:
 		argv[6].u = VENDOR_BOOT_BASE;
 		sprintf(boot_part_name, "vendor_boot");
