@@ -246,6 +246,8 @@ void arm_generic_timer_disable(void)
 
 void platform_early_init(void)
 {
+	unsigned int rst_stat = readl(EXYNOS3830_POWER_RST_STAT);
+
 	dfd_get_dump_en_before_reset();
 	dfd_set_dump_en(0);
 
@@ -271,6 +273,15 @@ void platform_early_init(void)
 		uart_log_mode = 1;
 	}
 #endif
+
+	/*
+	 * XXX: For normal booting condition except second boot (USB boot) or
+	 * warm/WDT reset.
+	 */
+	if (!(rst_stat & (WARM_RESET | LITTLE_WDT_RESET)) && is_first_boot()) {
+		/* Set MUIC to UART mode */
+		muic_sw_uart();
+	}
 
 	/* this function have to be called before calling printf */
 	dbg_snapshot_early_init();
