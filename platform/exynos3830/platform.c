@@ -246,6 +246,8 @@ void arm_generic_timer_disable(void)
 
 void platform_early_init(void)
 {
+	int ret;
+
 	dfd_get_dump_en_before_reset();
 	dfd_set_dump_en(0);
 
@@ -282,6 +284,9 @@ void platform_early_init(void)
 	arm_gic_init();
 	writel(1 << 8, EXYNOS3830_MCT_G_TCON);
 	arm_generic_timer_init(ARCH_TIMER_IRQ, 26000000);
+
+	ret = get_board_rev();
+	ret < 0 ? (board_rev = 0):(board_rev = ret);
 }
 
 extern bool is_xct_boot(void);
@@ -335,9 +340,6 @@ void platform_init(void)
 
 	if (*(unsigned int *)DRAM_BASE == 0xabcdef)
 		check_charger_connect();
-
-	ret = get_board_rev();
-	ret < 0 ? (board_rev = 0):(board_rev = ret);
 
 	mmc_init(MMC_CHANNEL_EMMC);
 	mmc_init(MMC_CHANNEL_SD);

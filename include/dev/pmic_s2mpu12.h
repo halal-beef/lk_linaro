@@ -35,6 +35,7 @@
 #define S2MPU12_PM_LDO11_CTRL		0x035
 #define S2MPU12_PM_LDO23_CTRL		0x041
 #define S2MPU12_PM_LDO24_CTRL		0x042
+#define S2MPU12_PM_LDO24_CTRL		0x042
 #define S2MPU12_PM_LDO26_CTRL		0x044
 #define S2MPU12_PM_LDO27_CTRL		0x045
 #define S2MPU12_PM_LDO28_CTRL		0x046
@@ -125,7 +126,7 @@ typedef enum {
  */
 #define S2MPU12_OUTPUT_ON_NORMAL	(0x3 << 6)
 
-void pmic_init(void);
+void pmic_init(unsigned int board_rev);
 void pmic_enable_manual_reset(pmic_mrdt);
 void read_smpl_wtsr(unsigned char read_int1, unsigned char read_int2, unsigned char read_pwronsrc, unsigned char read_wtsr_smpl);
 int chk_smpl_wtsr_s2mpu12(void);
