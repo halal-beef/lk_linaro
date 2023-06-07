@@ -308,7 +308,7 @@ static int bootargs_process(void)
 	int ret = 0;
 
 	/* Below console value can be used for bootargs change */
-	/* update_val("console", "ttySAC0,115200n8"); */
+	update_val("console", "ttySAC0,115200n8");
 
 	/* Update dtbo_idx value */
 	memset(buf, 0, sizeof(buf));
