@@ -34,12 +34,12 @@ extern struct dsim_lcd_driver s6e3fa0_mipi_lcd_driver;
 extern struct dsim_lcd_driver nt36672a_mipi_lcd_driver;
 extern struct dsim_lcd_driver s6e3ha8_mipi_lcd_driver;
 extern struct dsim_lcd_driver s6e3ha9_mipi_lcd_driver;
-
+extern struct dsim_lcd_driver kd101n65_mipi_lcd_driver;
 
 extern struct exynos_panel_info s6e3fa0_lcd_info;
 extern struct exynos_panel_info nt36672a_lcd_info;
 extern struct exynos_panel_info s6e3ha8_lcd_info;
 extern struct exynos_panel_info s6e3ha9_lcd_info;
-
+extern struct exynos_panel_info kd101n65_lcd_info;
 
 #endif /*__LCD_MODULE_H__ */
