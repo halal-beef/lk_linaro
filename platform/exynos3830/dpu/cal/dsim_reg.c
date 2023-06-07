@@ -1769,7 +1769,7 @@ static void dsim_reg_set_config(u32 id, struct exynos_panel_info *lcd_info,
 	}
 
 	dsim_reg_set_num_of_lane(id, lcd_info->data_lane - 1);
-	dsim_reg_enable_eotp(id, 1);
+	dsim_reg_enable_eotp(id, 0); // SS: updated from 1 as per Lontium engineer
 	dsim_reg_enable_per_frame_read(id, 0);
 	dsim_reg_set_pixel_format(id, DSIM_PIXEL_FORMAT_RGB24);
 	dsim_reg_set_vc_id(id, 0);
@@ -1823,6 +1823,11 @@ static void dsim_reg_set_config(u32 id, struct exynos_panel_info *lcd_info,
 	} else if (lcd_info->mode == DECON_VIDEO_MODE) {
 		dsim_reg_set_hperiod(id, lcd_info);
 		dsim_reg_set_vstatus_int(id, DSIM_VSYNC);
+	}
+
+	{
+		u32 val = dsim_read(id, DSIM_CONFIG);
+		dsim_err("dsim config read: %0x\n", val);
 	}
 
 	/* dsim_reg_enable_shadow_read(id, 1); */
