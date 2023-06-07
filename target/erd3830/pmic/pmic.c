@@ -55,13 +55,18 @@ void pmic_init (void)
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO27_CTRL, &reg);
 	reg |= 0xC0;
 	i3c_write(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO27_CTRL, reg);
+
+	/* Enable AI chip power */
+	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO30_CTRL, &reg);
+	reg |= 0xC0;
+	i3c_write(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO30_CTRL, reg);
 }
 
 void read_pmic_info (void)
 {
 	unsigned char read_int1, read_int2, read_int;
 	unsigned char read_ldo2_ctrl, read_ldo11_ctrl, read_ldo23_ctrl;
-	unsigned char read_ldo27_ctrl, read_ldo28_ctrl;
+	unsigned char read_ldo27_ctrl, read_ldo28_ctrl, read_ldo30_ctrl;
 	unsigned char read_pwronsrc, read_offsrc, read_wtsr_smpl;
 
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_INT1, &read_int1);
@@ -78,6 +83,7 @@ void read_pmic_info (void)
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO23_CTRL, &read_ldo23_ctrl);
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO27_CTRL, &read_ldo27_ctrl);
 	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO28_CTRL, &read_ldo28_ctrl);
+	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO30_CTRL, &read_ldo30_ctrl);
 	/* read PMIC RTC */
 	i3c_read(0, S2MPU12_RTC_ADDR, S2MPU12_RTC_WTSR_SMPL, &read_wtsr_smpl);
 
@@ -90,6 +96,7 @@ void read_pmic_info (void)
 	printf("S2MPU12_PM_LDO23_CTRL: 0x%x\n", read_ldo23_ctrl);
 	printf("S2MPU12_PM_LDO27_CTRL: 0x%x\n", read_ldo27_ctrl);
 	printf("S2MPU12_PM_LDO28_CTRL: 0x%x\n", read_ldo28_ctrl);
+	printf("S2MPU12_PM_LDO30_CTRL: 0x%x\n", read_ldo30_ctrl);
 	printf("S2MPU12_RTC_WTSR_SMPL : 0x%x\n", read_wtsr_smpl);
 
 	read_smpl_wtsr(read_int1, read_int2, read_pwronsrc, read_wtsr_smpl);
