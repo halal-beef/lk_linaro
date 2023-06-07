@@ -316,6 +316,9 @@ static int bootargs_process(void)
 	snprintf(buf, 4, "%d", local_dtbo_idx);
 	update_val("androidboot.dtbo_idx", buf);
 
+	/* Add devkmsg */
+	add_val("printk.devkmsg", "on");
+
 	/* reason */
 	memset(buf, 0, sizeof(buf));
 	update_boot_reason(buf);
