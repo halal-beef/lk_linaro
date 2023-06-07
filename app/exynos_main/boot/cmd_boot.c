@@ -720,6 +720,7 @@ int load_boot_images(void)
 	unsigned int ab_support = 0;
 	unsigned int boot_val = 0;
 	struct boot_img_hdr *b_hdr = (struct boot_img_hdr *)BOOT_BASE;
+	int err;
 
 	ab_support = ab_update_support();
 	boot_val = get_reboot_mode();
@@ -789,7 +790,9 @@ int load_boot_images(void)
 
 	}
 
-	cmd_scatter_load_boot(7, argv);
+	err = cmd_scatter_load_boot(7, argv);
+	if (err)
+		return err;
 
 	return 0;
 }
@@ -804,11 +807,14 @@ int cmd_boot(int argc, const cmd_args *argv)
 	char ab_suffix[8] = {'\0'};
 #endif
 	int ab_ret = 0;
+	int err;
 
 	fdt_dtb = (struct fdt_header *)DT_BASE;
 	dtbo_table = (struct dt_table_header *)DTBO_BASE;
 
-	load_boot_images();
+	err = load_boot_images();
+	if (err)
+		return err;
 
 	val = get_reboot_mode();
 	if ((val == REBOOT_MODE_RECOVERY) || (val == REBOOT_MODE_FASTBOOT_USER))

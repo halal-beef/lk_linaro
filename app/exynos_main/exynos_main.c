@@ -76,6 +76,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	/* struct pit_entry *ptn; */
 	int chk_wtsr_smpl;
 	int fb_mode_failed = FASTBOOT_OK;
+	int err;
 
 	print_lcd_update(FONT_WHITE, FONT_BLACK, "Board revision : 0x%X", board_rev);
 
@@ -162,6 +163,16 @@ download:
 	start_usb_gadget();
 	return;
 
+reboot:
+	err = cmd_boot(0, 0);
+	if (err) {
+		sdm_encrypt_secdram();
+		dfd_set_dump_en(0);
+		goto fastboot;
+	}
+
+	return;
+
 fastboot:
 	uart_log_mode = 1;
 #ifndef RAMDUMP_MODE_OFF
@@ -169,10 +180,6 @@ fastboot:
 	start_usb_gadget();
 	return;
 #endif
-
-reboot:
-	cmd_boot(0, 0);
-	return;
 }
 
 APP_START(exynos_boot)
