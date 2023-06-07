@@ -31,10 +31,10 @@ struct exynos_panel_info kd101n65_lcd_info = {
 	.yres = FRAME_HEIGHT,
 
 	/* Mhz */
-	.hs_clk = 1200,
+	.hs_clk = 1000, // SS changed from 1200,
 	.esc_clk = 20,
 
-	.dphy_pms = {2, 185, 1, 0x9d8a}, /* pmsk xxxxx for testing */
+	.dphy_pms = {2, 308, 2, 0xb13b}, // SS Changed from {2, 185, 1, 0x9d8a}, /* pmsk xxxxx for testing */
 	/* Maybe, width and height will be removed */
 	.fps = 60,
 	.data_lane = 4,
