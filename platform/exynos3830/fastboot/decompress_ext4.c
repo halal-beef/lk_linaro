@@ -15,6 +15,8 @@
 #include <platform/decompress_ext4.h>
 #include <part.h>
 
+//#define DEBUG_WRITE_COMPRESSED_EXT4
+
 /*
  * Exynos MMC host need buffer address space aligned to eight  bytes for DMA.
  */
@@ -129,13 +131,17 @@ int write_compressed_ext4(char* img_base, unsigned int sector_base) {
 		chunk_in_bytes = (u64)chunk_header->chunk_size * file_header->block_size;
 		sector_size = chunk_in_bytes / (u64)PART_SECTOR_SIZE;
 
+#ifdef DEBUG_WRITE_COMPRESSED_EXT4
 		printf("*** raw_chunk (lba: %u, sct: %u) ***\n",
 				sector_base, sector_size);	// todo:
+#endif
 		switch(chunk_header->type)
 		{
 		case EXT4_CHUNK_TYPE_RAW:
+#ifdef DEBUG_WRITE_COMPRESSED_EXT4
 			printf("*** CHUNK TYPE RAW (lba: %u, sct: %u) ***\n",
 					sector_base, sector_size);
+#endif
 
 			/*
 			 * Memory copy if transfer buffer address is not
@@ -160,8 +166,10 @@ int write_compressed_ext4(char* img_base, unsigned int sector_base) {
 
 			p_i_buf = (u32 *)i_buf_for_sparse;
 			chunk_in_bytes = (u64)sector_size * PART_SECTOR_SIZE;
+#ifdef DEBUG_WRITE_COMPRESSED_EXT4
 			printf("*** CHUNK TYPE FILL (lba: %u, sct: %u, pat: 0x%08x) %llu***\n",
 					sector_base, sector_size, pattern, chunk_in_bytes / (u64)sizeof(u32));
+#endif
 			for (i = 0; i < chunk_in_bytes / (u64)sizeof(u32); i++)
 				p_i_buf[i] = pattern;
 
@@ -171,14 +179,18 @@ int write_compressed_ext4(char* img_base, unsigned int sector_base) {
 			break;
 
 		case EXT4_CHUNK_TYPE_NONE:
+#ifdef DEBUG_WRITE_COMPRESSED_EXT4
 			printf("*** CHUNK TYPE NONE (lba: %u, sct: %u) ***\n",
 					sector_base, sector_size);
+#endif
 			sector_base += sector_size;
 			break;
 
 		default:
+#ifdef DEBUG_WRITE_COMPRESSED_EXT4
 			printf("*** CHUNK TYPE INVALID (lba: %u, sct: %u) ***\n",
 					sector_base, sector_size);
+#endif
 			sector_base += sector_size;
 			break;
 		}
