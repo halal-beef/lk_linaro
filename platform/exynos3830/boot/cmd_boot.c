@@ -304,6 +304,11 @@ static int bootargs_process_linux(void)
 		return -1;
 	}
 
+	if (add_val("rw", NULL)) {
+		printf("Add rw failed\n");
+		return -1;
+	}
+
 	return 0;
 }
 
