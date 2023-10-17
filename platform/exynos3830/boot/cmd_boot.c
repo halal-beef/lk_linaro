@@ -220,6 +220,14 @@ static int add_val(const char *key, const char *val)
 	return 0;
 }
 
+static void update_or_add_val(const char *name, const char *val)
+{
+	if (get_bootargs_val(name))
+		update_val(name, val);
+	else
+		add_val(name, val);
+}
+
 static int remove_val(const char *key, const char *val)
 {
 	int i;
@@ -392,7 +400,7 @@ static int bootargs_process(bool mount_super)
 {
 	int ret;
 
-	update_val("console", "ttySAC0,115200n8");
+	update_or_add_val("console", "ttySAC0,115200n8");
 	add_val("printk.devkmsg", "on");
 
 	if (mount_super)
