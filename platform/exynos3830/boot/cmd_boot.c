@@ -681,7 +681,7 @@ rmem_setup:
 	np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
 	printf("\nbootargs: %s\n", np);
 
-	set_bootargs(is_upstream_dtb);
+	set_bootargs(rd_size == 0);
 	set_usb_serialno();
 
 #if defined(CONFIG_USE_AVB20)
