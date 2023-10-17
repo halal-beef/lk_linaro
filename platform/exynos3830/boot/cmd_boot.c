@@ -321,8 +321,10 @@ static int bootargs_process_linux(void)
 
 static int bootargs_process_android(void)
 {
-	char buf[16];
+	char buf[17];
 	int ret;
+	unsigned long tmp_serial_id;
+	char *val;
 
 	update_val("androidboot.dtbo_idx", dtbo_idx);
 
@@ -393,6 +395,23 @@ static int bootargs_process_android(void)
 		}
 	}
 
+	/* Set USB serial number */
+	tmp_serial_id = ((unsigned long)s5p_chip_id[1] << 32) | (s5p_chip_id[0]);
+	printf("Set USB serial number in bootargs (%016lx)\n", tmp_serial_id);
+	val = get_bootargs_val("androidboot.serialno");
+	if (val) {
+		printf("already have serial prop: %s\n", val);
+	} else {
+		printf("no serial number prop; setting...\n");
+		memset(buf, 0, sizeof(buf));
+		snprintf(buf, 17, "%016lx", tmp_serial_id);
+		ret = add_val("androidboot.serialno", buf);
+		if (ret) {
+			printf("SerialNo set failed\n");
+			return -1;
+		}
+	}
+
 	return 0;
 }
 
@@ -423,32 +442,6 @@ static void set_bootargs(bool mount_super)
 	/* bootargs can be checked with print func */
 	/* print_val(); */
 	bootargs_update();
-}
-
-static void set_usb_serialno(void)
-{
-	char str[BUFFER_SIZE];
-	const char *np;
-	int len;
-	int noff;
-	unsigned long tmp_serial_id;
-	char *ret;
-
-	tmp_serial_id = ((unsigned long)s5p_chip_id[1] << 32) | (s5p_chip_id[0]);
-	printf("Set USB serial number in bootargs (%016lx)\n", tmp_serial_id);
-
-	ret = get_bootargs_val("androidboot.serialno");
-	if (ret) {
-		printf("already have serial prop: %s\n", ret);
-		return;
-	}
-
-	printf("no serial number prop; setting...\n");
-	noff = fdt_path_offset (fdt_dtb, "/chosen");
-	np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
-	snprintf(str, BUFFER_SIZE, "%s androidboot.serialno=%016lx",
-		 np, tmp_serial_id);
-	fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
 }
 
 static void configure_dtb(void)
@@ -701,8 +694,6 @@ rmem_setup:
 
 	set_bootargs(rd_size == 0);
 	if (rd_size != 0) {
-		set_usb_serialno();
-
 #if defined(CONFIG_USE_AVB20)
 		/* set AVB args */
 		noff = fdt_path_offset (fdt_dtb, "/chosen");
