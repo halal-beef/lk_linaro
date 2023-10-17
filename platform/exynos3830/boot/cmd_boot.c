@@ -106,13 +106,12 @@ static int bootargs_init(void)
 		return ret;
 	}
 
+	memset(bootargs, 0, BUFFER_SIZE);
 	noff = fdt_path_offset(fdt_dtb, "/chosen");
 	if (noff >= 0) {
 		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len2);
-		if (len2 >= 0) {
-			memset(bootargs, 0, BUFFER_SIZE);
+		if (len2 >= 0)
 			memcpy(bootargs, np, len2);
-		}
 	}
 
 	printf("\ndefault bootargs: %s\n", bootargs);
