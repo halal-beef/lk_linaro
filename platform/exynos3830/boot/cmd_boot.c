@@ -292,29 +292,27 @@ static void remove_string_from_bootargs(const char *str)
 	fdt_setprop(fdt_dtb, noff, "bootargs", bootargs, strlen(bootargs) + 1);
 }
 
-static int bootargs_process(bool mount_super)
+static int bootargs_process_linux(void)
+{
+	if (add_val("root", "/dev/mmcblk0p12")) {
+		printf("Add root failed\n");
+		return -1;
+	}
+
+	if (add_val("rootwait", NULL)) {
+		printf("Add rootwait failed\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+static int bootargs_process_android(void)
 {
 	char buf[16];
-	int ret = 0;
+	int ret;
 
-	/* Below console value can be used for bootargs change */
-	update_val("console", "ttySAC0,115200n8");
 	update_val("androidboot.dtbo_idx", dtbo_idx);
-
-	/* Add devkmsg */
-	add_val("printk.devkmsg", "on");
-
-	if (mount_super) {
-		if (add_val("root", "/dev/mmcblk0p12")) {
-			printf("Add root failed\n");
-			return -1;
-		}
-
-		if (add_val("rootwait", NULL)) {
-			printf("Add rootwait failed\n");
-			return -1;
-		}
-	}
 
 	/* reason */
 	memset(buf, 0, sizeof(buf));
@@ -384,6 +382,21 @@ static int bootargs_process(bool mount_super)
 	}
 
 	return 0;
+}
+
+static int bootargs_process(bool mount_super)
+{
+	int ret;
+
+	update_val("console", "ttySAC0,115200n8");
+	add_val("printk.devkmsg", "on");
+
+	if (mount_super)
+		ret = bootargs_process_linux();
+	else
+		ret = bootargs_process_android();
+
+	return ret;
 }
 
 static void set_bootargs(bool mount_super)
@@ -682,16 +695,20 @@ rmem_setup:
 	printf("\nbootargs: %s\n", np);
 
 	set_bootargs(rd_size == 0);
-	set_usb_serialno();
+	if (rd_size != 0) {
+		set_usb_serialno();
 
 #if defined(CONFIG_USE_AVB20)
-	/* set AVB args */
-	noff = fdt_path_offset (fdt_dtb, "/chosen");
-	np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
-	snprintf(str, BUFFER_SIZE, "%s %s %s", np, cmdline, verifiedbootstate);
-	fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
-	printf("\nupdated avb bootargs: %s\n", np);
+		/* set AVB args */
+		noff = fdt_path_offset (fdt_dtb, "/chosen");
+		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
+		snprintf(str, BUFFER_SIZE, "%s %s %s", np, cmdline,
+			 verifiedbootstate);
+		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
+		printf("\nupdated avb bootargs: %s\n", np);
 #endif
+	}
+
 	resize_dt(0);
 }
 
