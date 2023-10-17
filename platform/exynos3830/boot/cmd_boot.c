@@ -431,30 +431,23 @@ static void set_usb_serialno(void)
 	const char *np;
 	int len;
 	int noff;
-	unsigned long tmp_serial_id = 0;
+	unsigned long tmp_serial_id;
 	char *ret;
 
 	tmp_serial_id = ((unsigned long)s5p_chip_id[1] << 32) | (s5p_chip_id[0]);
-
-	printf("Set USB serial number in bootargs.(%016lx)\n", tmp_serial_id);
+	printf("Set USB serial number in bootargs (%016lx)\n", tmp_serial_id);
 
 	ret = get_bootargs_val("androidboot.serialno");
-
-	if(!ret) {
-		printf("no serial number prop");
-		noff = fdt_path_offset(fdt_dtb, "/chosen");
-		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
-		snprintf(str, BUFFER_SIZE, "%s androidboot.serialno=%016lx",
-							np, tmp_serial_id);
-		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
-	} else {
-		printf("already have serial prop: ret = %s\n", ret);
+	if (ret) {
+		printf("already have serial prop: %s\n", ret);
+		return;
 	}
 
+	printf("no serial number prop; setting...\n");
 	noff = fdt_path_offset (fdt_dtb, "/chosen");
 	np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
 	snprintf(str, BUFFER_SIZE, "%s androidboot.serialno=%016lx",
-						np, tmp_serial_id);
+		 np, tmp_serial_id);
 	fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
 }
 
