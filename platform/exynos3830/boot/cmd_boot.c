@@ -114,7 +114,7 @@ static int bootargs_init(void)
 			memcpy(bootargs, np, len2);
 	}
 
-	printf("\ndefault bootargs: %s\n", bootargs);
+	printf("default bootargs: %s\n", bootargs[0] ? bootargs : "<null>");
 
 	len = strlen(bootargs);
 	for (i = 0; i < len; i++) {
@@ -197,7 +197,7 @@ static void bootargs_update(void)
 
 	bootargs[cur] = '\0';
 
-	printf("\nupdated bootargs: %s\n", bootargs);
+	printf("updated bootargs: %s\n", bootargs);
 
 	set_fdt_val("/chosen", "bootargs", bootargs);
 }
@@ -704,7 +704,7 @@ rmem_setup:
 
 	noff = fdt_path_offset (fdt_dtb, "/chosen");
 	np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
-	printf("\nbootargs: %s\n", np);
+	printf("bootargs: %s\n", np);
 
 	set_bootargs(rd_size == 0);
 	if (rd_size != 0) {
@@ -717,7 +717,7 @@ rmem_setup:
 		snprintf(str, BUFFER_SIZE, "%s %s %s", np, cmdline,
 			 verifiedbootstate);
 		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
-		printf("\nupdated avb bootargs: %s\n", np);
+		printf("updated avb bootargs: %s\n", np);
 #endif
 	}
 
