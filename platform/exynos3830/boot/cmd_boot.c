@@ -423,35 +423,6 @@ static int bootargs_process_android(void)
 	return 0;
 }
 
-static int bootargs_process(bool mount_super)
-{
-	int ret;
-
-	update_or_add_val("console", "ttySAC0,115200n8");
-	add_val("printk.devkmsg", "on");
-
-	if (mount_super)
-		ret = bootargs_process_linux();
-	else
-		ret = bootargs_process_android();
-
-	return ret;
-}
-
-static void set_bootargs(bool mount_super)
-{
-	bootargs_init();
-
-	/* add bootargs for bootmode reason, etc */
-	if (bootargs_process(mount_super)) {
-		printf("ERR: bootargs process failed!");
-	}
-
-	/* bootargs can be checked with print func */
-	/* print_val(); */
-	bootargs_update();
-}
-
 static void configure_dtb(void)
 {
 	char str[BUFFER_SIZE];
@@ -505,8 +476,8 @@ static void configure_dtb(void)
 
 	/*
 	 * In this here, it is enabled cache. So you don't use blk read/write function
-	 * If you modify dtb, you must use under set_bootargs function.
-	 * And if you modify bootargs, you will modify in set_bootargs function.
+	 * If you modify dtb, you must use under set_bootargs label.
+	 * And if you modify bootargs, you will modify in set_bootargs label.
 	 */
 	merge_dto_to_main_dtb();
 	resize_dt(SZ_4K);
@@ -696,10 +667,21 @@ rmem_setup:
 		}
 	}
 
-	noff = fdt_path_offset (fdt_dtb, "/chosen");
+set_bootargs:
+	noff = fdt_path_offset(fdt_dtb, "/chosen");
 	np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
 	printf("bootargs: %s\n", np);
-	set_bootargs(rd_size == 0);
+	bootargs_init();
+	update_or_add_val("console", "ttySAC0,115200n8");
+	add_val("printk.devkmsg", "on");
+	if (rd_size == 0)
+		err = bootargs_process_linux();
+	else
+		err = bootargs_process_android();
+	if (err)
+		printf("ERR: bootargs process failed!\n");
+	/* bootargs can be checked with print_val() */
+	bootargs_update();
 
 	resize_dt(0);
 }
