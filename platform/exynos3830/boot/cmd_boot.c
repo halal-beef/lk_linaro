@@ -56,7 +56,7 @@ void arm_generic_timer_disable(void);
 
 #if defined(CONFIG_USE_AVB20)
 static char cmdline[AVB_CMD_MAX_SIZE];
-static char verifiedbootstate[AVB_VBS_MAX_SIZE]="androidboot.verifiedbootstate=";
+static char verifiedbootstate[AVB_VBS_MAX_SIZE];
 #endif
 
 static void update_boot_reason(char *buf)
@@ -412,6 +412,14 @@ static int bootargs_process_android(void)
 		}
 	}
 
+#if defined(CONFIG_USE_AVB20)
+	/* Set AVB args */
+	memset(buf, 0, sizeof(buf));
+	snprintf(buf, 16, "%s", verifiedbootstate);
+	add_val("androidboot.verifiedbootstate", buf);
+	printf("updated avb bootargs: %s\n", np);
+#endif
+
 	return 0;
 }
 
@@ -691,19 +699,7 @@ rmem_setup:
 	noff = fdt_path_offset (fdt_dtb, "/chosen");
 	np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
 	printf("bootargs: %s\n", np);
-
 	set_bootargs(rd_size == 0);
-	if (rd_size != 0) {
-#if defined(CONFIG_USE_AVB20)
-		/* set AVB args */
-		noff = fdt_path_offset (fdt_dtb, "/chosen");
-		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
-		snprintf(str, BUFFER_SIZE, "%s %s %s", np, cmdline,
-			 verifiedbootstate);
-		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
-		printf("updated avb bootargs: %s\n", np);
-#endif
-	}
 
 	resize_dt(0);
 }
