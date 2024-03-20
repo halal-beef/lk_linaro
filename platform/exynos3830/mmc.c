@@ -81,7 +81,7 @@ void mmc_gpio_set(unsigned int channel, unsigned int enable)
 			reg = *(volatile u32 *)GPF0_PUD;
 			reg &= ~(0x00FFFF);
 			reg |= 0x0130;
-			*(volatile u32 *)GPF1_PUD = reg;
+			*(volatile u32 *)GPF0_PUD = reg;
 
 			reg = *(volatile u32 *)GPF1_CON;
 			reg &= ~(0xFFFFFFFF);
